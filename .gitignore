@@ -1,0 +1,5 @@
+local-admin/
+gcm-diagnose.log
+AGENTS.md
+dist/
+node_modules/

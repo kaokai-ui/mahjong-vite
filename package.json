@@ -1,0 +1,31 @@
+{
+  "name": "mahjong-vite",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 4173",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "smoke": "node local-admin/scripts/smoke-test.mjs",
+    "test:game-engine": "node local-admin/scripts/game-engine-scenarios.mjs",
+    "test:bot-ai": "node local-admin/scripts/bot-ai-deterministic-scenarios.mjs",
+    "test:network-helpers": "node local-admin/scripts/network-room-helpers-scenarios.mjs",
+    "test:network-controller": "node local-admin/scripts/network-controller-scenarios.mjs",
+    "test:network-live": "node local-admin/scripts/network-live-dual-client-smoke.mjs",
+    "test:network-live:appcheck": "node local-admin/scripts/network-live-dual-client-smoke.mjs --strict-appcheck",
+    "typecheck": "tsc --noEmit",
+    "verify:migration": "node local-admin/scripts/verify-react-migration.mjs"
+  },
+  "dependencies": {
+    "firebase": "^12.12.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
+  }
+}
