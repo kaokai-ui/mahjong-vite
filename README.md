@@ -47,8 +47,4 @@ npm run test:network-live:appcheck
 ## 專案結構
 
 - `src/`：正式站前端、遊戲引擎、AI、多人同步
-- `local-admin/`：本機專用工具、文件、驗證腳本、手測頁
 
-`local-admin/` 是本機工作區，不是公開站內容。
-
-本機開發與驗證文件保留在 `local-admin/`，刻意不納入公開發佈內容。
