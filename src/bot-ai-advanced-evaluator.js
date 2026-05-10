@@ -17,7 +17,7 @@ import {
 import {
   createAnalysisCache,
   evaluateHandProgress,
-  getOpponentSeat,
+  getOpponentSeats,
 } from "./bot-ai-hand-progress.js";
 
 function evaluateAdvancedHand(
@@ -162,10 +162,10 @@ function evaluateFlexibility(handTileIds) {
 }
 
 function deriveBattleProfile(game, playerSeat, baseProgress) {
-  const opponentSeat = getOpponentSeat(playerSeat);
-  const opponent = game && Array.isArray(game.players) ? game.players[opponentSeat] : null;
-  const openMelds = opponent && Array.isArray(opponent.melds) ? opponent.melds.filter((meld) => !meld.concealed).length : 0;
-  const opponentDiscardCount = opponent && Array.isArray(opponent.discards) ? opponent.discards.length : 0;
+  const opponentProfiles = getOpponentProfiles(game, playerSeat);
+  const totalOpenMelds = opponentProfiles.reduce((sum, opponent) => sum + opponent.openMelds, 0);
+  const maxOpenMelds = opponentProfiles.reduce((max, opponent) => Math.max(max, opponent.openMelds), 0);
+  const maxOpponentDiscardCount = opponentProfiles.reduce((max, opponent) => Math.max(max, opponent.discardCount), 0);
 
   let attackWeight = 1;
   let defenseWeight = 0.9;
@@ -178,18 +178,21 @@ function deriveBattleProfile(game, playerSeat, baseProgress) {
     defenseWeight += 0.2;
   }
 
-  if (openMelds >= 1) {
-    defenseWeight += 0.2 + openMelds * 0.1;
+  if (totalOpenMelds >= 1) {
+    defenseWeight += 0.12 + totalOpenMelds * 0.08 + maxOpenMelds * 0.06;
   }
 
-  if (opponentDiscardCount >= 8) {
+  if (maxOpponentDiscardCount >= 8) {
     defenseWeight += 0.08;
   }
 
   if (normalizeScoringEnabled(game && game.scoringEnabled) && Array.isArray(game && game.scores)) {
     const myScore = Number(game.scores[playerSeat]) || 0;
-    const opponentScore = Number(game.scores[opponentSeat]) || 0;
-    const scoreGap = myScore - opponentScore;
+    const highestOpponentScore = opponentProfiles.reduce(
+      (best, opponent) => Math.max(best, opponent.score),
+      0,
+    );
+    const scoreGap = myScore - highestOpponentScore;
 
     if (scoreGap <= -160) {
       attackWeight += 0.2;
@@ -206,16 +209,126 @@ function deriveBattleProfile(game, playerSeat, baseProgress) {
     }
   }
 
-  const suitPressure = evaluateSuitPressure(opponent);
+  const suitPressure = evaluateSuitPressure(opponentProfiles);
   return {
     attackWeight,
     defenseWeight,
     suitPressure,
-    opponentOpenMelds: openMelds,
+    opponentOpenMelds: totalOpenMelds,
+    opponentProfiles,
+    riskSignature: buildOpponentRiskSignature(opponentProfiles),
   };
 }
 
-function evaluateSuitPressure(opponent) {
+function evaluateSuitPressure(opponentProfiles) {
+  const suitPressure = { m: 0, p: 0, s: 0, z: 0 };
+  if (!Array.isArray(opponentProfiles) || !opponentProfiles.length) {
+    return suitPressure;
+  }
+
+  for (const opponent of opponentProfiles) {
+    for (const suit of ["m", "p", "s", "z"]) {
+      suitPressure[suit] += Number(opponent.suitPressure[suit] || 0) * opponent.threatWeight;
+    }
+  }
+
+  const divisor = opponentProfiles.reduce((sum, opponent) => sum + opponent.threatWeight, 0) || 1;
+  for (const suit of ["m", "p", "s", "z"]) {
+    suitPressure[suit] /= divisor;
+  }
+
+  return suitPressure;
+}
+
+function evaluateDiscardRisk(game, playerSeat, tileId, battleProfile, analysisCache) {
+  const tileType = getTileType(tileId);
+  const cacheKey = `${playerSeat}|${tileType}|${battleProfile.riskSignature || serializeSuitPressure(battleProfile.suitPressure)}`;
+  if (analysisCache.riskCache.has(cacheKey)) {
+    return analysisCache.riskCache.get(cacheKey);
+  }
+
+  const opponentProfiles = Array.isArray(battleProfile.opponentProfiles) && battleProfile.opponentProfiles.length
+    ? battleProfile.opponentProfiles
+    : getOpponentProfiles(game, playerSeat);
+  const visibleCounts = buildVisibleCounts(game, playerSeat, [], [], analysisCache);
+  const visibleCount = visibleCounts[tileType] || 0;
+  const perSeatRisks = opponentProfiles.map((opponent) =>
+    evaluateOpponentDiscardRisk(opponent, tileType, visibleCount, battleProfile),
+  );
+  const highestRisk = perSeatRisks.length ? Math.max(...perSeatRisks) : 0;
+  const supportRisk = perSeatRisks
+    .filter((seatRisk) => seatRisk !== highestRisk)
+    .reduce((sum, seatRisk) => sum + seatRisk * 0.2, 0);
+  const risk = Math.max(0, highestRisk + supportRisk);
+  analysisCache.riskCache.set(cacheKey, risk);
+  return risk;
+}
+
+function getOpponentProfiles(game, playerSeat) {
+  const scores = Array.isArray(game && game.scores) ? game.scores : [];
+  const myScore = Number(scores[playerSeat]) || 0;
+  const players = game && Array.isArray(game.players) ? game.players : [];
+
+  return getOpponentSeats(game, playerSeat)
+    .map((seat) => buildOpponentProfile(players[seat], seat, myScore, scores))
+    .filter(Boolean)
+    .sort((left, right) => right.threatWeight - left.threatWeight);
+}
+
+function buildOpponentProfile(opponent, seat, myScore, scores) {
+  if (!opponent) {
+    return null;
+  }
+
+  const openMelds = Array.isArray(opponent.melds)
+    ? opponent.melds.filter((meld) => !meld.concealed)
+    : [];
+  const discards = Array.isArray(opponent.discards) ? opponent.discards : [];
+  const score = Number(scores[seat]) || 0;
+  const scorePressure = Math.max(0, score - myScore);
+  const threatWeight =
+    1 +
+    openMelds.length * 0.24 +
+    Math.min(0.18, discards.length * 0.015) +
+    Math.min(0.28, scorePressure / 260);
+
+  return {
+    seat,
+    score,
+    openMelds: openMelds.length,
+    discardCount: discards.length,
+    discardTypes: new Set(discards.map((discard) => getTileType(discard.tileId || discard))),
+    suitDiscardCounts: countDiscardSuits(discards),
+    openMeldRanksBySuit: groupOpenMeldRanksBySuit(openMelds),
+    suitPressure: evaluateSingleOpponentSuitPressure(opponent),
+    threatWeight,
+  };
+}
+
+function countDiscardSuits(discards) {
+  const counts = { m: 0, p: 0, s: 0, z: 0 };
+  for (const discard of discards || []) {
+    counts[getTileSuit(getTileType(discard.tileId || discard))] += 1;
+  }
+  return counts;
+}
+
+function groupOpenMeldRanksBySuit(openMelds) {
+  const ranks = { m: [], p: [], s: [], z: [] };
+  for (const meld of openMelds || []) {
+    const meldTileType = meld.tileType || getTileType(meld.tiles && meld.tiles[0] ? meld.tiles[0] : "");
+    const suit = getTileSuit(meldTileType);
+    const rank = isSuitTile(meldTileType) ? getTileRank(meldTileType) : null;
+    if (rank) {
+      ranks[suit].push(rank);
+    } else {
+      ranks[suit].push(0);
+    }
+  }
+  return ranks;
+}
+
+function evaluateSingleOpponentSuitPressure(opponent) {
   const suitPressure = { m: 0, p: 0, s: 0, z: 0 };
   if (!opponent) {
     return suitPressure;
@@ -236,63 +349,60 @@ function evaluateSuitPressure(opponent) {
   return suitPressure;
 }
 
-function evaluateDiscardRisk(game, playerSeat, tileId, battleProfile, analysisCache) {
-  const tileType = getTileType(tileId);
-  const cacheKey = `${playerSeat}|${tileType}|${serializeSuitPressure(battleProfile.suitPressure)}`;
-  if (analysisCache.riskCache.has(cacheKey)) {
-    return analysisCache.riskCache.get(cacheKey);
+function evaluateOpponentDiscardRisk(opponentProfile, tileType, visibleCount, battleProfile) {
+  if (!opponentProfile) {
+    return 0;
   }
 
-  const opponentSeat = getOpponentSeat(playerSeat);
-  const opponent = game && Array.isArray(game.players) ? game.players[opponentSeat] : null;
-  const visibleCounts = buildVisibleCounts(game, playerSeat, [], [], analysisCache);
-  const visibleCount = visibleCounts[tileType] || 0;
-  const opponentDiscardTypes = new Set(
-    (opponent && Array.isArray(opponent.discards) ? opponent.discards : []).map((discard) => getTileType(discard.tileId || discard)),
-  );
+  if (opponentProfile.discardTypes.has(tileType)) {
+    return 0;
+  }
 
   let risk = 14;
-
-  if (opponentDiscardTypes.has(tileType)) {
-    risk = 0;
-  } else if (isHonorTile(tileType)) {
+  if (isHonorTile(tileType)) {
     risk = 24 - visibleCount * 5;
-    if ((battleProfile.suitPressure.z || 0) > 0) {
+    if ((opponentProfile.suitPressure.z || 0) > 0 || (battleProfile.suitPressure.z || 0) > 0) {
       risk += 4;
     }
   } else {
     const suit = getTileSuit(tileType);
     const rank = getTileRank(tileType);
     risk = rank >= 3 && rank <= 7 ? 18 : 15;
-    risk += (battleProfile.suitPressure[suit] || 0) * 4;
+    risk += (opponentProfile.suitPressure[suit] || 0) * 4;
+    risk += (battleProfile.suitPressure[suit] || 0) * 2;
     risk += visibleCount <= 1 ? 5 : visibleCount >= 3 ? -4 : 0;
 
-    const opponentDiscards = opponent && Array.isArray(opponent.discards) ? opponent.discards : [];
-    const sameSuitDiscards = opponentDiscards.filter((discard) => getTileSuit(getTileType(discard.tileId || discard)) === suit).length;
-    if (sameSuitDiscards <= 1) {
+    if ((opponentProfile.suitDiscardCounts[suit] || 0) <= 1) {
       risk += 4;
     }
 
-    const openMelds = opponent && Array.isArray(opponent.melds) ? opponent.melds.filter((meld) => !meld.concealed) : [];
-    for (const meld of openMelds) {
-      const meldSuit = getTileSuit(meld.tileType || getTileType(meld.tiles && meld.tiles[0] ? meld.tiles[0] : ""));
-      if (meldSuit !== suit) {
-        continue;
-      }
-      const meldRank = isSuitTile(meld.tileType) ? getTileRank(meld.tileType) : null;
+    for (const meldRank of opponentProfile.openMeldRanksBySuit[suit] || []) {
       if (meldRank && Math.abs(meldRank - rank) <= 2) {
         risk += 6;
       }
     }
   }
 
-  risk = Math.max(0, risk);
-  analysisCache.riskCache.set(cacheKey, risk);
-  return risk;
+  risk += (opponentProfile.threatWeight - 1) * 8;
+  return Math.max(0, risk);
 }
 
 function serializeSuitPressure(suitPressure) {
   return ["m", "p", "s", "z"].map((suit) => Number(suitPressure[suit] || 0).toFixed(2)).join(",");
+}
+
+function buildOpponentRiskSignature(opponentProfiles) {
+  return (opponentProfiles || [])
+    .map((opponent) =>
+      [
+        opponent.seat,
+        opponent.threatWeight.toFixed(2),
+        opponent.openMelds,
+        opponent.discardCount,
+        serializeSuitPressure(opponent.suitPressure),
+      ].join(":"),
+    )
+    .join("|");
 }
 
 function evaluateFutureDrawPotential(

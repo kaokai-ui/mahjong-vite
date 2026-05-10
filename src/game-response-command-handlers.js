@@ -1,4 +1,5 @@
 import { GAME_DISCARD_CLAIM_COMMAND_HANDLERS } from "./game-discard-claim-command-handlers.js";
+import { advancePendingClaim } from "./game-claim-state.js";
 import {
   appendLog,
   failure,
@@ -13,23 +14,27 @@ import {
 function handlePassClaim(game, playerSeat) {
   const claim = game.pendingClaim;
   if (!claim || claim.toSeat !== playerSeat) {
-    return failure("目前沒有可以放棄的叫牌。");
+    return failure("There is no active claim to pass.");
+  }
+
+  appendLog(game, `${seatLabel(playerSeat)} passed.`);
+
+  const advancedClaim = advancePendingClaim(game);
+  if (advancedClaim) {
+    return success(game);
   }
 
   if (claim.kind === "discard") {
-    game.pendingClaim = null;
-    drawTurnTile(game, playerSeat, "摸牌", "live");
-    appendLog(game, `${seatLabel(playerSeat)}選擇過牌。`);
+    drawTurnTile(game, claim.nextTurnSeat, "drew a tile", "live");
     return success(game);
   }
 
   if (claim.kind === "robKong") {
     finalizeAddedKong(game, claim.playerSeat, claim.meldId, claim.tileId);
-    appendLog(game, `${seatLabel(playerSeat)}放棄搶槓。`);
     return success(game);
   }
 
-  return failure("無法處理過牌。");
+  return failure("Unknown claim state.");
 }
 
 export const GAME_RESPONSE_COMMAND_HANDLERS = {

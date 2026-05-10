@@ -67,6 +67,8 @@ export type AppRoomLike = NonNullable<BridgeRoomLike> & {
   } | null;
   meta?: (NonNullable<BridgeRoomLike>["meta"] & {
     soloDifficulty?: string;
+    soloPlayerCount?: number;
+    botDifficulties?: Record<string, string>;
   }) | null;
 };
 
@@ -126,6 +128,7 @@ export type AppState = {
   selectedRulesetId: string;
   selectedDrawRevealSeconds: number;
   selectedSoloDifficulty: string;
+  selectedSoloPlayerCount: number;
   selectedScoringEnabled: boolean;
   roomPanelRulesetId: string;
   roomPanelRulesetDirty: boolean;

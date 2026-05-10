@@ -5,6 +5,7 @@ type NormalizeGameMode = (value: unknown) => AppGameMode;
 type NormalizeRoomId = (value: unknown) => string;
 type NormalizeScoringEnabled = (value: unknown) => boolean;
 type NormalizeSoloDifficulty = (value: unknown) => string;
+type NormalizeSoloPlayerCount = (value: unknown) => number;
 type ReadInitialAppSettingsContext = {
   createRandomRoomId: CreateRandomRoomId;
   gameModeStorageKey: string;
@@ -12,11 +13,13 @@ type ReadInitialAppSettingsContext = {
   normalizeRoomId: NormalizeRoomId;
   normalizeScoringEnabled: NormalizeScoringEnabled;
   normalizeSoloDifficulty: NormalizeSoloDifficulty;
+  normalizeSoloPlayerCount: NormalizeSoloPlayerCount;
   onlineModeValue: AppGameMode;
   playerNameStorageKey: string;
   queryRoom: string | null;
   scoringEnabledStorageKey: string;
   soloDifficultyStorageKey: string;
+  soloPlayerCountStorageKey: string;
   soloModeValue: AppGameMode;
 };
 
@@ -39,16 +42,24 @@ type ApplyDefaultSettingsMigrationContext = {
   normalizeGameMode: NormalizeGameMode;
   normalizeScoringEnabled: NormalizeScoringEnabled;
   normalizeSoloDifficulty: NormalizeSoloDifficulty;
+  normalizeSoloPlayerCount: NormalizeSoloPlayerCount;
   onlineModeValue: AppGameMode;
   queryRoom: string | null;
   scoringEnabledStorageKey: string;
   soloDifficultyStorageKey: string;
+  soloPlayerCountStorageKey: string;
   soloModeValue: AppGameMode;
 };
 
 type InitialAppSettings = Pick<
   AppState,
-  "selectedMode" | "playerName" | "createRoomCode" | "joinRoomCode" | "selectedSoloDifficulty" | "selectedScoringEnabled"
+  | "selectedMode"
+  | "playerName"
+  | "createRoomCode"
+  | "joinRoomCode"
+  | "selectedSoloDifficulty"
+  | "selectedSoloPlayerCount"
+  | "selectedScoringEnabled"
 >;
 
 export function readInitialAppSettings(context: ReadInitialAppSettingsContext): InitialAppSettings {
@@ -63,6 +74,7 @@ export function readInitialAppSettings(context: ReadInitialAppSettingsContext): 
     normalizeGameMode,
     normalizeRoomId,
     normalizeSoloDifficulty,
+    normalizeSoloPlayerCount,
     normalizeScoringEnabled,
     createRandomRoomId,
   } = context;
@@ -74,6 +86,7 @@ export function readInitialAppSettings(context: ReadInitialAppSettingsContext): 
     createRoomCode: createRandomRoomId(),
     joinRoomCode: queryRoom ? normalizeRoomId(queryRoom) : "",
     selectedSoloDifficulty: normalizeSoloDifficulty(readLocalSetting(soloDifficultyStorageKey)),
+    selectedSoloPlayerCount: normalizeSoloPlayerCount(readLocalSetting(context.soloPlayerCountStorageKey)),
     selectedScoringEnabled: normalizeScoringEnabled(readLocalSetting(scoringEnabledStorageKey)),
   };
 }
@@ -135,6 +148,7 @@ export function applyDefaultSettingsMigration(context: ApplyDefaultSettingsMigra
     defaultScoringEnabled,
     normalizeGameMode,
     normalizeSoloDifficulty,
+    normalizeSoloPlayerCount,
     normalizeScoringEnabled,
   } = context;
   if (queryRoom) {
@@ -148,6 +162,7 @@ export function applyDefaultSettingsMigration(context: ApplyDefaultSettingsMigra
 
   const storedMode = normalizeGameMode(readLocalSetting(gameModeStorageKey) || soloModeValue);
   const storedDifficulty = normalizeSoloDifficulty(readLocalSetting(soloDifficultyStorageKey));
+  const storedSoloPlayerCount = normalizeSoloPlayerCount(readLocalSetting(context.soloPlayerCountStorageKey));
   const storedScoringEnabled = normalizeScoringEnabled(readLocalSetting(scoringEnabledStorageKey));
 
   if (storedMode === onlineModeValue) {
@@ -156,6 +171,10 @@ export function applyDefaultSettingsMigration(context: ApplyDefaultSettingsMigra
 
   if (storedDifficulty === "easy") {
     writeLocalSetting(soloDifficultyStorageKey, defaultSoloDifficulty);
+  }
+
+  if (![2, 4].includes(storedSoloPlayerCount)) {
+    writeLocalSetting(context.soloPlayerCountStorageKey, "2");
   }
 
   if (!storedScoringEnabled) {

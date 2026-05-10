@@ -1,0 +1,145 @@
+/* Small-height, mobile-width, and final 2P viewport overrides. */
+@media (max-height: 860px) and (orientation: landscape) {
+  body.app-game-focus {
+    --game-focus-notice-bottom-offset: clamp(188px, 23vh, 254px);
+  }
+
+  body.app-game-focus .table-self {
+    --self-tile-width: clamp(36px, calc((100vw - 160px) / 16), 64px);
+    --self-meld-tile-width: calc(var(--self-tile-width) * 0.56);
+    --self-head-second-row-height: 42px;
+    --self-head-height: 80px;
+    --self-action-dock-height: 40px;
+    padding: 6px 4px 8px;
+  }
+
+  body.app-game-focus .table-self .self-play-area {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 0;
+    height: 100%;
+  }
+
+  body.app-game-focus .table-shell-four {
+    grid-template-rows: 96px minmax(0, 1fr) 228px;
+  }
+
+  body.app-game-focus .table-self .self-hand-row {
+    align-self: center;
+    margin-top: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  body.app-game-focus {
+    --game-focus-notice-bottom-offset: clamp(132px, 16vh, 176px);
+  }
+
+  .app-shell {
+    width: min(100% - 14px, 100%);
+    padding-top: 10px;
+  }
+
+  .hero-copy,
+  .hero-card,
+  .panel {
+    border-radius: 20px;
+  }
+
+  .panel {
+    padding: 18px;
+  }
+
+  .panel-head,
+  .side-head,
+  .game-head-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tile {
+    width: auto;
+    height: auto;
+  }
+
+  body.app-game-focus .tile {
+    width: auto;
+    height: auto;
+  }
+
+  .inline-field {
+    grid-template-columns: 1fr;
+  }
+
+  .result-card {
+    width: min(100%, 680px);
+    padding: 20px 16px 16px;
+  }
+
+  .result-hand-panel {
+    padding: 12px;
+  }
+
+  .result-hand-group {
+    width: 100%;
+  }
+
+  .result-actions {
+    flex-wrap: wrap;
+  }
+
+  .result-hand-tiles .tile-faceup,
+  body.app-game-focus .result-hand-tiles .tile-faceup {
+    width: clamp(34px, 9vw, 46px);
+  }
+
+  .result-winning-tile .tile-faceup,
+  body.app-game-focus .result-winning-tile .tile-faceup {
+    width: 92px;
+  }
+}
+
+body.app-game-focus .table-center-two .table-center-board {
+  grid-template-rows: minmax(56px, auto) 8px minmax(56px, auto);
+  gap: 4px;
+  min-height: 132px;
+  align-content: stretch;
+}
+
+body.app-game-focus .table-center-two .discard-lane-top,
+body.app-game-focus .table-center-two .discard-lane-bottom {
+  min-height: 56px;
+  padding-block: 0;
+  padding-inline: 16px;
+}
+
+body.app-game-focus .table-center-two .discard-lane-bottom {
+  align-content: start;
+}
+
+body.app-game-focus .table-center-two .discard-line-horizontal {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 40px;
+}
+
+body.app-native-fullscreen.app-game-focus .table-center-two .table-center-board {
+  grid-template-rows: minmax(48px, auto) 6px minmax(48px, auto);
+  gap: 2px;
+  min-height: 110px;
+}
+
+body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-top,
+body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-bottom {
+  min-height: 48px;
+  padding-block: 0;
+  padding-inline: 14px;
+}
+
+body.app-native-fullscreen.app-game-focus .table-center-two .discard-line-horizontal {
+  min-height: 36px;
+}

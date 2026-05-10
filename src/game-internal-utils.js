@@ -5,8 +5,49 @@ export function getPlayer(game, seat) {
   return game.players.find((player) => player && player.seat === seat) || null;
 }
 
+export function getPlayerCount(gameOrCount) {
+  if (typeof gameOrCount === "number") {
+    return Number.isFinite(gameOrCount) && gameOrCount >= 2 ? Math.round(gameOrCount) : 2;
+  }
+
+  if (gameOrCount && Array.isArray(gameOrCount.players) && gameOrCount.players.length >= 2) {
+    return gameOrCount.players.length;
+  }
+
+  return Number.isFinite(gameOrCount && gameOrCount.playerCount) && gameOrCount.playerCount >= 2
+    ? Math.round(gameOrCount.playerCount)
+    : 2;
+}
+
+export function getSeatRange(gameOrCount) {
+  const playerCount = getPlayerCount(gameOrCount);
+  return Array.from({ length: playerCount }, (_, seat) => seat);
+}
+
+export function getNextSeat(seat, gameOrCount, step = 1) {
+  const playerCount = getPlayerCount(gameOrCount);
+  const normalizedSeat = ((Number(seat) % playerCount) + playerCount) % playerCount;
+  const normalizedStep = Number.isFinite(step) ? Math.round(step) : 1;
+  return ((normalizedSeat + normalizedStep) % playerCount + playerCount) % playerCount;
+}
+
+export function getOtherSeats(gameOrCount, seat) {
+  return getSeatRange(gameOrCount).filter((candidateSeat) => candidateSeat !== seat);
+}
+
+export function getSeatDistance(fromSeat, toSeat, gameOrCount) {
+  const playerCount = getPlayerCount(gameOrCount);
+  const normalizedFrom = ((Number(fromSeat) % playerCount) + playerCount) % playerCount;
+  const normalizedTo = ((Number(toSeat) % playerCount) + playerCount) % playerCount;
+  return ((normalizedTo - normalizedFrom) % playerCount + playerCount) % playerCount;
+}
+
+export function isNextSeat(fromSeat, candidateSeat, gameOrCount) {
+  return getNextSeat(fromSeat, gameOrCount) === candidateSeat;
+}
+
 export function getOpponentSeat(seat) {
-  return seat === 0 ? 1 : 0;
+  return getNextSeat(seat, 2);
 }
 
 export function removeExactTile(tileIds, tileId) {
@@ -27,7 +68,7 @@ export function appendLog(game, message) {
 }
 
 export function seatLabel(seat) {
-  return `玩家 ${seat + 1}`;
+  return `P${seat + 1}`;
 }
 
 export function cloneGame(game) {

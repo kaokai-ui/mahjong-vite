@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">0506單人麻將</string>
+    <string name="title_activity_main">0506單人麻將</string>
+    <string name="package_name">io.kaokai.mahjongsolooffline</string>
+    <string name="custom_url_scheme">io.kaokai.mahjongsolooffline</string>
+</resources>

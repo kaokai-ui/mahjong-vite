@@ -15,10 +15,12 @@ type CreateBridgeActionsDeps = {
   normalizeRulesetId: (value?: string) => string;
   normalizeScoringEnabled: (value: unknown) => boolean;
   normalizeSoloDifficulty: (value: unknown) => string;
+  normalizeSoloPlayerCount: (value: unknown) => number;
   render: () => void;
   scoringEnabledStorageKey: string;
   sendGameCommand: (command: string, payload?: BridgeGameCommandPayload) => Promise<void>;
   soloDifficultyStorageKey: string;
+  soloPlayerCountStorageKey: string;
   switchMode: (mode: AppGameMode) => void;
   syncBridgeSnapshot: () => void;
   writeLocalSetting: (key: string, value: string) => void;
@@ -57,6 +59,11 @@ export function createBridgeActions(appState: AppState, deps: CreateBridgeAction
       appState.selectedSoloDifficulty = deps.normalizeSoloDifficulty(value);
       deps.writeLocalSetting(deps.soloDifficultyStorageKey, appState.selectedSoloDifficulty);
       deps.render();
+    },
+    setSoloPlayerCount: (value: string) => {
+      appState.selectedSoloPlayerCount = deps.normalizeSoloPlayerCount(value);
+      deps.writeLocalSetting(deps.soloPlayerCountStorageKey, String(appState.selectedSoloPlayerCount));
+      deps.syncBridgeSnapshot();
     },
     setScoringEnabled: (value: string) => {
       appState.selectedScoringEnabled = deps.normalizeScoringEnabled(value);

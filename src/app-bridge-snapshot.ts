@@ -51,6 +51,7 @@ export function buildAppBridgeSnapshot(context: BuildAppBridgeSnapshotContext) {
     rulesetId: appState.selectedRulesetId,
     drawRevealSeconds: appState.selectedDrawRevealSeconds,
     soloDifficulty: appState.selectedSoloDifficulty as ReturnType<typeof buildLobbyBridgeSnapshot>["lobby"]["soloDifficulty"],
+    soloPlayerCount: String(appState.selectedSoloPlayerCount) as ReturnType<typeof buildLobbyBridgeSnapshot>["lobby"]["soloPlayerCount"],
     scoringEnabled: appState.selectedScoringEnabled,
     room,
     playerId,

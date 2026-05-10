@@ -1,6 +1,6 @@
 import { getTileLabel, getTileType } from "./rules.js";
 import { scoreFromTai } from "./scoring.js";
-import { SOLO_DIFFICULTY_LABELS } from "./bot-ai-profile.js";
+import { DIFFICULTY_PROFILES, SOLO_DIFFICULTY_LABELS } from "./bot-ai-profile.js";
 import {
   evaluateHandProgress,
   removeTileIdsFromHand,

@@ -1,0 +1,66 @@
+/* Native fullscreen overrides layered on top of game-focus and table layout rules. */
+@media (max-width: 1400px) {
+  body.app-native-fullscreen.app-game-focus #game-panel.panel {
+    padding:
+      calc(18px + env(safe-area-inset-top))
+      calc(10px + env(safe-area-inset-right))
+      calc(10px + env(safe-area-inset-bottom))
+      calc(10px + env(safe-area-inset-left));
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four {
+    --side-seat-panel-width: 144px;
+    --side-seat-panel-inline-padding: 12px;
+    --table-center-board-rows: 36px minmax(112px, 1fr) 78px;
+    --table-center-board-gap: 2px;
+    grid-template-columns: minmax(54px, 0.34fr) minmax(0, 3.02fr) minmax(54px, 0.34fr);
+    grid-template-rows: 88px minmax(0, 1fr) 210px;
+    gap: 4px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-center-four {
+    width: calc(100% - 168px);
+    max-width: 940px;
+    --four-seat-discard-top-min-height: 36px;
+    --four-seat-discard-bottom-min-height: 78px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .seat-top-panel {
+    gap: 4px;
+    padding-top: 6px;
+    padding-bottom: 8px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .seat-top-panel-compact {
+    width: min(100%, 920px);
+    padding: 4px 12px 10px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .seat-top-rack {
+    min-height: 46px;
+    gap: 2px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .seat-top-rack .tile-faceup,
+  body.app-native-fullscreen.app-game-focus .seat-top-rack .tile-back {
+    width: 36px;
+    height: 50px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .seat-side-melds .tile-faceup {
+    width: 18px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-self {
+    --self-tile-width: clamp(32px, calc((100vw - 152px) / 16), 56px);
+    --self-meld-tile-width: calc(var(--self-tile-width) * 0.56);
+    --self-head-second-row-height: 40px;
+    --self-head-height: 72px;
+    --self-action-dock-height: 36px;
+    padding: 4px 4px 8px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-self .side-head-self {
+    gap: 4px 8px;
+  }
+}

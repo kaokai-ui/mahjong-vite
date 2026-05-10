@@ -1,8 +1,8 @@
-import { evaluateWinningHand, getTileLabel, getTileType, getTilesByType } from "./rules.js";
+import { getTileLabel, getTileType, getTilesByType } from "./rules.js";
+import { buildRobKongResponseState } from "./game-claim-state.js";
 import {
   appendLog,
   failure,
-  getOpponentSeat,
   getPlayer,
   removeTiles,
   seatLabel,
@@ -12,14 +12,14 @@ import { drawSupplementTile, finalizeAddedKong } from "./game-turn-flow.js";
 
 function handleConcealedKong(game, playerSeat, payload = {}) {
   if (game.phase !== "discard" || game.turnSeat !== playerSeat) {
-    return failure("現在不能暗槓。");
+    return failure("It is not this player's discard step.");
   }
 
   const player = getPlayer(game, playerSeat);
   const tileType = payload.tileType;
   const usedTileIds = getTilesByType(player.hand, tileType, 4);
   if (usedTileIds.length !== 4) {
-    return failure("沒有可暗槓的四張同牌。");
+    return failure("The player does not have four matching tiles for a concealed kong.");
   }
 
   removeTiles(player.hand, usedTileIds);
@@ -32,14 +32,14 @@ function handleConcealedKong(game, playerSeat, payload = {}) {
     fromSeat: playerSeat,
   });
   game.nextMeldId += 1;
-  appendLog(game, `${seatLabel(playerSeat)}暗槓 ${getTileLabel(tileType)}。`);
-  drawSupplementTile(game, playerSeat, "暗槓補牌");
+  appendLog(game, `${seatLabel(playerSeat)} declared a concealed kong of ${getTileLabel(tileType)}.`);
+  drawSupplementTile(game, playerSeat, "drew a supplement tile after the concealed kong");
   return success(game);
 }
 
 function handleAddedKong(game, playerSeat, payload = {}) {
   if (game.phase !== "discard" || game.turnSeat !== playerSeat) {
-    return failure("現在不能補槓。");
+    return failure("It is not this player's discard step.");
   }
 
   const player = getPlayer(game, playerSeat);
@@ -47,32 +47,23 @@ function handleAddedKong(game, playerSeat, payload = {}) {
   const tileId = payload.tileId;
   const meld = player.melds.find((candidate) => candidate.id === meldId);
   if (!meld || meld.type !== "pung" || meld.concealed) {
-    return failure("這副牌不能補槓。");
+    return failure("The selected meld cannot be promoted to a kong.");
   }
 
   if (!player.hand.includes(tileId) || getTileType(tileId) !== meld.tileType) {
-    return failure("缺少補槓需要的牌。");
+    return failure("The selected tile cannot complete the added kong.");
   }
 
-  const targetSeat = getOpponentSeat(playerSeat);
-  const opponent = getPlayer(game, targetSeat);
-  const robWin = evaluateWinningHand({
-    handTileIds: opponent.hand,
-    melds: opponent.melds,
-    additionalTileType: meld.tileType,
+  const robKongClaim = buildRobKongResponseState(game, playerSeat, {
+    meldId,
+    tileId,
+    tileType: meld.tileType,
   });
 
-  if (robWin.canWin) {
+  if (robKongClaim) {
     game.phase = "robKong";
-    game.pendingClaim = {
-      kind: "robKong",
-      playerSeat,
-      toSeat: targetSeat,
-      meldId,
-      tileId,
-      tileType: meld.tileType,
-    };
-    appendLog(game, `${seatLabel(playerSeat)}宣告補槓，等待 ${seatLabel(targetSeat)} 是否搶槓。`);
+    game.pendingClaim = robKongClaim;
+    appendLog(game, `${seatLabel(playerSeat)} attempted an added kong. ${seatLabel(robKongClaim.toSeat)} may rob it.`);
     return success(game);
   }
 

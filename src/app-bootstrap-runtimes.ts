@@ -8,9 +8,11 @@ import {
   GAME_MODE_STORAGE_KEY,
   SCORING_ENABLED_STORAGE_KEY,
   SOLO_DIFFICULTY_STORAGE_KEY,
+  SOLO_PLAYER_COUNT_STORAGE_KEY,
   normalizeGameMode,
   normalizeRulesetId,
 } from "./app-bootstrap-state";
+import { createRandomFirebaseRoomId, normalizeFirebaseRoomId } from "./firebase-rules-contract.js";
 import {
   syncModeSpecificInputs,
   syncRoomPanelRulesetState,
@@ -23,9 +25,8 @@ import {
   resetGameRuntimeState,
   triggerAutoDrawIfNeeded,
 } from "./game-runtime-state";
-import { createRandomRoomId, normalizeRoomId } from "./network.js";
 import { normalizeScoringEnabled } from "./scoring.js";
-import { normalizeSoloDifficulty } from "./solo-controller.js";
+import { normalizeSoloDifficulty, normalizeSoloPlayerCount } from "./solo-controller.js";
 import type {
   AppState,
   BootstrapRuntimes,
@@ -39,7 +40,7 @@ export function createBootstrapRuntimes(appState: AppState, runtimeState: GameRu
   let renderRuntime: RenderRuntime | null = null;
 
   const modeRuntime = createAppModeRuntime(appState, {
-    createRandomRoomId,
+    createRandomRoomId: createRandomFirebaseRoomId,
     gameModeStorageKey: GAME_MODE_STORAGE_KEY,
     normalizeRulesetId,
     render: () => renderRuntime!.render(),
@@ -52,22 +53,24 @@ export function createBootstrapRuntimes(appState: AppState, runtimeState: GameRu
   }) as ModeRuntime;
 
   bridgeRuntime = createAppBridgeRuntime(appState, {
-    createRandomRoomId,
+    createRandomRoomId: createRandomFirebaseRoomId,
     defaultRulesetId: DEFAULT_RULESET_ID,
     getController: modeRuntime.getController,
     getDrawRevealState,
     handleUiAction: (action: string) => renderRuntime!.runUiAction(action),
     normalizeDrawRevealSecondsValue,
     normalizeGameMode,
-    normalizeRoomId,
+    normalizeRoomId: normalizeFirebaseRoomId,
     normalizeRulesetId,
     normalizeScoringEnabled,
     normalizeSoloDifficulty,
+    normalizeSoloPlayerCount,
     onlineModeValue: GAME_MODE_ONLINE,
     render: () => renderRuntime!.render(),
     runtimeState,
     scoringEnabledStorageKey: SCORING_ENABLED_STORAGE_KEY,
     soloDifficultyStorageKey: SOLO_DIFFICULTY_STORAGE_KEY,
+    soloPlayerCountStorageKey: SOLO_PLAYER_COUNT_STORAGE_KEY,
     soloModeValue: GAME_MODE_SOLO,
     switchMode: modeRuntime.switchMode,
     writeLocalSetting,

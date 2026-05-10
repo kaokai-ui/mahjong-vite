@@ -17,14 +17,38 @@ import {
 
 const PLAYER_NAME_KEY = "mahjong-player-name";
 const SOLO_DIFFICULTY_STORAGE_KEY = "mahjong-solo-difficulty";
+const SOLO_PLAYER_COUNT_STORAGE_KEY = "mahjong-solo-player-count";
 const HUMAN_PLAYER_ID = "solo-human";
-const BOT_PLAYER_ID = "solo-bot";
 const HUMAN_BROWSER_ID = "solo-human-browser";
-const BOT_BROWSER_ID = "solo-bot-browser";
 const SOLO_ROOM_ID = "SOLO";
-const BOT_NAME = "電腦玩家";
+const BOT_NAME_PREFIX = "電腦玩家";
+const DEFAULT_SOLO_PLAYER_COUNT = 2;
+const MAX_SOLO_PLAYER_COUNT = 4;
+const SOLO_FOUR_PLAYER_BOT_PROFILES = [
+  { name: "夏曉蘭", difficulty: "god" },
+  { name: "楊貴妃", difficulty: "normal" },
+  { name: "李善德", difficulty: "hard" },
+];
 
-export { DEFAULT_SOLO_DIFFICULTY, SOLO_DIFFICULTY_LABELS, normalizeSoloDifficulty };
+export {
+  DEFAULT_SOLO_DIFFICULTY,
+  SOLO_DIFFICULTY_LABELS,
+  normalizeSoloDifficulty,
+  DEFAULT_SOLO_PLAYER_COUNT,
+  MAX_SOLO_PLAYER_COUNT,
+  normalizeSoloPlayerCount,
+  SOLO_FOUR_PLAYER_BOT_PROFILES,
+  getSoloBotProfile,
+};
+
+function normalizeSoloPlayerCount(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_SOLO_PLAYER_COUNT;
+  }
+
+  return Math.min(MAX_SOLO_PLAYER_COUNT, Math.max(DEFAULT_SOLO_PLAYER_COUNT, Math.round(parsed)));
+}
 
 export class SoloController {
   constructor({ onRoomChange, onInfo, onError, onStatusChange }) {
@@ -67,6 +91,13 @@ export class SoloController {
     return { ...this.setupState };
   }
 
+  getSoloSettings() {
+    return {
+      difficulty: normalizeSoloDifficulty(readStorage(SOLO_DIFFICULTY_STORAGE_KEY) || DEFAULT_SOLO_DIFFICULTY),
+      playerCount: getStoredSoloPlayerCount(),
+    };
+  }
+
   setPlayerName(playerName) {
     const trimmed = String(playerName || "").trim();
     if (!trimmed) {
@@ -77,12 +108,19 @@ export class SoloController {
     return trimmed;
   }
 
+  setSoloPlayerCount(playerCount) {
+    const normalizedPlayerCount = normalizeSoloPlayerCount(playerCount);
+    writeStorage(SOLO_PLAYER_COUNT_STORAGE_KEY, String(normalizedPlayerCount));
+    return normalizedPlayerCount;
+  }
+
   async createSoloGame({
     playerName,
     rulesetId = DEFAULT_RULESET,
     drawRevealSeconds = DEFAULT_DRAW_REVEAL_SECONDS,
     difficulty = DEFAULT_SOLO_DIFFICULTY,
     scoringEnabled = DEFAULT_SCORING_ENABLED,
+    playerCount = getStoredSoloPlayerCount(),
   }) {
     this.clearBotTimer();
 
@@ -90,16 +128,20 @@ export class SoloController {
     const normalizedDifficulty = normalizeSoloDifficulty(difficulty);
     const normalizedDrawRevealSeconds = normalizeDrawRevealSeconds(drawRevealSeconds);
     const normalizedScoringEnabled = normalizeScoringEnabled(scoringEnabled);
+    const normalizedPlayerCount = normalizeSoloPlayerCount(playerCount);
     writeStorage(SOLO_DIFFICULTY_STORAGE_KEY, normalizedDifficulty);
+    writeStorage(SOLO_PLAYER_COUNT_STORAGE_KEY, String(normalizedPlayerCount));
 
     const now = Date.now();
     const waitingGame = createWaitingGame(rulesetId, {
       drawRevealSeconds: normalizedDrawRevealSeconds,
       scoringEnabled: normalizedScoringEnabled,
+      playerCount: normalizedPlayerCount,
     });
     const startedGame = createStartedGame(rulesetId, waitingGame, {
       drawRevealSeconds: normalizedDrawRevealSeconds,
       scoringEnabled: normalizedScoringEnabled,
+      playerCount: normalizedPlayerCount,
     });
 
     this.room = createSoloRoom({
@@ -109,8 +151,10 @@ export class SoloController {
       rulesetId,
       difficulty: normalizedDifficulty,
       scoringEnabled: normalizedScoringEnabled,
+      playerCount: normalizedPlayerCount,
       game: startedGame,
       botThinking: false,
+      botThinkingSeat: null,
     });
     this.emitRoom();
     this.queueBotTurnIfNeeded();
@@ -150,16 +194,16 @@ export class SoloController {
 
     const action = this.getPendingBotAction();
     if (!action) {
-      this.setBotThinking(false);
+      this.setBotThinking(false, null);
       return;
     }
 
-    this.setBotThinking(true);
+    this.setBotThinking(true, action.playerSeat);
     this.onInfo(action.infoMessage || "電腦思考中...");
 
     this.botTimer = window.setTimeout(() => {
       this.botTimer = 0;
-      this.setBotThinking(false);
+      this.setBotThinking(false, null);
       this.runBotAction(action);
     }, action.delayMs || 900);
   }
@@ -171,13 +215,17 @@ export class SoloController {
 
     const game = normalizeGameState(this.room.game);
     const pendingClaim = game.pendingClaim || null;
-    const botSeat = 1;
+    const botSeat = resolvePendingBotSeat(this.room, game, pendingClaim);
+    if (botSeat === null) {
+      return null;
+    }
 
     if (
       (game.phase === "draw" || game.phase === "discard") &&
       game.turnSeat === botSeat
     ) {
-      return decideBotAction(game, botSeat, this.room.meta.soloDifficulty);
+      const action = decideBotAction(game, botSeat, getBotDifficultyForSeat(this.room, botSeat));
+      return action ? { ...action, playerSeat: botSeat } : null;
     }
 
     if (
@@ -185,7 +233,8 @@ export class SoloController {
       pendingClaim &&
       pendingClaim.toSeat === botSeat
     ) {
-      return decideBotAction(game, botSeat, this.room.meta.soloDifficulty);
+      const action = decideBotAction(game, botSeat, getBotDifficultyForSeat(this.room, botSeat));
+      return action ? { ...action, playerSeat: botSeat } : null;
     }
 
     return null;
@@ -197,11 +246,15 @@ export class SoloController {
     }
 
     if (action && action.debugSummary) {
-      console.debug(`[BOT ${SOLO_DIFFICULTY_LABELS[this.room.meta.soloDifficulty] || this.room.meta.soloDifficulty}]`, action.debugSummary);
+      const difficulty = getBotDifficultyForSeat(this.room, action.playerSeat);
+      console.debug(
+        `[BOT ${action.playerSeat} / ${SOLO_DIFFICULTY_LABELS[difficulty] || difficulty}]`,
+        action.debugSummary,
+      );
     }
 
     const result = applyGameCommand(this.room.game, {
-      playerSeat: 1,
+      playerSeat: action.playerSeat,
       type: action.type,
       payload: action.payload || {},
     });
@@ -235,14 +288,22 @@ export class SoloController {
           ? game.scoringEnabled
           : this.room.meta.scoringEnabled,
       ),
+      playerCount: this.room.meta.soloPlayerCount || this.room.meta.playerCount || DEFAULT_SOLO_PLAYER_COUNT,
       game,
       botThinking: false,
+      botThinkingSeat: null,
     });
     this.emitRoom();
   }
 
-  setBotThinking(botThinking) {
-    if (!this.room || Boolean(this.room.meta.botThinking) === Boolean(botThinking)) {
+  setBotThinking(botThinking, botThinkingSeat) {
+    if (
+      !this.room ||
+      (
+        Boolean(this.room.meta.botThinking) === Boolean(botThinking) &&
+        (this.room.meta.botThinkingSeat ?? null) === (botThinkingSeat ?? null)
+      )
+    ) {
       return;
     }
 
@@ -251,6 +312,7 @@ export class SoloController {
       meta: {
         ...this.room.meta,
         botThinking: Boolean(botThinking),
+        botThinkingSeat: botThinking ? botThinkingSeat : null,
       },
     };
     this.emitRoom();
@@ -279,26 +341,26 @@ function createSoloRoom({
   rulesetId,
   difficulty,
   scoringEnabled,
+  playerCount,
   game,
   botThinking,
+  botThinkingSeat,
 }) {
   const normalizedGame = normalizeGameState(game);
-  const players = {
-    [HUMAN_PLAYER_ID]: {
-      id: HUMAN_PLAYER_ID,
-      name: humanName,
-      seat: 0,
-      joinedAt: createdAt,
-      type: "human",
-    },
-    [BOT_PLAYER_ID]: {
-      id: BOT_PLAYER_ID,
-      name: BOT_NAME,
-      seat: 1,
-      joinedAt: createdAt,
-      type: "bot",
-    },
-  };
+  const normalizedPlayerCount = normalizeSoloPlayerCount(
+    playerCount || (normalizedGame && normalizedGame.playerCount),
+  );
+  const botDifficulties = getBotDifficultiesBySeat(normalizedPlayerCount, difficulty);
+  const players = buildSoloPlayers({
+    humanName,
+    createdAt,
+    playerCount: normalizedPlayerCount,
+    fallbackDifficulty: difficulty,
+  });
+  const activePlayers = Object.values(players).sort((left, right) => left.seat - right.seat);
+  const participants = Object.fromEntries(activePlayers.map((player) => [player.id, true]));
+  const seats = Object.fromEntries(activePlayers.map((player) => [player.seat, player.id]));
+  const seatBrowserIds = Object.fromEntries(activePlayers.map((player) => [player.seat, getBrowserIdForPlayer(player)]));
 
   return {
     roomId: SOLO_ROOM_ID,
@@ -308,10 +370,7 @@ function createSoloRoom({
     updatedAt,
     lastError: null,
     players,
-    activePlayers: [
-      players[HUMAN_PLAYER_ID],
-      players[BOT_PLAYER_ID],
-    ],
+    activePlayers,
     commands: {},
     gameMode: "solo-bot",
     game: normalizedGame,
@@ -323,26 +382,125 @@ function createSoloRoom({
       rulesetId,
       createdAt,
       updatedAt,
-      playerCount: 2,
+      playerCount: normalizedPlayerCount,
+      soloPlayerCount: normalizedPlayerCount,
       open: false,
-      participants: {
-        [HUMAN_PLAYER_ID]: true,
-        [BOT_PLAYER_ID]: true,
-      },
-      seats: {
-        0: HUMAN_PLAYER_ID,
-        1: BOT_PLAYER_ID,
-      },
-      seatBrowserIds: {
-        0: HUMAN_BROWSER_ID,
-        1: BOT_BROWSER_ID,
-      },
+      participants,
+      seats,
+      seatBrowserIds,
       gameMode: "solo-bot",
       soloDifficulty: normalizeSoloDifficulty(difficulty),
+      botDifficulties,
       scoringEnabled: normalizeScoringEnabled(scoringEnabled),
       botThinking: Boolean(botThinking),
+      botThinkingSeat: botThinking ? botThinkingSeat : null,
     },
   };
+}
+
+function buildSoloPlayers({ humanName, createdAt, playerCount, fallbackDifficulty }) {
+  const players = {
+    [HUMAN_PLAYER_ID]: {
+      id: HUMAN_PLAYER_ID,
+      name: humanName,
+      seat: 0,
+      joinedAt: createdAt,
+      type: "human",
+    },
+  };
+
+  for (let seat = 1; seat < playerCount; seat += 1) {
+    const playerId = createBotPlayerId(seat);
+    const botProfile = getSoloBotProfile(seat, playerCount, fallbackDifficulty);
+    players[playerId] = {
+      id: playerId,
+      name: botProfile.name,
+      seat,
+      joinedAt: createdAt,
+      type: "bot",
+    };
+  }
+
+  return players;
+}
+
+function createBotPlayerId(seat) {
+  return `solo-bot-${seat}`;
+}
+
+function getBotDifficultiesBySeat(playerCount, fallbackDifficulty = DEFAULT_SOLO_DIFFICULTY) {
+  const difficulties = {};
+  for (let seat = 1; seat < playerCount; seat += 1) {
+    difficulties[seat] = getSoloBotProfile(seat, playerCount, fallbackDifficulty).difficulty;
+  }
+  return difficulties;
+}
+
+function getBotDifficultyForSeat(room, seat) {
+  const mappedDifficulty = room?.meta?.botDifficulties?.[seat];
+  return normalizeSoloDifficulty(mappedDifficulty || room?.meta?.soloDifficulty);
+}
+
+function getSoloBotProfile(seat, playerCount = DEFAULT_SOLO_PLAYER_COUNT, fallbackDifficulty = DEFAULT_SOLO_DIFFICULTY) {
+  const normalizedSeat = Number(seat);
+  const normalizedPlayerCount = normalizeSoloPlayerCount(playerCount);
+  const fallback = normalizeSoloDifficulty(fallbackDifficulty);
+
+  if (normalizedSeat < 1) {
+    return {
+      name: BOT_NAME_PREFIX,
+      difficulty: fallback,
+    };
+  }
+
+  const configuredProfile = SOLO_FOUR_PLAYER_BOT_PROFILES[normalizedSeat - 1];
+  if (normalizedPlayerCount >= 4 && configuredProfile) {
+    return configuredProfile;
+  }
+
+  if (configuredProfile) {
+    return {
+      name: configuredProfile.name,
+      difficulty: fallback,
+    };
+  }
+
+  return {
+    name: `${BOT_NAME_PREFIX} ${normalizedSeat}`,
+    difficulty: fallback,
+  };
+}
+
+function getBrowserIdForPlayer(player) {
+  if (player.type === "human") {
+    return HUMAN_BROWSER_ID;
+  }
+
+  return `solo-bot-browser-${player.seat}`;
+}
+
+function getSeatPlayer(room, seat) {
+  return room && Array.isArray(room.activePlayers)
+    ? room.activePlayers.find((player) => player && player.seat === seat) || null
+    : null;
+}
+
+function resolvePendingBotSeat(room, game, pendingClaim) {
+  if ((game.phase === "draw" || game.phase === "discard") && typeof game.turnSeat === "number") {
+    const currentPlayer = getSeatPlayer(room, game.turnSeat);
+    return currentPlayer && currentPlayer.type === "bot" ? currentPlayer.seat : null;
+  }
+
+  if (
+    ["response", "robKong"].includes(game.phase) &&
+    pendingClaim &&
+    typeof pendingClaim.toSeat === "number"
+  ) {
+    const currentPlayer = getSeatPlayer(room, pendingClaim.toSeat);
+    return currentPlayer && currentPlayer.type === "bot" ? currentPlayer.seat : null;
+  }
+
+  return null;
 }
 
 function getHumanPlayer(room) {
@@ -357,6 +515,10 @@ function readStorage(key) {
   } catch (error) {
     return null;
   }
+}
+
+function getStoredSoloPlayerCount() {
+  return normalizeSoloPlayerCount(readStorage(SOLO_PLAYER_COUNT_STORAGE_KEY));
 }
 
 function writeStorage(key, value) {

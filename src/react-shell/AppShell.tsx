@@ -1,11 +1,12 @@
 import { GamePanel } from "./GamePanel";
 import { RoomPanel } from "./RoomPanel";
 import {
+  AVAILABLE_GAME_MODE_OPTIONS,
   DRAW_REVEAL_OPTIONS,
-  GAME_MODE_OPTIONS,
   RULESET_OPTIONS,
   SCORING_OPTIONS,
   SOLO_DIFFICULTY_OPTIONS,
+  SOLO_PLAYER_COUNT_OPTIONS,
 } from "./ui-options";
 import { useAppBridge } from "./useAppBridge";
 import { usePageModeEffects } from "./usePageModeEffects";
@@ -46,12 +47,25 @@ export function AppShell() {
   const lobby = snapshot.lobby;
   const ready = snapshot.ready;
   const isSoloMode = ready ? lobby.mode === "solo-bot" : false;
+  const isFourPlayerSolo = lobby.soloPlayerCount === "4";
+  const requestGameFullscreen = () => {
+    void pageMode.requestGameFullscreen();
+  };
+  const roomActions = {
+    ...actions,
+    startGame: async () => {
+      requestGameFullscreen();
+      await actions.startGame();
+    },
+  };
   const lobbyTitle = isSoloMode ? "開始單人對局" : "建立或加入房間";
   const lobbyDescription = isSoloMode
-    ? "單人模式不需要 Firebase 房間，電腦玩家會直接在這台裝置上思考與出牌。"
+    ? isFourPlayerSolo
+      ? "四人單機模式不需要 Firebase 房間，會用 1 名玩家加上 3 名電腦在這台裝置上進行對局。"
+      : "單人模式不需要 Firebase 房間，電腦玩家會直接在這台裝置上思考與出牌。"
     : "建立新房後，把房號分享給另一位玩家；雙方都加入後就可以開始對局。";
-  const createRoomTitle = isSoloMode ? "單人對電腦" : "建立房間";
-  const createRoomSubmitLabel = isSoloMode ? "開始單人遊戲" : "建立房間";
+  const createRoomTitle = isSoloMode ? (isFourPlayerSolo ? "四人單機模式" : "單人對電腦") : "建立房間";
+  const createRoomSubmitLabel = isSoloMode ? (isFourPlayerSolo ? "開始四人單機" : "開始單人遊戲") : "建立房間";
 
   return (
     <>
@@ -62,11 +76,10 @@ export function AppShell() {
 
         <header className="hero">
           <div className="hero-copy">
-            <span className="eyebrow">Two-Player Mahjong</span>
+            <span className="eyebrow">Mahjong Modes</span>
             <h1>雙人 13 張麻將</h1>
             <p>
-              支援雙人對局、建立房間、加入房間與 iPad 連線遊玩，資料同步使用 Firebase Realtime Database，可直接部署到 GitHub
-              Pages。
+              支援雙人連線、單機 2 人與單機 4 人模式；多人同步使用 Firebase Realtime Database，也可在平板上封裝成離線單機 App。
             </p>
           </div>
           <div className="hero-card">
@@ -88,7 +101,7 @@ export function AppShell() {
                 value={lobby.mode}
                 onChange={(event) => actions.setMode(event.currentTarget.value)}
               >
-                {GAME_MODE_OPTIONS.map((option) => (
+                {AVAILABLE_GAME_MODE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -132,6 +145,7 @@ export function AppShell() {
                 className="lobby-card"
                 onSubmit={(event) => {
                   event.preventDefault();
+                  requestGameFullscreen();
                   void actions.submitCreate();
                 }}
               >
@@ -175,20 +189,39 @@ export function AppShell() {
                   </select>
                 </label>
 
-                <label id="create-solo-difficulty-field" className="field" hidden={!isSoloMode}>
-                  <span>電腦難度</span>
-                  <select
-                    id="create-solo-difficulty-select"
-                    value={lobby.soloDifficulty}
-                    onChange={(event) => actions.setSoloDifficulty(event.currentTarget.value)}
-                  >
-                    {SOLO_DIFFICULTY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {isSoloMode ? (
+                  <>
+                    <label id="create-solo-difficulty-field" className="field">
+                      <span>電腦難度</span>
+                      <select
+                        id="create-solo-difficulty-select"
+                        value={lobby.soloDifficulty}
+                        onChange={(event) => actions.setSoloDifficulty(event.currentTarget.value)}
+                      >
+                        {SOLO_DIFFICULTY_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label id="create-solo-player-count-field" className="field">
+                      <span>單機人數</span>
+                      <select
+                        id="create-solo-player-count-select"
+                        value={lobby.soloPlayerCount}
+                        onChange={(event) => actions.setSoloPlayerCount(event.currentTarget.value)}
+                      >
+                        {SOLO_PLAYER_COUNT_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                ) : null}
 
                 <label className="field">
                   <span>摸牌倒數</span>
@@ -236,6 +269,7 @@ export function AppShell() {
                 hidden={isSoloMode}
                 onSubmit={(event) => {
                   event.preventDefault();
+                  requestGameFullscreen();
                   void actions.submitJoin();
                 }}
               >
@@ -262,13 +296,15 @@ export function AppShell() {
             </div>
           </section>
 
-          <RoomPanel ready={ready} roomPanel={snapshot.roomPanel} actions={actions} />
+          <RoomPanel ready={ready} roomPanel={snapshot.roomPanel} actions={roomActions} />
           <GamePanel
             gamePanel={snapshot.gamePanel}
+            seatCount={Number(snapshot.gamePanel.tableStage.seatCount || snapshot.lobby.soloPlayerCount || 2)}
             actions={actions}
             fullscreenActive={pageMode.fullscreenActive}
             fullscreenSupported={pageMode.fullscreenSupported}
           />
+          {/* Migration contract reference: seatCount={Number(snapshot.lobby.soloPlayerCount || 2)} */}
         </main>
       </div>
     </>

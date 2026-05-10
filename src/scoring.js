@@ -37,6 +37,40 @@ export function scoreFromTai(totalTai) {
   return Math.min(SCORE_CAP, BASE_SCORE_UNIT * (2 ** Math.max(0, normalizedTai - 1)));
 }
 
+export function buildWinningScoreDelta({
+  playerCount = 2,
+  winnerSeat = 0,
+  loserSeat = null,
+  winKind = "discardWin",
+  totalScore = 0,
+}) {
+  const normalizedPlayerCount = Math.max(2, Math.round(Number(playerCount) || 2));
+  const normalizedWinnerSeat = ((Number(winnerSeat) % normalizedPlayerCount) + normalizedPlayerCount) % normalizedPlayerCount;
+  const normalizedScore = Math.max(0, Math.round(Number(totalScore) || 0));
+  const scoreDeltaBySeat = Array.from({ length: normalizedPlayerCount }, () => 0);
+  if (!normalizedScore) {
+    return scoreDeltaBySeat;
+  }
+
+  const loserSeats = normalizeWinningLoserSeats(loserSeat, normalizedPlayerCount, normalizedWinnerSeat);
+  if (!loserSeats.length) {
+    return scoreDeltaBySeat;
+  }
+
+  if (winKind === "selfDraw") {
+    for (const seat of loserSeats) {
+      scoreDeltaBySeat[normalizedWinnerSeat] += normalizedScore;
+      scoreDeltaBySeat[seat] -= normalizedScore;
+    }
+    return scoreDeltaBySeat;
+  }
+
+  const sourceSeat = loserSeats[0];
+  scoreDeltaBySeat[normalizedWinnerSeat] += normalizedScore;
+  scoreDeltaBySeat[sourceSeat] -= normalizedScore;
+  return scoreDeltaBySeat;
+}
+
 export function evaluateWinningScore({
   handTileIds,
   melds = [],
@@ -231,6 +265,15 @@ function createEmptyScoringResult(evaluation = null) {
     winningTileId: "",
     winningTileType: "",
   };
+}
+
+function normalizeWinningLoserSeats(loserSeat, playerCount, winnerSeat) {
+  const loserSeats = Array.isArray(loserSeat) ? loserSeat : [loserSeat];
+  const normalizedLoserSeats = loserSeats
+    .filter((seat) => typeof seat === "number")
+    .map((seat) => ((seat % playerCount) + playerCount) % playerCount)
+    .filter((seat) => seat !== winnerSeat);
+  return [...new Set(normalizedLoserSeats)];
 }
 
 function pushTai(breakdown, key, label, tai) {

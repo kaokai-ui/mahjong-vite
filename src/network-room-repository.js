@@ -30,6 +30,7 @@ async function writeHostGameState(roomId, { game, rulesetId, updatedAt, lastErro
   }
   if (rulesetId !== undefined) {
     await setWithContext(`rooms/${roomId}/rulesetId`, rulesetId);
+    await setWithContext(`roomMeta/${roomId}/rulesetId`, rulesetId);
   }
   if (updatedAt !== undefined) {
     await setWithContext(`rooms/${roomId}/updatedAt`, updatedAt);

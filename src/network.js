@@ -19,21 +19,11 @@ import {
   queuePendingRoomCommand,
   subscribeToRoomState,
 } from "./network-room-subscription-runtime.js";
-
-const COMMAND_TYPES = new Set([
-  "startGame",
-  "restartGame",
-  "drawTile",
-  "discardTile",
-  "passClaim",
-  "claimChow",
-  "claimPung",
-  "claimDiscardKong",
-  "declareSelfDraw",
-  "claimWin",
-  "concealedKong",
-  "addedKong",
-]);
+import {
+  FIREBASE_COMMAND_TYPE_SET,
+  createRandomFirebaseRoomId,
+  normalizeFirebaseRoomId,
+} from "./firebase-rules-contract.js";
 
 export class NetworkController {
   constructor({ onRoomChange, onInfo, onError, onStatusChange }) {
@@ -81,7 +71,7 @@ export class NetworkController {
   }
 
   async sendGameCommand(type, payload = {}) {
-    return sendNetworkGameCommand(this, type, payload, COMMAND_TYPES);
+    return sendNetworkGameCommand(this, type, payload);
   }
 
   leaveRoom() {
@@ -113,22 +103,16 @@ export class NetworkController {
   }
 
   normalizeRoomId(roomId) {
-    return normalizeRoomId(roomId);
+    return normalizeFirebaseRoomId(roomId);
   }
 }
 
 export function normalizeRoomId(value) {
-  return String(value || "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 8);
+  return normalizeFirebaseRoomId(value);
 }
 
 export function createRandomRoomId() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let index = 0; index < 6; index += 1) {
-    code += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return code;
+  return createRandomFirebaseRoomId();
 }
+
+export const NETWORK_COMMAND_TYPES = FIREBASE_COMMAND_TYPE_SET;

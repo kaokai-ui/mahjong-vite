@@ -4,9 +4,21 @@ import {
 } from "./scoring.js";
 
 export const DEFAULT_DRAW_REVEAL_SECONDS = 3;
+export const DEFAULT_PLAYER_COUNT = 2;
+export const MIN_PLAYER_COUNT = 2;
+export const MAX_PLAYER_COUNT = 4;
 
 const MIN_DRAW_REVEAL_SECONDS = 0;
 const MAX_DRAW_REVEAL_SECONDS = 6;
+
+export function normalizePlayerCount(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_PLAYER_COUNT;
+  }
+
+  return Math.min(MAX_PLAYER_COUNT, Math.max(MIN_PLAYER_COUNT, Math.round(parsed)));
+}
 
 export function normalizeRoundPlayer(player = {}, seat = 0) {
   return {
@@ -22,7 +34,10 @@ export function normalizeGameState(game) {
     return null;
   }
 
-  const normalizedPlayers = Array.from({ length: 2 }, (_, seat) =>
+  const playerCount = normalizePlayerCount(
+    game.playerCount || (Array.isArray(game.players) ? game.players.length : 0),
+  );
+  const normalizedPlayers = Array.from({ length: playerCount }, (_, seat) =>
     normalizeRoundPlayer(
       Array.isArray(game.players)
         ? game.players.find((player) => player && player.seat === seat) || game.players[seat]
@@ -33,6 +48,7 @@ export function normalizeGameState(game) {
 
   return {
     ...game,
+    playerCount,
     players: normalizedPlayers,
     drawRevealSeconds: normalizeDrawRevealSeconds(game.drawRevealSeconds),
     scoringEnabled: normalizeScoringEnabled(game.scoringEnabled),
@@ -45,8 +61,8 @@ export function normalizeGameState(game) {
     latestDiscard: game.latestDiscard || null,
     result: game.result || null,
     lastDraw: game.lastDraw || null,
-    wins: normalizeWins(game.winCounts, game.scores, game.scoringEnabled),
-    scores: normalizePointScores(game.scores, game.winCounts, game.scoringEnabled),
+    wins: normalizeWins(game.winCounts, game.scores, game.scoringEnabled, playerCount),
+    scores: normalizePointScores(game.scores, game.winCounts, game.scoringEnabled, playerCount),
   };
 }
 
@@ -59,26 +75,26 @@ export function normalizeDrawRevealSeconds(value) {
   return Math.min(MAX_DRAW_REVEAL_SECONDS, Math.max(MIN_DRAW_REVEAL_SECONDS, Math.round(parsed)));
 }
 
-export function normalizeWins(winCounts, legacyScores, scoringEnabled) {
+export function normalizeWins(winCounts, legacyScores, scoringEnabled, playerCount = DEFAULT_PLAYER_COUNT) {
   const source = Array.isArray(winCounts)
     ? winCounts
     : !normalizeScoringEnabled(scoringEnabled) && Array.isArray(legacyScores)
       ? legacyScores
       : [];
 
-  return Array.from({ length: 2 }, (_, seat) => {
+  return Array.from({ length: normalizePlayerCount(playerCount) }, (_, seat) => {
     const value = Number(source[seat]);
     return Number.isFinite(value) && value > 0 ? value : 0;
   });
 }
 
-export function normalizePointScores(scores, winCounts, scoringEnabled) {
+export function normalizePointScores(scores, winCounts, scoringEnabled, playerCount = DEFAULT_PLAYER_COUNT) {
   const shouldTreatLegacyScoresAsWins = !Array.isArray(winCounts) && !normalizeScoringEnabled(scoringEnabled);
   if (shouldTreatLegacyScoresAsWins) {
-    return [0, 0];
+    return Array.from({ length: normalizePlayerCount(playerCount) }, () => 0);
   }
 
-  return Array.from({ length: 2 }, (_, seat) => {
+  return Array.from({ length: normalizePlayerCount(playerCount) }, (_, seat) => {
     const value = Array.isArray(scores) ? Number(scores[seat]) : 0;
     return Number.isFinite(value) ? Math.round(value) : 0;
   });
