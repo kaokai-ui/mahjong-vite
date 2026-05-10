@@ -1,6 +1,12 @@
+import "../styles.css";
 import { createRoot } from "react-dom/client";
+import { ONLINE_MULTIPLAYER_ENABLED } from "./app-variant";
 
 function shouldLoadLocalOverride() {
+  if (!ONLINE_MULTIPLAYER_ENABLED) {
+    return false;
+  }
+
   const { protocol, hostname } = window.location;
   if (protocol === "file:") {
     return true;

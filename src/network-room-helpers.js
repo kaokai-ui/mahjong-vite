@@ -1,5 +1,6 @@
 import { normalizeGameState } from "./game.js";
 import { DEFAULT_RULESET } from "./rules.js";
+import { normalizeFirebaseRulesetId } from "./firebase-rules-contract.js";
 
 const ROOM_EXPIRATION_MS = 8 * 24 * 60 * 60 * 1000;
 
@@ -15,7 +16,7 @@ function normalizeRoom(room, meta = null) {
     ...room,
     roomId: room.roomId || (normalizedMeta && normalizedMeta.roomId) || "",
     hostPlayerId: room.hostPlayerId || (normalizedMeta && normalizedMeta.hostPlayerId) || "",
-    rulesetId: room.rulesetId || (normalizedMeta && normalizedMeta.rulesetId) || DEFAULT_RULESET,
+    rulesetId: normalizeFirebaseRulesetId(room.rulesetId || (normalizedMeta && normalizedMeta.rulesetId) || DEFAULT_RULESET),
     meta: normalizedMeta,
     players: normalizedPlayers,
     activePlayers: buildActivePlayers(normalizedPlayers, normalizedMeta),
@@ -34,7 +35,7 @@ function normalizeRoomMeta(meta) {
     hostPlayerId: meta.hostPlayerId || "",
     hostBrowserId: meta.hostBrowserId || "",
     godViewEnabled: Boolean(meta.godViewEnabled),
-    rulesetId: meta.rulesetId || DEFAULT_RULESET,
+    rulesetId: normalizeFirebaseRulesetId(meta.rulesetId || DEFAULT_RULESET),
     createdAt: typeof meta.createdAt === "number" ? meta.createdAt : 0,
     updatedAt: typeof meta.updatedAt === "number" ? meta.updatedAt : 0,
     playerCount: typeof meta.playerCount === "number" ? meta.playerCount : 0,
@@ -147,22 +148,13 @@ function isRoomExpired(meta, now = Date.now()) {
 
 function getCommandRulesetId(command, fallbackRulesetId) {
   if (command && command.payload && command.payload.rulesetId) {
-    return command.payload.rulesetId;
+    return normalizeFirebaseRulesetId(command.payload.rulesetId);
   }
-  return fallbackRulesetId;
+  return normalizeFirebaseRulesetId(fallbackRulesetId);
 }
 
 function getCommandTimestamp(command) {
   return command && typeof command.createdAt === "number" ? command.createdAt : 0;
-}
-
-function sanitizeCommandPayload(value) {
-  const sanitized = stripUndefined(value);
-  if (!sanitized || typeof sanitized !== "object" || Array.isArray(sanitized)) {
-    return sanitized;
-  }
-
-  return Object.keys(sanitized).length ? sanitized : undefined;
 }
 
 function stripUndefined(value) {
@@ -195,7 +187,6 @@ export {
   isRoomExpired,
   normalizeRoom,
   normalizeRoomMeta,
-  sanitizeCommandPayload,
   seatExists,
   stripUndefined,
 };

@@ -22,6 +22,8 @@ export const RULE_PRESETS = {
     description: "使用萬、筒、索與字牌各四張，保留一般 13 張麻將的吃碰槓胡流程。",
     tileTypes: FULL_TILE_TYPES,
     copies: 4,
+    minPlayers: 2,
+    maxPlayers: 4,
   },
   classic64: {
     id: "classic64",
@@ -29,6 +31,8 @@ export const RULE_PRESETS = {
     description: "參考香港二人麻雀，只使用萬子與字牌各四張，共 64 張。",
     tileTypes: CLASSIC_TILE_TYPES,
     copies: 4,
+    minPlayers: 2,
+    maxPlayers: 4,
   },
 };
 
@@ -52,6 +56,33 @@ const THIRTEEN_ORPHANS_TYPES = [
 
 export function getRuleset(rulesetId = DEFAULT_RULESET) {
   return RULE_PRESETS[rulesetId] || RULE_PRESETS[DEFAULT_RULESET];
+}
+
+export function supportsRulesetPlayerCount(rulesetIdOrRuleset, playerCount = 2) {
+  const ruleset = typeof rulesetIdOrRuleset === "string"
+    ? getRuleset(rulesetIdOrRuleset)
+    : rulesetIdOrRuleset || getRuleset(DEFAULT_RULESET);
+  const normalizedPlayerCount = Math.max(2, Math.round(Number(playerCount) || 2));
+  const minPlayers = Number.isFinite(ruleset.minPlayers) ? ruleset.minPlayers : 2;
+  const maxPlayers = Number.isFinite(ruleset.maxPlayers) ? ruleset.maxPlayers : 4;
+  return normalizedPlayerCount >= minPlayers && normalizedPlayerCount <= maxPlayers;
+}
+
+export function normalizeRulesetForPlayerCount(rulesetId = DEFAULT_RULESET, playerCount = 2) {
+  const ruleset = getRuleset(rulesetId);
+  if (supportsRulesetPlayerCount(ruleset, playerCount)) {
+    return ruleset;
+  }
+
+  const fallbackRuleset = Object.values(RULE_PRESETS).find((candidate) =>
+    supportsRulesetPlayerCount(candidate, playerCount),
+  );
+  return fallbackRuleset || getRuleset(DEFAULT_RULESET);
+}
+
+export function getRequiredOpeningTileCount(playerCount = 2) {
+  const normalizedPlayerCount = Math.max(2, Math.round(Number(playerCount) || 2));
+  return normalizedPlayerCount * 13 + 1;
 }
 
 export function shuffle(list, rng = Math.random) {

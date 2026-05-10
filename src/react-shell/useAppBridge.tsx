@@ -116,6 +116,7 @@ export type LobbyBridgeSnapshot = {
     rulesetId: string;
     drawRevealSeconds: string;
     soloDifficulty: "easy" | "normal" | "hard" | "god";
+    soloPlayerCount: "2" | "4";
     scoringEnabled: "false" | "true";
     createDisabled: boolean;
     joinDisabled: boolean;
@@ -152,6 +153,7 @@ export type LobbyBridgeSnapshot = {
     focusNote: string;
     showFocusControls: boolean;
     tableStage: {
+      seatCount: number;
       visible: boolean;
       hasResult: boolean;
       latestDiscard: BridgeTileSnapshot | null;
@@ -166,6 +168,8 @@ export type LobbyBridgeSnapshot = {
         placeholderText: string;
       };
       opponentSection: BridgeOpponentSectionSnapshot;
+      leftSection: BridgeOpponentSectionSnapshot;
+      rightSection: BridgeOpponentSectionSnapshot;
       selfSection: BridgeSelfSectionSnapshot;
       resultOverlay: GameResultOverlaySnapshot;
     };
@@ -180,6 +184,7 @@ export type LobbyBridgeActions = {
   setRulesetId: (value: string) => void;
   setDrawRevealSeconds: (value: string) => void;
   setSoloDifficulty: (value: string) => void;
+  setSoloPlayerCount: (value: string) => void;
   setScoringEnabled: (value: string) => void;
   generateCreateRoomCode: () => void;
   submitCreate: () => Promise<void>;

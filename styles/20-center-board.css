@@ -1,0 +1,629 @@
+/* Center board, discard lanes, and table-center-specific layout rules. */
+.table-center-four,
+.table-center-two {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.06), transparent 28%),
+    linear-gradient(180deg, rgba(16, 52, 41, 0.96), rgba(9, 35, 28, 0.96));
+  border-radius: 24px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(6, 18, 15, 0.35);
+}
+
+.table-center-board {
+  display: grid;
+  grid-template-rows: var(--table-center-board-rows, auto minmax(220px, 1fr) auto);
+  gap: var(--table-center-board-gap, 12px);
+  min-height: 280px;
+}
+
+.table-center-middle {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 54px;
+  gap: 12px;
+  align-items: stretch;
+  min-height: 220px;
+}
+
+.table-center-hub {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.table-center-middle.is-four-seat {
+  grid-template-columns: var(--table-center-four-middle-columns, clamp(38px, 4vw, 46px) minmax(0, 1fr) clamp(38px, 4vw, 46px));
+  gap: var(--table-center-four-middle-gap, 10px);
+  align-items: center;
+}
+
+.table-center-middle.is-two-seat {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  align-items: center;
+  justify-items: center;
+  min-height: 28px;
+}
+
+.table-center-core {
+  position: relative;
+  min-height: 132px;
+  width: var(--table-center-core-width, min(100%, calc(100% - 44px)));
+  height: var(--table-center-core-height, min(100%, 72%));
+  justify-self: center;
+  align-self: center;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.table-center-core-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background:
+    linear-gradient(180deg, rgba(5, 18, 15, 0.62), rgba(7, 23, 19, 0.38));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.table-center-core-two {
+  width: min(100%, calc(100% - 120px));
+  min-height: 24px;
+  height: 24px;
+}
+
+.table-center-two .discard-lane {
+  min-width: 0;
+}
+
+.table-center-two .discard-lane-top,
+.table-center-two .discard-lane-bottom {
+  width: 100%;
+  justify-items: stretch;
+  align-content: start;
+  gap: 6px;
+  padding-block: 2px;
+  padding-inline: 20px;
+}
+
+.table-center-two .discard-lane-top .discard-lane-label,
+.table-center-two .discard-lane-bottom .discard-lane-label {
+  justify-self: center;
+}
+
+.table-center-two .discard-line-horizontal {
+  width: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  align-content: center;
+  gap: 6px;
+  min-height: 46px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.discard-lane {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.discard-lane-label {
+  color: rgba(244, 238, 225, 0.82);
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+}
+
+.discard-lane-top,
+.discard-lane-bottom {
+  justify-items: center;
+}
+
+.discard-lane-left,
+.discard-lane-right {
+  align-content: stretch;
+  align-items: stretch;
+  justify-items: stretch;
+  grid-template-columns: 16px minmax(0, 1fr);
+  column-gap: 4px;
+}
+
+.discard-lane-right {
+  grid-template-columns: minmax(0, 1fr) 16px;
+}
+
+.discard-lane-left .discard-lane-label,
+.discard-lane-right .discard-lane-label,
+.discard-lane-left .placeholder,
+.discard-lane-right .placeholder {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: rgba(244, 238, 225, 0.5);
+  align-self: center;
+  justify-self: center;
+}
+
+.discard-lane-left .discard-lane-label,
+.discard-lane-left .placeholder {
+  order: 1;
+}
+
+.discard-lane-left .discard-line-vertical {
+  order: 2;
+}
+
+.discard-lane-right .discard-line-vertical {
+  order: 1;
+}
+
+.discard-lane-right .discard-lane-label,
+.discard-lane-right .placeholder {
+  order: 2;
+}
+
+.discard-line-horizontal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  min-height: 62px;
+}
+
+.discard-line-vertical {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 180px;
+  min-width: 0;
+}
+
+.discard-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 38px;
+}
+
+.discard-line-vertical-left {
+  justify-content: flex-start;
+}
+
+.discard-line-vertical-right {
+  justify-content: flex-end;
+}
+
+body.app-game-focus .table-center-board {
+  grid-template-rows: 88px minmax(0, 1fr) 88px;
+  gap: 10px;
+  min-height: 0;
+  height: 100%;
+}
+
+body.app-game-focus .table-center-middle {
+  min-height: 0;
+}
+
+body.app-game-focus .table-center-four {
+  --four-seat-discard-top-min-height: 88px;
+  --four-seat-discard-bottom-min-height: 88px;
+  --four-seat-discard-top-gap: 6px;
+  --four-seat-discard-bottom-gap: 6px;
+  --four-seat-discard-top-padding-block: 4px;
+  --four-seat-discard-bottom-padding-block: 4px;
+  --four-seat-discard-side-width: auto;
+  --four-seat-discard-side-label-width: 16px;
+  --four-seat-discard-side-column-gap: 4px;
+  --four-seat-discard-side-padding-top: 0;
+  --four-seat-discard-side-padding-left: 0;
+  --four-seat-discard-side-padding-right: 0;
+  --four-seat-discard-side-align-content: stretch;
+  --four-seat-discard-horizontal-gap: 8px;
+  --four-seat-discard-horizontal-min-height: 42px;
+  --four-seat-discard-horizontal-padding-inline: 0;
+  --four-seat-discard-horizontal-align: center;
+  --four-seat-discard-horizontal-justify: center;
+  --four-seat-discard-side-gap: 6px;
+  --four-seat-discard-side-min-height: 0;
+  --four-seat-discard-side-overflow: hidden;
+  --four-seat-discard-side-tile-width: 38px;
+  --four-seat-discard-horizontal-tile-width: 38px;
+  --four-seat-discard-column-gap: 6px;
+  --four-seat-discard-column-min-width: 38px;
+  --four-seat-discard-column-min-height: auto;
+  --four-seat-discard-column-align-self: auto;
+}
+
+body.app-game-focus .table-center-middle.is-four-seat {
+  align-items: stretch;
+}
+
+body.app-game-focus .table-center-core {
+  min-height: 0;
+  width: min(100%, calc(100% - 56px));
+  height: min(100%, 68%);
+}
+
+body.app-game-focus .table-center-four .discard-lane {
+  min-height: 0;
+}
+
+body.app-game-focus .table-center-four .discard-lane-top,
+body.app-game-focus .table-center-four .discard-lane-bottom {
+  min-height: var(--four-seat-discard-bottom-min-height);
+  align-content: center;
+  gap: var(--four-seat-discard-bottom-gap);
+  padding-block: var(--four-seat-discard-bottom-padding-block);
+}
+
+body.app-game-focus .table-center-four .discard-lane-top {
+  min-height: var(--four-seat-discard-top-min-height);
+  gap: var(--four-seat-discard-top-gap);
+  padding-block: var(--four-seat-discard-top-padding-block);
+}
+
+body.app-game-focus .table-center-four .discard-lane-left,
+body.app-game-focus .table-center-four .discard-lane-right {
+  align-content: var(--four-seat-discard-side-align-content);
+  grid-template-columns: var(--four-seat-discard-side-label-width) minmax(0, 1fr);
+  column-gap: var(--four-seat-discard-side-column-gap);
+  width: var(--four-seat-discard-side-width);
+  overflow: visible;
+  padding-top: var(--four-seat-discard-side-padding-top);
+}
+
+body.app-game-focus .table-center-four .discard-lane-left {
+  padding-left: var(--four-seat-discard-side-padding-left);
+}
+
+body.app-game-focus .table-center-four .discard-lane-right {
+  grid-template-columns: minmax(0, 1fr) var(--four-seat-discard-side-label-width);
+  padding-right: var(--four-seat-discard-side-padding-right);
+}
+
+body.app-game-focus .table-center-four .discard-line-horizontal {
+  flex-wrap: nowrap;
+  justify-content: var(--four-seat-discard-horizontal-justify);
+  align-items: var(--four-seat-discard-horizontal-align);
+  gap: var(--four-seat-discard-horizontal-gap);
+  min-height: var(--four-seat-discard-horizontal-min-height);
+  padding-inline: var(--four-seat-discard-horizontal-padding-inline);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+body.app-game-focus .table-center-four .discard-line-vertical {
+  gap: var(--four-seat-discard-side-gap);
+  min-height: var(--four-seat-discard-side-min-height);
+  overflow-y: hidden;
+  overflow-x: var(--four-seat-discard-side-overflow);
+}
+
+.discard-lane .tile-faceup,
+.discard-lane .tile-back {
+  width: 38px;
+  height: auto;
+  aspect-ratio: 27 / 35;
+}
+
+.discard-lane-vertical .tile-faceup,
+.discard-lane-vertical .tile-back,
+.discard-line-vertical .tile-faceup,
+.discard-line-vertical .tile-back {
+  width: 38px;
+  height: auto;
+  aspect-ratio: 27 / 35;
+}
+
+body.app-game-focus .table-center-four .discard-lane .tile-faceup,
+body.app-game-focus .table-center-four .discard-lane .tile-back,
+body.app-game-focus .table-center-four .discard-line-vertical .tile-faceup,
+body.app-game-focus .table-center-four .discard-line-vertical .tile-back {
+  width: var(--four-seat-discard-side-tile-width);
+  height: auto;
+  aspect-ratio: 27 / 35;
+}
+
+body.app-game-focus .table-center-four .discard-lane-top .tile-faceup,
+body.app-game-focus .table-center-four .discard-lane-top .tile-back,
+body.app-game-focus .table-center-four .discard-lane-bottom .tile-faceup,
+body.app-game-focus .table-center-four .discard-lane-bottom .tile-back {
+  width: var(--four-seat-discard-horizontal-tile-width);
+}
+
+body.app-game-focus .table-center-four .discard-column {
+  gap: var(--four-seat-discard-column-gap);
+  min-width: var(--four-seat-discard-column-min-width);
+  min-height: var(--four-seat-discard-column-min-height);
+  align-self: var(--four-seat-discard-column-align-self);
+}
+
+body.app-game-focus .table-center-two .discard-lane {
+  min-height: 0;
+}
+
+body.app-game-focus .table-center-two .discard-lane-top,
+body.app-game-focus .table-center-two .discard-lane-bottom {
+  min-height: 64px;
+  align-content: start;
+  gap: 6px;
+  padding-block: 2px;
+  padding-inline: 20px;
+}
+
+body.app-game-focus .table-center-two .discard-line-horizontal {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  align-content: center;
+  min-height: 42px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+body.app-game-focus .table-center-two .table-center-board {
+  grid-template-rows: minmax(64px, auto) 8px minmax(64px, auto);
+  gap: 4px;
+  min-height: 148px;
+  align-content: stretch;
+}
+
+body.app-game-focus .table-center-two .discard-lane-bottom {
+  align-content: start;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+body.app-game-focus .table-center-two .discard-lane .tile-faceup,
+body.app-game-focus .table-center-two .discard-lane .tile-back {
+  width: 38px;
+  height: auto;
+  aspect-ratio: 27 / 35;
+}
+
+.table-center-hub .center-block {
+  background: rgba(6, 19, 16, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.table-center-hub .center-block-actions .action-grid {
+  justify-content: flex-start;
+}
+
+.table-center-hub .center-block-latest {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+}
+
+.table-center-hub .center-block-latest .latest-discard {
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-center-hub .center-block-latest .tile-faceup,
+.table-center-hub .center-block-latest .tile-back {
+  width: 56px;
+  height: 72px;
+}
+
+.tile-clickable {
+  cursor: pointer;
+}
+
+.tile-faceup.tile-clickable {
+  border-radius: 12px;
+}
+
+.tile-faceup.tile-clickable:hover {
+  transform: translateY(-2px) scale(1.05);
+  filter: none;
+}
+
+.tile-faceup.tile-clickable:active {
+  transform: translateY(0) scale(1.02);
+}
+
+.tile:disabled {
+  opacity: 1;
+}
+
+.discard-item {
+  opacity: 0.95;
+  flex: 0 0 auto;
+}
+
+.discard-claimed {
+  opacity: 0.38;
+  transform: translateY(4px);
+}
+
+.table-center {
+  background: linear-gradient(180deg, rgba(255, 249, 236, 0.97), rgba(243, 234, 214, 0.95));
+  border-radius: 22px;
+  padding: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  grid-template-columns: minmax(88px, 0.22fr) minmax(0, 1.08fr) minmax(220px, 0.74fr);
+  align-items: stretch;
+  height: 184px;
+  overflow: hidden;
+}
+
+.table-center.table-center-four {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.06), transparent 28%),
+    linear-gradient(180deg, rgba(16, 52, 41, 0.96), rgba(9, 35, 28, 0.96));
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: inset 0 0 0 1px rgba(6, 18, 15, 0.35);
+  grid-template-columns: none;
+  align-items: stretch;
+  height: auto;
+  overflow: visible;
+}
+
+body.app-game-focus .table-center.table-center-four {
+  grid-template-columns: none;
+  grid-template-rows: none;
+  gap: 14px;
+  align-items: stretch;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+.table-center.table-center-two {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.06), transparent 28%),
+    linear-gradient(180deg, rgba(16, 52, 41, 0.96), rgba(9, 35, 28, 0.96));
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: inset 0 0 0 1px rgba(6, 18, 15, 0.35);
+  grid-template-columns: none;
+  grid-template-rows: none;
+  align-items: stretch;
+  height: auto;
+  overflow: visible;
+}
+
+body.app-game-focus .table-center.table-center-two {
+  grid-template-columns: none;
+  grid-template-rows: none;
+  gap: 14px;
+  align-items: stretch;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+body.app-game-focus .seat-side-panel {
+  min-height: 0;
+  align-items: stretch;
+  align-content: stretch;
+}
+
+body.app-game-focus .seat-side-head {
+  min-height: 0;
+  height: 100%;
+  padding-block: clamp(16px, 2.2vh, 24px);
+}
+
+body.app-game-focus .seat-side-rack {
+  min-height: 0;
+  align-self: center;
+  height: auto;
+}
+
+.table-center-four .center-label {
+  color: rgba(244, 238, 225, 0.82);
+}
+
+body.app-game-focus .table-center {
+  grid-template-columns: minmax(88px, 0.2fr) minmax(0, 1.12fr) minmax(220px, 0.72fr);
+  grid-template-rows: 1fr;
+  gap: 8px;
+  align-items: stretch;
+  height: 184px;
+  max-height: 184px;
+  overflow: hidden;
+}
+
+.center-block {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.56);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.center-label {
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  text-transform: none;
+  color: var(--muted);
+}
+
+.center-block-actions .center-label {
+  font-size: 0.88rem;
+}
+
+.latest-discard {
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.latest-discard .tile-faceup,
+body.app-game-focus .latest-discard .tile-faceup {
+  width: 64px;
+  height: 84px;
+}
+
+.action-grid {
+  min-height: 0;
+  align-content: start;
+  overflow: auto;
+}
+
+.action-button {
+  background: rgba(23, 32, 29, 0.06);
+  color: var(--ink);
+}
+
+.center-block-actions .action-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(23, 32, 29, 0.24) transparent;
+}
+
+.center-block-actions .action-button {
+  font-size: clamp(1.04rem, 1.42vw, 1.16rem);
+  font-weight: 700;
+  padding: 12px 14px;
+  line-height: 1.18;
+  white-space: nowrap;
+  flex: 0 1 auto;
+  min-width: max-content;
+  border-radius: 16px;
+}
+
+.center-block-actions .placeholder {
+  font-size: clamp(0.94rem, 1.2vw, 1.02rem);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+body.app-game-focus .table-center-core-mark {
+  display: none;
+}

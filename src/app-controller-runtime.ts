@@ -1,5 +1,4 @@
-import { NetworkController } from "./network.js";
-import { SoloController } from "./solo-controller.js";
+import { ONLINE_MULTIPLAYER_ENABLED } from "./app-variant";
 import type {
   AppGameMode,
   AppRoomLike,
@@ -63,7 +62,7 @@ export async function initializeControllerRuntime(
     runtime.controller.leaveRoom();
   }
 
-  runtime.controller = buildController(mode, {
+  runtime.controller = await buildController(mode, {
     appState,
     soloModeValue,
     syncRoomPanelRulesetState,
@@ -110,7 +109,10 @@ export function syncPlayerNameFromController(
   }
 }
 
-function buildController(mode: AppGameMode, context: Omit<InitializeControllerRuntimeContext, "resetGameRuntimeState" | "syncPlayerNameFromController">): ControllerLike {
+async function buildController(
+  mode: AppGameMode,
+  context: Omit<InitializeControllerRuntimeContext, "resetGameRuntimeState" | "syncPlayerNameFromController">,
+): Promise<ControllerLike> {
   const { appState, soloModeValue, syncRoomPanelRulesetState, normalizeRulesetId, render } = context;
   const callbacks: ControllerCallbacks = {
     onRoomChange: (room) => {
@@ -131,9 +133,13 @@ function buildController(mode: AppGameMode, context: Omit<InitializeControllerRu
     },
   };
 
-  return mode === soloModeValue
-    ? (new SoloController(callbacks) as ControllerLike)
-    : (new NetworkController(callbacks) as ControllerLike);
+  if (mode === soloModeValue || !ONLINE_MULTIPLAYER_ENABLED) {
+    const { SoloController } = await import("./solo-controller.js");
+    return new SoloController(callbacks) as ControllerLike;
+  }
+
+  const { NetworkController } = await import("@network-controller-entry");
+  return new NetworkController(callbacks) as ControllerLike;
 }
 
 function getErrorMessage(error: unknown) {

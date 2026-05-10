@@ -1,6 +1,6 @@
 import { processCommandEntry as processNetworkCommandEntry } from "./network-command-processor.js";
 import { formatFirebaseClientError } from "./network-client-errors.js";
-import { sanitizeCommandPayload } from "./network-room-helpers.js";
+import { isSupportedFirebaseCommandType, sanitizeFirebaseCommandPayload } from "./firebase-rules-contract.js";
 import {
   pushRoomCommand,
   removeRoomCommand,
@@ -18,7 +18,6 @@ export async function sendNetworkGameCommand(
   controller,
   type,
   payload = {},
-  commandTypes,
   dependencies = defaultNetworkCommandDependencies,
 ) {
   try {
@@ -27,12 +26,12 @@ export async function sendNetworkGameCommand(
       throw new Error("尚未加入房間。");
     }
 
-    if (!commandTypes.has(type)) {
+    if (!isSupportedFirebaseCommandType(type)) {
       throw new Error("未知的操作。");
     }
 
     const identity = controller.getIdentity();
-    const sanitizedPayload = sanitizeCommandPayload(payload);
+    const sanitizedPayload = sanitizeFirebaseCommandPayload(type, payload);
     const command = {
       type,
       fromPlayerId: identity.playerId,

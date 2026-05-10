@@ -3,14 +3,14 @@ import { markDiscardClaimed } from "./game-claim-state.js";
 import { finishWithWinner } from "./game-resolution.js";
 import {
   failure,
-  getOpponentSeat,
+  getOtherSeats,
   getPlayer,
   success,
 } from "./game-internal-utils.js";
 
 function handleDeclareSelfDraw(game, playerSeat) {
   if (game.phase !== "discard" || game.turnSeat !== playerSeat) {
-    return failure("現在不能自摸。");
+    return failure("It is not this player's discard step.");
   }
 
   const player = getPlayer(game, playerSeat);
@@ -19,15 +19,15 @@ function handleDeclareSelfDraw(game, playerSeat) {
     melds: player.melds,
   });
   if (!evaluation.canWin) {
-    return failure("目前手牌尚未成胡。");
+    return failure("The hand is not a valid self-draw win.");
   }
 
   finishWithWinner(game, {
     winnerSeat: playerSeat,
-    loserSeat: getOpponentSeat(playerSeat),
+    loserSeat: getOtherSeats(game, playerSeat),
     winKind: "selfDraw",
     winningTileId: game.lastDraw ? game.lastDraw.tileId : null,
-    patterns: [...evaluation.patterns, "自摸"],
+    patterns: [...evaluation.patterns, "Self Draw"],
   });
   return success(game);
 }
@@ -35,7 +35,7 @@ function handleDeclareSelfDraw(game, playerSeat) {
 function handleClaimWin(game, playerSeat) {
   const claim = game.pendingClaim;
   if (!claim || claim.toSeat !== playerSeat) {
-    return failure("目前沒有可胡的牌。");
+    return failure("There is no active win claim for this player.");
   }
 
   if (claim.kind === "discard") {
@@ -46,7 +46,7 @@ function handleClaimWin(game, playerSeat) {
       additionalTileId: claim.tileId,
     });
     if (!evaluation.canWin) {
-      return failure("這張牌不能讓你胡牌。");
+      return failure("The discard does not complete a winning hand.");
     }
 
     markDiscardClaimed(game, claim.discardId);
@@ -68,7 +68,7 @@ function handleClaimWin(game, playerSeat) {
       additionalTileType: claim.tileType,
     });
     if (!evaluation.canWin) {
-      return failure("目前不能搶槓胡。");
+      return failure("The added kong cannot be robbed by this hand.");
     }
 
     finishWithWinner(game, {
@@ -76,12 +76,12 @@ function handleClaimWin(game, playerSeat) {
       loserSeat: claim.playerSeat,
       winKind: "robKong",
       winningTileId: claim.tileId,
-      patterns: [...evaluation.patterns, "搶槓"],
+      patterns: [...evaluation.patterns, "Rob Kong"],
     });
     return success(game);
   }
 
-  return failure("這個胡牌動作無效。");
+  return failure("Unknown win claim state.");
 }
 
 export const GAME_WIN_COMMAND_HANDLERS = {

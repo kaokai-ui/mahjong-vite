@@ -1,9 +1,9 @@
 import { getTileLabel, sortTileIds } from "./rules.js";
-import { buildDiscardClaimState } from "./game-claim-state.js";
+import { buildDiscardResponseState } from "./game-claim-state.js";
 import {
   appendLog,
   failure,
-  getOpponentSeat,
+  getNextSeat,
   getPlayer,
   removeExactTile,
   seatLabel,
@@ -13,22 +13,22 @@ import { drawTurnTile } from "./game-turn-flow.js";
 
 function handleDrawTile(game, playerSeat) {
   if (game.phase !== "draw" || game.turnSeat !== playerSeat) {
-    return failure("現在不能摸牌。");
+    return failure("It is not this player's draw step.");
   }
 
-  drawTurnTile(game, playerSeat, "摸牌", "live");
+  drawTurnTile(game, playerSeat, "drew a tile", "live");
   return success(game);
 }
 
 function handleDiscardTile(game, playerSeat, payload = {}) {
   if (game.phase !== "discard" || game.turnSeat !== playerSeat) {
-    return failure("現在不能打牌。");
+    return failure("It is not this player's discard step.");
   }
 
   const player = getPlayer(game, playerSeat);
   const tileId = payload.tileId;
   if (!player.hand.includes(tileId)) {
-    return failure("指定的牌不在手牌中。");
+    return failure("The selected tile is not in the player's hand.");
   }
 
   removeExactTile(player.hand, tileId);
@@ -48,19 +48,17 @@ function handleDiscardTile(game, playerSeat, payload = {}) {
   };
   game.lastDraw = null;
 
-  appendLog(game, `${seatLabel(playerSeat)}打出 ${getTileLabel(tileId)}。`);
+  appendLog(game, `${seatLabel(playerSeat)} discarded ${getTileLabel(tileId)}.`);
 
-  const targetSeat = getOpponentSeat(playerSeat);
-  const claimState = buildDiscardClaimState(game, targetSeat);
-
-  if (claimState.options.length > 0) {
+  const pendingClaim = buildDiscardResponseState(game);
+  if (pendingClaim) {
     game.phase = "response";
-    game.pendingClaim = claimState;
+    game.pendingClaim = pendingClaim;
     return success(game);
   }
 
   game.pendingClaim = null;
-  drawTurnTile(game, targetSeat, "摸牌", "live");
+  drawTurnTile(game, getNextSeat(playerSeat, game), "drew a tile", "live");
   return success(game);
 }
 

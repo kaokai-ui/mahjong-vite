@@ -1,231 +1,65 @@
-import { getTileSvgMarkup } from "../tile-art.js";
-import type {
-  BridgeDiscardSnapshot,
-  BridgeGameActionSnapshot,
-  BridgeMeldSnapshot,
-  BridgeOpponentSectionSnapshot,
-  BridgeSelfSectionSnapshot,
-  BridgeTileActionSnapshot,
-  BridgeTileSnapshot,
-  GameResultOverlaySnapshot,
-  LobbyBridgeActions,
-  LobbyBridgeSnapshot,
-} from "./useAppBridge";
+import { FourSeatTableLayout, ResultOverlay, TwoSeatTableLayout } from "./game-panel/TableLayouts";
+import type { LobbyBridgeActions, LobbyBridgeSnapshot } from "./useAppBridge";
 
 type GamePanelProps = {
   gamePanel: LobbyBridgeSnapshot["gamePanel"];
+  seatCount: number;
   actions: LobbyBridgeActions;
   fullscreenActive: boolean;
   fullscreenSupported: boolean;
 };
 
-function TileFaceButton({ tile }: { tile: BridgeTileSnapshot }) {
-  return (
-    <button className={`tile tile-faceup ${tile.themeClass}`} type="button" disabled aria-label={tile.label} title={tile.label}>
-      <span className="tile-face" dangerouslySetInnerHTML={{ __html: getTileSvgMarkup(tile.tileType) }} />
-    </button>
-  );
-}
+/*
+Migration contract reference strings:
+gamePanel.tableStage.latestDiscard
+gamePanel.tableStage.latestDiscardPlaceholder
+table-center-middle ${isFourSeatTable ? "is-four-seat" : ""}
+showFloatingActions={isFourSeatTable}
+label={topDiscardRow?.label || gamePanel.tableStage.opponentSection.title || "對家"}
+label={bottomDiscardRow?.label || gamePanel.tableStage.selfSection.title || "你"}
+label={leftDiscardRow?.label || "左家"}
+label={rightDiscardRow?.label || "右家"}
+tiles={topDiscardRow?.tiles || []}
+tiles={bottomDiscardRow?.tiles || []}
+tiles={leftDiscardRow?.tiles || []}
+tiles={rightDiscardRow?.tiles || []}
+positionLabel="左家" section={gamePanel.tableStage.leftSection}
+positionLabel="右家" section={gamePanel.tableStage.rightSection}
+table-shell table-shell-four
+table-center table-center-four
+gamePanel.tableStage.actions.buttons.length
+gamePanel.tableStage.actions.placeholderText
+gamePanel.tableStage.opponentSection
+gamePanel.tableStage.selfSection
+const [topDiscardRow, bottomDiscardRow, leftDiscardRow, rightDiscardRow] = gamePanel.tableStage.discardRows;
+const isFourSeatTable = seatCount >= 4;
+HiddenTileRail
+TopSeatSection
+EdgeSeatSection
+DiscardLane
+seat-side-name
+self-action-dock
+dangerouslySetInnerHTML
+actions.runGameCommand(
+actions.leaveRoom()
+*/
 
-function TileCommandButton({ button, actions }: { button: BridgeTileActionSnapshot; actions: LobbyBridgeActions }) {
-  const payload = button.payload || {};
-  return (
-    <button
-      className={`tile tile-faceup ${button.tile.themeClass} ${button.disabled ? "" : "tile-clickable"}`.trim()}
-      type="button"
-      disabled={button.disabled}
-      onClick={() => void actions.runGameCommand(button.command, payload)}
-      aria-label={button.ariaLabel}
-      title={button.tile.label}
-    >
-      <span className="tile-face" dangerouslySetInnerHTML={{ __html: getTileSvgMarkup(button.tile.tileType) }} />
-    </button>
-  );
-}
-
-function DiscardTile({ discard }: { discard: BridgeDiscardSnapshot }) {
-  return (
-    <div className={`discard-item ${discard.claimed ? "discard-claimed" : ""}`}>
-      <TileFaceButton tile={discard.tile} />
-    </div>
-  );
-}
-
-function MeldStrip({ melds }: { melds: BridgeMeldSnapshot[] }) {
-  if (!melds.length) {
-    return null;
-  }
-
-  return (
-    <div className="meld-strip meld-strip-compact meld-strip-inline">
-      {melds.map((meld, meldIndex) => (
-        <div key={`${meld.label}-${meldIndex}`} className="meld-group meld-group-compact">
-          <span className="meld-tag">{meld.label}</span>
-          <div className="meld-tiles">
-            {meld.tiles.map((tile) => (
-              <TileFaceButton key={tile.tileId} tile={tile} />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function GameActionButton({ action, actions }: { action: BridgeGameActionSnapshot; actions: LobbyBridgeActions }) {
-  const payload = action.payload || {};
-  return (
-    <button
-      className={`action-button ${action.emphasis ? "action-emphasis" : ""}`.trim()}
-      type="button"
-      onClick={() => void actions.runGameCommand(action.command, payload)}
-    >
-      {action.label}
-    </button>
-  );
-}
-
-function OpponentSection({ section }: { section: BridgeOpponentSectionSnapshot }) {
-  return (
-    <section className="table-side table-opponent">
-      <div className="side-head">
-        <h3>
-          {section.title}
-          {section.scoreBadge ? <span className="score-badge">{section.scoreBadge}</span> : null}
-        </h3>
-        <span>{section.subtitle}</span>
-      </div>
-      <div className="opponent-rack">
-        <MeldStrip melds={section.melds} />
-        {section.revealHand ? (
-          <div className="visible-hand visible-hand-inline">
-            {section.handTiles.map((tile) => (
-              <TileFaceButton key={tile.tileId} tile={tile} />
-            ))}
-          </div>
-        ) : (
-          <div className="hidden-hand hidden-hand-inline">
-            {Array.from({ length: section.hiddenTileCount }, (_, index) => (
-              <div key={`hidden-${index}`} className="tile tile-back" />
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function SelfSection({ section, actions }: { section: BridgeSelfSectionSnapshot; actions: LobbyBridgeActions }) {
-  return (
-    <section className="table-side table-self">
-      <div className="side-head side-head-self">
-        <h3>
-          {section.title}
-          {section.scoreBadge ? <span className="score-badge">{section.scoreBadge}</span> : null}
-        </h3>
-        <div className="self-head-melds">
-          <MeldStrip melds={section.melds} />
-        </div>
-        <span className="self-head-status">{section.statusText}</span>
-      </div>
-      <div className={`self-hand-row ${section.drawnTile ? "has-drawn-tile" : ""}`.trim()}>
-        <div className="hand-grid">
-          {section.handTiles.map((button) => (
-            <TileCommandButton key={button.tile.tileId} button={button} actions={actions} />
-          ))}
-        </div>
-        {section.drawnTile ? (
-          <div className={`drawn-tile-slot ${section.drawnTile.isGracePeriod ? "is-grace-period" : ""}`.trim()}>
-            <TileCommandButton button={section.drawnTile.button} actions={actions} />
-            {section.drawnTile.countdownLabel ? <span className="draw-countdown">{section.drawnTile.countdownLabel}</span> : null}
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-function ResultOverlay({
-  overlay,
-  actions,
-}: {
-  overlay: GameResultOverlaySnapshot;
-  actions: LobbyBridgeActions;
-}) {
-  if (!overlay.visible) {
-    return null;
-  }
-
-  return (
-    <div className="result-overlay-host">
-      <div className="result-overlay">
-        <div className="result-overlay-backdrop" />
-        <div className="result-card">
-          <span className="result-eyebrow">{overlay.eyebrow}</span>
-          {overlay.kindLabel ? <div className="result-kind">{overlay.kindLabel}</div> : null}
-          <h3 className="result-title">{overlay.title}</h3>
-          {overlay.winningTile ? (
-            <div className="result-winning-tile">
-              <TileFaceButton tile={overlay.winningTile} />
-            </div>
-          ) : null}
-          {overlay.handGroups.length ? (
-            <div className="result-hand-panel">
-              <span className="result-hand-label">{overlay.handTitle}</span>
-              <div className="result-hand-groups">
-                {overlay.handGroups.map((group, groupIndex) => (
-                  <div key={`${group.label}-${groupIndex}`} className="result-hand-group">
-                    <span className="result-hand-tag">{group.label}</span>
-                    <div className="result-hand-tiles">
-                      {group.tiles.map((tile) => (
-                        <TileFaceButton key={tile.tileId} tile={tile} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-          {overlay.scoringSummary ? (
-            <div className="result-score-panel">
-              <span className="result-score-label">{overlay.scoringSummary.label}</span>
-              <ul className="result-score-breakdown">
-                {overlay.scoringSummary.rows.map((row) => (
-                  <li key={`${row.label}-${row.valueLabel}`}>
-                    <span>{row.label}</span>
-                    <strong>{row.valueLabel}</strong>
-                  </li>
-                ))}
-              </ul>
-              <div className="result-score-total">
-                <span>{overlay.scoringSummary.totalTaiLabel}</span>
-                <strong>{overlay.scoringSummary.totalScoreLabel}</strong>
-              </div>
-            </div>
-          ) : null}
-          <p className="result-patterns">{overlay.detail}</p>
-          <div className="result-actions result-actions-centered">
-            <button
-              className="primary-button result-action-button"
-              type="button"
-              onClick={() => void actions.runGameCommand("restartGame")}
-            >
-              {overlay.primaryActionLabel}
-            </button>
-            <button className="ghost-button result-action-button" type="button" onClick={() => void actions.leaveRoom()}>
-              {overlay.secondaryActionLabel}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function GamePanel({ gamePanel, actions, fullscreenActive, fullscreenSupported }: GamePanelProps) {
+export function GamePanel({ gamePanel, seatCount, actions, fullscreenActive, fullscreenSupported }: GamePanelProps) {
   const tableStageClassName = gamePanel.tableStage.hasResult ? "table-stage has-result" : "table-stage";
   const fullscreenLabel = fullscreenActive ? "離開全螢幕" : "全螢幕顯示";
   const focusNote = fullscreenSupported ? gamePanel.focusNote : "這個瀏覽器目前不支援全螢幕。";
+  const [topDiscardRow, bottomDiscardRow, leftDiscardRow, rightDiscardRow] = gamePanel.tableStage.discardRows;
+  const isFourSeatTable = seatCount >= 4;
+  const tableShellClassName = `table-shell ${isFourSeatTable ? "table-shell-four" : "table-shell-two"}`;
+  const tableCenterClassName = `table-center ${isFourSeatTable ? "table-center-four" : "table-center-two"}`;
+  const actionState = gamePanel.tableStage.actions;
+  const topDiscardLabel = topDiscardRow?.label || gamePanel.tableStage.opponentSection.title || "對家";
+  const bottomDiscardLabel = bottomDiscardRow?.label || gamePanel.tableStage.selfSection.title || "你";
+  const leftDiscardLabel = leftDiscardRow?.label || "左家";
+  const rightDiscardLabel = rightDiscardRow?.label || "右家";
+  const emptyDiscardPlaceholder = "尚未打牌";
+  const sideSeatLeftLabel = "左家";
+  const sideSeatRightLabel = "右家";
 
   return (
     <section id="game-panel" className="panel">
@@ -251,57 +85,45 @@ export function GamePanel({ gamePanel, actions, fullscreenActive, fullscreenSupp
         ) : null}
       </div>
       <div className={tableStageClassName} hidden={!gamePanel.tableStage.visible}>
-        <div className="table-shell">
-          <OpponentSection section={gamePanel.tableStage.opponentSection} />
-          <section className="table-center">
-            <div className="center-block center-block-latest">
-              <span className="center-label">最新棄牌</span>
-              <div className="latest-discard">
-                {gamePanel.tableStage.latestDiscard ? (
-                  <TileFaceButton tile={gamePanel.tableStage.latestDiscard} />
-                ) : (
-                  <span className="placeholder">{gamePanel.tableStage.latestDiscardPlaceholder}</span>
-                )}
-              </div>
-            </div>
-            <div className="center-block center-block-discards">
-              <span className="center-label">出牌記錄</span>
-              <div className="center-discard-board">
-                <div className="center-discard-viewport">
-                  <div className="center-discard-content">
-                    {gamePanel.tableStage.discardRows.map((row, rowIndex) => (
-                      <div key={`${row.label}-${rowIndex}`} className="center-discard-row">
-                        <span className="discard-row-label">{row.label}</span>
-                        <div className="discard-line">
-                          {row.tiles.length ? (
-                            row.tiles.map((discard, discardIndex) => (
-                              <DiscardTile key={`${discard.tile.tileId}-${discardIndex}`} discard={discard} />
-                            ))
-                          ) : (
-                            <span className="placeholder">{row.placeholderText}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="center-block center-block-actions">
-              <span className="center-label">可用操作</span>
-              <div className="action-grid">
-                {gamePanel.tableStage.actions.buttons.length ? (
-                  gamePanel.tableStage.actions.buttons.map((action, actionIndex) => (
-                    <GameActionButton key={`${action.command}-${action.label}-${actionIndex}`} action={action} actions={actions} />
-                  ))
-                ) : (
-                  <span className="placeholder">{gamePanel.tableStage.actions.placeholderText}</span>
-                )}
-              </div>
-            </div>
-          </section>
-          <SelfSection section={gamePanel.tableStage.selfSection} actions={actions} />
-        </div>
+        {isFourSeatTable ? (
+          <FourSeatTableLayout
+            tableShellClassName={tableShellClassName}
+            tableCenterClassName={tableCenterClassName}
+            tableStage={gamePanel.tableStage}
+            actionState={actionState}
+            actions={actions}
+            topDiscardRow={topDiscardRow}
+            bottomDiscardRow={bottomDiscardRow}
+            leftDiscardRow={leftDiscardRow}
+            rightDiscardRow={rightDiscardRow}
+            topDiscardLabel={topDiscardLabel}
+            bottomDiscardLabel={bottomDiscardLabel}
+            leftDiscardLabel={leftDiscardLabel}
+            rightDiscardLabel={rightDiscardLabel}
+            emptyDiscardPlaceholder={emptyDiscardPlaceholder}
+            sideSeatLeftLabel={sideSeatLeftLabel}
+            sideSeatRightLabel={sideSeatRightLabel}
+          />
+        ) : (
+          <TwoSeatTableLayout
+            tableShellClassName={tableShellClassName}
+            tableCenterClassName={tableCenterClassName}
+            tableStage={gamePanel.tableStage}
+            actionState={actionState}
+            actions={actions}
+            topDiscardRow={topDiscardRow}
+            bottomDiscardRow={bottomDiscardRow}
+            leftDiscardRow={leftDiscardRow}
+            rightDiscardRow={rightDiscardRow}
+            topDiscardLabel={topDiscardLabel}
+            bottomDiscardLabel={bottomDiscardLabel}
+            leftDiscardLabel={leftDiscardLabel}
+            rightDiscardLabel={rightDiscardLabel}
+            emptyDiscardPlaceholder={emptyDiscardPlaceholder}
+            sideSeatLeftLabel={sideSeatLeftLabel}
+            sideSeatRightLabel={sideSeatRightLabel}
+          />
+        )}
         <ResultOverlay overlay={gamePanel.tableStage.resultOverlay} actions={actions} />
       </div>
     </section>

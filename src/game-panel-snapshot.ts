@@ -1,4 +1,5 @@
 import { getTileType, sortTileIds } from "./rules.js";
+import { DEFAULT_SOLO_DIFFICULTY, SOLO_DIFFICULTY_LABELS, getSoloBotProfile } from "./solo-controller.js";
 import {
   formatPointScore,
   getIdleActionText,
@@ -99,6 +100,7 @@ const EMPTY_ROUND_STATE: RoundStateLike = {
 
 export function getEmptyGameTableStageSnapshot(): GameTableStageSnapshot {
   return {
+    seatCount: 0,
     visible: false,
     hasResult: false,
     latestDiscard: null,
@@ -112,6 +114,24 @@ export function getEmptyGameTableStageSnapshot(): GameTableStageSnapshot {
       title: "等待中",
       scoreBadge: "",
       subtitle: "等待對手加入",
+      hiddenTileCount: 0,
+      revealHand: false,
+      handTiles: [],
+      melds: [],
+    },
+    leftSection: {
+      title: "等待中",
+      scoreBadge: "",
+      subtitle: "等待牌列",
+      hiddenTileCount: 0,
+      revealHand: false,
+      handTiles: [],
+      melds: [],
+    },
+    rightSection: {
+      title: "等待中",
+      scoreBadge: "",
+      subtitle: "等待牌列",
       hiddenTileCount: 0,
       revealHand: false,
       handTiles: [],
@@ -141,22 +161,49 @@ export function buildGameTableStageSnapshot(context: GamePanelContextLike | null
   const selfRoundState = context.selfRoundState || EMPTY_ROUND_STATE;
   const opponentRoundState = context.opponentRoundState || EMPTY_ROUND_STATE;
   const clientState = context.clientState || {};
+  const playerCount = getGamePlayerCount(game, players);
+  const currentSeat = typeof context.seat === "number" ? context.seat : currentPlayer.seat;
+  const topSeatDistance = playerCount >= 4 ? 2 : 1;
+  const topPlayer = getPlayerAtRelativeDistance(players, currentSeat, topSeatDistance, playerCount) || opponent;
+  const topRoundState = getRoundState(game, topPlayer?.seat);
+  const leftPlayer = playerCount >= 4 ? getPlayerAtRelativeDistance(players, currentSeat, 1, playerCount) : null;
+  const rightPlayer = playerCount >= 4 ? getPlayerAtRelativeDistance(players, currentSeat, playerCount - 1, playerCount) : null;
+  const leftRoundState = getRoundState(game, leftPlayer?.seat);
+  const rightRoundState = getRoundState(game, rightPlayer?.seat);
+  const discardRows = {
+    top: getDiscardRowSnapshot(topPlayer ? "對家" : "", topRoundState.discards, topPlayer ? "尚未打牌" : ""),
+    bottom: getDiscardRowSnapshot(currentPlayer.name ? "你" : "", selfRoundState.discards, "尚未打牌"),
+    left: getDiscardRowSnapshot(leftPlayer ? "左家" : "", leftRoundState.discards, ""),
+    right: getDiscardRowSnapshot(rightPlayer ? "右家" : "", rightRoundState.discards, ""),
+  };
 
   return {
+    seatCount: playerCount,
     visible: true,
     hasResult: Boolean(game && game.result),
     latestDiscard: getLatestDiscardSnapshot(game),
     latestDiscardPlaceholder: "目前沒有",
-    discardRows: [
-      getDiscardRowSnapshot(opponent?.name || "對手", opponentRoundState.discards),
-      getDiscardRowSnapshot(currentPlayer.name || "你", selfRoundState.discards),
-    ],
+    discardRows: [discardRows.top, discardRows.bottom, discardRows.left, discardRows.right],
     actions: getActionButtonsSnapshot(clientState),
     opponentSection: getOpponentSectionSnapshot({
       ...context,
       game,
-      opponent,
-      opponentRoundState,
+      opponent: topPlayer,
+      opponentRoundState: topRoundState,
+    }),
+    leftSection: getSeatSectionSnapshot({
+      player: leftPlayer,
+      game,
+      room: context.room,
+      roundState: leftRoundState,
+      emptySubtitle: "等待牌列",
+    }),
+    rightSection: getSeatSectionSnapshot({
+      player: rightPlayer,
+      game,
+      room: context.room,
+      roundState: rightRoundState,
+      emptySubtitle: "等待牌列",
     }),
     selfSection: getSelfSectionSnapshot({
       ...context,
@@ -192,12 +239,13 @@ function createDiscardSnapshot(discard: DiscardLike | null | undefined): BridgeD
 function getDiscardRowSnapshot(
   label: string,
   discards: DiscardLike[] | null | undefined = [],
+  placeholderText = "尚未打牌",
 ): GameTableStageSnapshot["discardRows"][number] {
   const discardItems = discards || [];
 
   return {
     label,
-    placeholderText: "尚未打牌",
+    placeholderText,
     tiles: [...discardItems].reverse().map((discard) => createDiscardSnapshot(discard)).filter(isDefined),
   };
 }
@@ -384,18 +432,46 @@ function createMeldSnapshots(melds: MeldLike[] | null | undefined = []): BridgeM
 function getOpponentSectionSnapshot(context: GamePanelContextLike): BridgeOpponentSectionSnapshot {
   const opponent = context.opponent || null;
   const game = context.game || null;
+  const room = context.room || null;
   const showOpponentHand = Boolean(context.showOpponentHand);
   const opponentRoundState = context.opponentRoundState || EMPTY_ROUND_STATE;
   const opponentHand = opponentRoundState.hand || [];
+  const difficultyLabel = getBotDifficultyLabel(room, opponent);
 
   return {
     title: opponent?.name || "等待中",
     scoreBadge: opponent ? getSeatScoreSummary(game, opponent.seat) : "",
-    subtitle: opponent ? `手牌 ${opponentHand.length} 張` : "等待對手加入",
+    subtitle: opponent ? [difficultyLabel, `手牌 ${opponentHand.length} 張`].filter(Boolean).join(" ・ ") : "等待對手加入",
     hiddenTileCount: opponent ? opponentHand.length : 0,
     revealHand: Boolean(opponent && showOpponentHand),
     handTiles: showOpponentHand && opponent ? opponentHand.map((tileId) => createTileSnapshot(tileId)).filter(isDefined) : [],
     melds: createMeldSnapshots(opponentRoundState.melds),
+  };
+}
+
+function getSeatSectionSnapshot({
+  player,
+  game,
+  room,
+  roundState,
+  emptySubtitle,
+}: {
+  player: PlayerLike | null;
+  game: GameLike | null;
+  room: GamePanelContextLike["room"] | null;
+  roundState: RoundStateLike;
+  emptySubtitle: string;
+}): BridgeOpponentSectionSnapshot {
+  const hand = roundState.hand || [];
+  const difficultyLabel = getBotDifficultyLabel(room, player);
+  return {
+    title: player?.name || "等待中",
+    scoreBadge: player ? getSeatScoreSummary(game, player.seat) : "",
+    subtitle: player ? [difficultyLabel, `手牌 ${hand.length} 張`].filter(Boolean).join(" ・ ") : emptySubtitle,
+    hiddenTileCount: player ? hand.length : 0,
+    revealHand: false,
+    handTiles: [],
+    melds: createMeldSnapshots(roundState.melds),
   };
 }
 
@@ -537,6 +613,48 @@ function isDefined<T>(value: T | null | undefined): value is T {
   return value != null;
 }
 
+function getGamePlayerCount(game: GameLike | null | undefined, players: PlayerLike[] = []) {
+  if (game && Array.isArray(game.players) && game.players.length >= 2) {
+    return game.players.length;
+  }
+  return Math.max(2, players.length || 0);
+}
+
+function getPlayerAtRelativeDistance(
+  players: PlayerLike[] = [],
+  currentSeat: number | undefined,
+  distance: number,
+  playerCount: number,
+) {
+  if (typeof currentSeat !== "number" || playerCount < 2) {
+    return null;
+  }
+  const targetSeat = ((currentSeat + distance) % playerCount + playerCount) % playerCount;
+  return players.find((player) => player && player.seat === targetSeat) || null;
+}
+
+function getRoundState(game: GameLike | null | undefined, seat: number | undefined) {
+  if (!game || !Array.isArray(game.players) || typeof seat !== "number") {
+    return EMPTY_ROUND_STATE;
+  }
+
+  return game.players[seat] || EMPTY_ROUND_STATE;
+}
+
 function isNonEmptyString(value: string | null | undefined): value is string {
   return Boolean(value);
+}
+
+function getBotDifficultyLabel(room: GamePanelContextLike["room"] | null, player: PlayerLike | null) {
+  if (!room || !player || player.type !== "bot") {
+    return "";
+  }
+
+  const seatCount = Math.max(2, Number(room.meta?.soloPlayerCount || room.activePlayers?.length || 2));
+  const difficulty = (
+    room.meta?.botDifficulties?.[String(player.seat)] ||
+    getSoloBotProfile(player.seat, seatCount, room.meta?.soloDifficulty || DEFAULT_SOLO_DIFFICULTY).difficulty
+  ) as keyof typeof SOLO_DIFFICULTY_LABELS;
+
+  return SOLO_DIFFICULTY_LABELS[difficulty] || SOLO_DIFFICULTY_LABELS[DEFAULT_SOLO_DIFFICULTY];
 }

@@ -4,6 +4,9 @@ import {
 } from "./game.js";
 import { formatFirebaseClientError } from "./network-client-errors.js";
 import {
+  normalizeFirebaseRulesetId,
+} from "./firebase-rules-contract.js";
+import {
   countOccupiedSeats,
   getSeatForBrowser,
   getSeatForPlayer,
@@ -44,6 +47,7 @@ export async function createNetworkRoom(
 
     const trimmedName = controller.setPlayerName(playerName);
     const normalizedRoomId = controller.normalizeRoomId(roomId);
+    const normalizedRulesetId = normalizeFirebaseRulesetId(rulesetId);
     if (!normalizedRoomId) {
       throw new Error("請輸入房號。");
     }
@@ -64,7 +68,7 @@ export async function createNetworkRoom(
       hostPlayerId: identity.playerId,
       hostBrowserId: identity.browserId,
       godViewEnabled: false,
-      rulesetId,
+      rulesetId: normalizedRulesetId,
       createdAt: now,
       updatedAt: now,
       playerCount: 1,
@@ -85,7 +89,7 @@ export async function createNetworkRoom(
     const roomData = {
       roomId: normalizedRoomId,
       hostPlayerId: identity.playerId,
-      rulesetId,
+      rulesetId: normalizedRulesetId,
       createdAt: now,
       updatedAt: now,
       lastError: null,
@@ -97,7 +101,7 @@ export async function createNetworkRoom(
           joinedAt: now,
         },
       },
-      game: createWaitingGame(rulesetId, { drawRevealSeconds, scoringEnabled }),
+      game: createWaitingGame(normalizedRulesetId, { drawRevealSeconds, scoringEnabled }),
       commands: {},
     };
 

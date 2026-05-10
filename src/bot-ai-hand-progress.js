@@ -7,6 +7,7 @@ import {
   isSuitTile,
 } from "./rules.js";
 import { ALL_TILE_TYPES } from "./bot-ai-profile.js";
+import { getOtherSeats } from "./game-internal-utils.js";
 
 function evaluateHandProgress(handTileIds, lockedMelds = 0, cache = null) {
   const counts = countTileTypes(handTileIds || []);
@@ -397,8 +398,23 @@ function createAnalysisCache() {
   };
 }
 
-function getOpponentSeat(seat) {
-  return seat === 0 ? 1 : 0;
+function getOpponentSeats(gameOrCount, seat) {
+  return getOtherSeats(gameOrCount, seat);
 }
 
-export { evaluateHandProgress, getTilesOfTypeFromHand, getTilesForNeededTypes, removeTileIdsFromHand, getCandidateDiscardTileIds, scoreDiscardTile, createAnalysisCache, getOpponentSeat };
+function getOpponentSeat(gameOrCount, seat) {
+  const opponentSeats = getOpponentSeats(gameOrCount, seat);
+  return opponentSeats[0] ?? null;
+}
+
+export {
+  evaluateHandProgress,
+  getTilesOfTypeFromHand,
+  getTilesForNeededTypes,
+  removeTileIdsFromHand,
+  getCandidateDiscardTileIds,
+  scoreDiscardTile,
+  createAnalysisCache,
+  getOpponentSeats,
+  getOpponentSeat,
+};

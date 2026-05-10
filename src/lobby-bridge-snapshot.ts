@@ -54,6 +54,7 @@ type BuildLobbyBridgeSnapshotContext = {
   rulesetId: string;
   drawRevealSeconds: number;
   soloDifficulty: LobbyBridgeSnapshot["lobby"]["soloDifficulty"];
+  soloPlayerCount: LobbyBridgeSnapshot["lobby"]["soloPlayerCount"];
   scoringEnabled: boolean;
   room: RoomLike | null;
   playerId: string;
@@ -77,6 +78,7 @@ export function buildLobbyBridgeSnapshot(context: BuildLobbyBridgeSnapshotContex
     rulesetId,
     drawRevealSeconds,
     soloDifficulty,
+    soloPlayerCount,
     scoringEnabled,
     room,
     playerId,
@@ -103,11 +105,12 @@ export function buildLobbyBridgeSnapshot(context: BuildLobbyBridgeSnapshotContex
       rulesetId,
       drawRevealSeconds: String(drawRevealSeconds),
       soloDifficulty,
+      soloPlayerCount,
       scoringEnabled: String(scoringEnabled) as LobbyBridgeSnapshot["lobby"]["scoringEnabled"],
       createDisabled: isSoloMode ? false : !onlineReady,
       joinDisabled: isSoloMode ? true : !onlineReady,
       noticeBanner: buildNoticeBanner({ room, playerId, error, message }),
-      firebaseStatus: buildFirebaseStatus({ setupState, isSoloMode, soloDifficulty }),
+      firebaseStatus: buildFirebaseStatus({ setupState, isSoloMode, soloDifficulty, soloPlayerCount }),
       createFeedback: buildFormFeedback({ room, lastLobbyAction, error, message, action: "create" }),
       joinFeedback: buildFormFeedback({ room, lastLobbyAction, error, message, action: "join" }),
     },
@@ -178,10 +181,12 @@ function buildFirebaseStatus({
   setupState,
   isSoloMode,
   soloDifficulty,
+  soloPlayerCount,
 }: {
   setupState: SetupStateLike;
   isSoloMode: boolean;
   soloDifficulty: LobbyBridgeSnapshot["lobby"]["soloDifficulty"];
+  soloPlayerCount: LobbyBridgeSnapshot["lobby"]["soloPlayerCount"];
 }): BridgeStatusCardSnapshot {
   if (isSoloMode) {
     return {
@@ -190,6 +195,7 @@ function buildFirebaseStatus({
       description: "不需要 Firebase、房號或 App Check，電腦玩家會在這台裝置上運行。",
       pills: [
         "模式：單人對電腦",
+        `人數：${soloPlayerCount === "4" ? "4 人局" : "2 人局"}`,
         `難度：${SOLO_DIFFICULTY_LABELS[soloDifficulty || DEFAULT_SOLO_DIFFICULTY] || SOLO_DIFFICULTY_LABELS[DEFAULT_SOLO_DIFFICULTY]}`,
       ],
       detail: "",

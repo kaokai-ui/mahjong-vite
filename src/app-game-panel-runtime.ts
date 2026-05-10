@@ -43,7 +43,12 @@ export function getGamePanelContext(
   deps: CreateGamePanelRuntimeDeps,
   room: AppRoomLike | null = appState.room,
 ): GamePanelRuntimeContext {
-  const { playerId } = deps.getController().getIdentity();
+  const controller = deps.getController();
+  if (!controller || typeof controller.getIdentity !== "function") {
+    return null;
+  }
+
+  const { playerId } = controller.getIdentity();
   const baseContext = buildBaseGamePanelContext({
     room,
     playerId,

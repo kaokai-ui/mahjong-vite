@@ -1,5 +1,5 @@
 import { DEFAULT_RULESET, getRuleset } from "./rules.js";
-import { DEFAULT_SOLO_DIFFICULTY, SOLO_DIFFICULTY_LABELS } from "./solo-controller.js";
+import { DEFAULT_SOLO_DIFFICULTY, SOLO_DIFFICULTY_LABELS, getSoloBotProfile } from "./solo-controller.js";
 import {
   describeGamePhase,
   formatSeat,
@@ -35,6 +35,8 @@ type RoomLike = {
   hostPlayerId?: string;
   meta?: {
     soloDifficulty?: string;
+    soloPlayerCount?: number;
+    botDifficulties?: Record<string, string>;
     gameMode?: string;
   } | null;
   gameMode?: string;
@@ -85,7 +87,8 @@ export function buildRoomPanelSnapshot(context: BuildRoomPanelSnapshotContext): 
   const currentPlayerSeat = currentPlayer ? currentPlayer.seat : 0;
   const scoringStatus = isScoringEnabled(game) ? "開啟" : "關閉";
   const soloDifficultyKey = (room.meta?.soloDifficulty || DEFAULT_SOLO_DIFFICULTY) as keyof typeof SOLO_DIFFICULTY_LABELS;
-  const seats: RoomPanelSnapshot["seats"] = [0, 1].map((seat) => {
+  const seatCount = isSoloMode ? Math.max(2, Number(room.meta?.soloPlayerCount || players.length || 2)) : 2;
+  const seats: RoomPanelSnapshot["seats"] = Array.from({ length: seatCount }, (_, seat) => seat).map((seat) => {
     const player = players.find((item) => item && item.seat === seat);
     if (!player) {
       return {
@@ -98,6 +101,10 @@ export function buildRoomPanelSnapshot(context: BuildRoomPanelSnapshotContext): 
       };
     }
 
+    const botDifficulty = player.type === "bot"
+      ? (room.meta?.botDifficulties?.[String(player.seat)] || getSoloBotProfile(player.seat, seatCount, room.meta?.soloDifficulty).difficulty) as keyof typeof SOLO_DIFFICULTY_LABELS
+      : "";
+
     return {
       seat,
       empty: false,
@@ -107,6 +114,7 @@ export function buildRoomPanelSnapshot(context: BuildRoomPanelSnapshotContext): 
         player.id === room.hostPlayerId ? "房主" : "",
         player.id === currentPlayerId ? "你" : "",
         player.type === "bot" ? "電腦" : "",
+        player.type === "bot" && botDifficulty ? SOLO_DIFFICULTY_LABELS[botDifficulty] || botDifficulty : "",
       ].filter(isNonEmptyString),
       scoreBadge: getSeatScoreSummary(game, player.seat),
     };
@@ -127,10 +135,12 @@ export function buildRoomPanelSnapshot(context: BuildRoomPanelSnapshotContext): 
     pills: [
       isSoloMode ? "模式：單人對電腦" : "",
       isSoloMode
-        ? `難度：${
-            SOLO_DIFFICULTY_LABELS[soloDifficultyKey] ||
-            SOLO_DIFFICULTY_LABELS[DEFAULT_SOLO_DIFFICULTY]
-          }`
+        ? seatCount >= 4
+          ? "電腦陣容：夏曉蘭（賭神）／楊貴妃（普通）／李善德（困難）"
+          : `難度：${
+              SOLO_DIFFICULTY_LABELS[soloDifficultyKey] ||
+              SOLO_DIFFICULTY_LABELS[DEFAULT_SOLO_DIFFICULTY]
+            }`
         : "",
       `規則：${displayRuleset.name}`,
       `台數計算：${scoringStatus}`,

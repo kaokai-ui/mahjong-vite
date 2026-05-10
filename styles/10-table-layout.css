@@ -1,0 +1,1005 @@
+/* Table shell, seats, hands, tiles, and shared table layout rules. */
+.table-shell-two {
+  grid-template-areas:
+    "top"
+    "center"
+    "self";
+  grid-template-rows: minmax(176px, auto) minmax(260px, 1fr) minmax(260px, auto);
+}
+
+.table-shell-four {
+  grid-template-columns: minmax(132px, 0.9fr) minmax(0, 1.7fr) minmax(132px, 0.9fr);
+  grid-template-rows: minmax(176px, auto) minmax(260px, 1fr) minmax(260px, auto);
+  grid-template-areas:
+    ". top ."
+    "left center right"
+    "self self self";
+  gap: 16px;
+  align-items: stretch;
+}
+
+.seat-top-panel {
+  grid-area: top;
+  width: min(100%, 960px);
+  justify-self: center;
+}
+
+.seat-side-left {
+  grid-area: left;
+}
+
+.seat-side-right {
+  grid-area: right;
+}
+
+.table-center-four {
+  grid-area: center;
+  width: min(100%, 960px);
+  justify-self: center;
+  align-self: center;
+}
+
+.table-center-two {
+  grid-area: center;
+  width: min(100%, 960px);
+  justify-self: center;
+  align-self: center;
+}
+
+.table-self {
+  grid-area: self;
+}
+
+.table-stage {
+  position: relative;
+}
+
+body.app-game-focus .table-stage {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.table-stage.has-result .table-shell {
+  filter: saturate(0.72) brightness(0.72);
+}
+
+body.app-game-focus .table-shell {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: 1fr;
+  grid-template-rows: 126px minmax(0, 172px) minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+body.app-game-focus .table-shell-two {
+  height: 100%;
+  min-height: 0;
+  grid-template-areas:
+    "top"
+    "center"
+    "self";
+  grid-template-rows: 156px minmax(0, 1fr) 276px;
+  gap: 18px;
+}
+
+body.app-game-focus .table-shell-four {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(140px, 0.9fr) minmax(0, 1.7fr) minmax(140px, 0.9fr);
+  grid-template-rows: 156px minmax(0, 1fr) 276px;
+  grid-template-areas:
+    ". top ."
+    "left center right"
+    "self self self";
+  gap: 18px;
+  align-items: stretch;
+}
+
+.table-side,
+.table-center {
+  display: grid;
+  gap: 14px;
+}
+
+.seat-top-panel,
+.seat-side-panel,
+.table-center-four,
+.table-center-two,
+.table-self {
+  min-width: 0;
+}
+
+body.app-game-focus .table-side,
+body.app-game-focus .table-center {
+  min-height: 0;
+  align-self: stretch;
+}
+
+.table-side {
+  background:
+    linear-gradient(180deg, rgba(18, 52, 44, 0.95), rgba(13, 38, 32, 0.95)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+  border-radius: 22px;
+  padding: 18px;
+  color: #f4eee1;
+}
+
+.seat-top-panel {
+  justify-items: center;
+  align-content: start;
+  gap: 12px;
+  padding-top: 16px;
+  padding-bottom: 14px;
+}
+
+.seat-top-rack {
+  justify-content: center;
+  width: 100%;
+}
+
+.seat-top-panel-compact {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: start;
+  justify-items: center;
+  gap: 8px;
+}
+
+.seat-top-panel-compact .seat-top-head {
+  order: 2;
+  justify-items: center;
+  text-align: center;
+}
+
+.seat-top-panel-compact .seat-top-title-line {
+  justify-content: center;
+}
+
+.seat-top-panel-compact .seat-top-rack {
+  order: 1;
+  justify-content: center;
+  width: 100%;
+  overflow: visible;
+}
+
+.seat-top-panel-compact .hidden-hand-standing-horizontal {
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.seat-top-rack-standing {
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.hidden-hand-standing-horizontal .standing-side-tile,
+.seat-top-panel-compact .standing-side-tile {
+  margin-top: 0;
+}
+
+.seat-top-head {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  width: 100%;
+  text-align: center;
+}
+
+.seat-top-title-line {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.seat-top-name {
+  margin: 0;
+  color: #f4eee1;
+  font-family: "Noto Serif TC", "PMingLiU", serif;
+  font-size: clamp(1.08rem, 1.22vw, 1.26rem);
+  line-height: 1.12;
+  font-weight: 800;
+}
+
+.seat-top-inline-meta {
+  color: rgba(244, 238, 225, 0.82);
+  font-size: 0.88rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.seat-top-meta-line {
+  color: rgba(244, 238, 225, 0.78);
+  font-size: 0.88rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.seat-top-panel-compact .seat-top-meta-line {
+  white-space: normal;
+}
+
+.seat-side-panel {
+  position: relative;
+  display: grid;
+  align-items: center;
+  align-content: center;
+  gap: 8px;
+  min-height: 250px;
+  height: 100%;
+  overflow: visible;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.seat-side-head {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-content: stretch;
+  gap: 6px;
+  justify-items: center;
+  text-align: center;
+  width: 100%;
+  min-height: 250px;
+  padding: 24px 7px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(18, 52, 44, 0.95), rgba(13, 38, 32, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(6, 18, 15, 0.28),
+    0 10px 22px rgba(6, 18, 15, 0.14);
+}
+
+.seat-side-head span {
+  color: rgba(244, 238, 225, 0.72);
+  font-size: 0.72rem;
+}
+
+.seat-side-topline {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  align-self: start;
+}
+
+.seat-side-score {
+  margin-left: 0;
+}
+
+.seat-side-name {
+  color: #f4eee1;
+  font-family: "Noto Serif TC", "PMingLiU", serif;
+  font-size: clamp(1.02rem, 1.1vw, 1.16rem);
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.seat-side-role {
+  align-self: end;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  color: rgba(244, 238, 225, 0.78);
+}
+
+.seat-side-head .seat-side-role {
+  font-size: 0.88rem;
+  line-height: 1.35;
+  color: rgba(244, 238, 225, 0.78);
+}
+
+.seat-side-position-label {
+  display: none;
+}
+
+.seat-side-left .seat-side-head {
+  order: 2;
+  left: auto;
+}
+
+.seat-side-right .seat-side-head {
+  order: 1;
+  right: auto;
+}
+
+.seat-side-rack {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 0;
+  height: auto;
+  width: auto;
+  padding-inline: 0;
+}
+
+.seat-side-melds {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: auto;
+}
+
+.seat-side-meld-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
+.seat-side-meld-tiles {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  align-items: center;
+}
+
+.seat-side-melds .tile-faceup {
+  width: 24px;
+  height: auto;
+  aspect-ratio: 27 / 35;
+}
+
+.seat-side-visible-hand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.seat-side-left {
+  grid-template-columns: auto minmax(74px, 82px);
+}
+
+.seat-side-right {
+  grid-template-columns: minmax(74px, 82px) auto;
+}
+
+.seat-side-left .seat-side-rack {
+  order: 1;
+  justify-content: center;
+}
+
+.seat-side-right .seat-side-rack {
+  order: 2;
+  justify-content: center;
+}
+
+body.app-game-focus .table-side {
+  max-height: none;
+  overflow: visible;
+  padding: 12px 18px;
+}
+
+body.app-game-focus .table-shell-four {
+  --side-seat-panel-width: 112px;
+  --side-seat-panel-inline-padding: 8px;
+  --side-seat-head-offset: 30px;
+}
+
+body.app-game-focus .seat-side-panel {
+  width: var(--side-seat-panel-width);
+  padding-inline: var(--side-seat-panel-inline-padding);
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+body.app-game-focus .seat-side-panel .seat-side-head,
+body.app-game-focus .seat-side-panel .seat-side-rack {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+body.app-game-focus .seat-side-left .seat-side-head {
+  order: 1;
+  transform: none;
+  padding-left: var(--side-seat-head-offset);
+  padding-right: 8px;
+}
+
+body.app-game-focus .seat-side-left .seat-side-rack {
+  order: 2;
+  justify-content: flex-start;
+  overflow: hidden;
+  padding-left: 8px;
+  padding-right: 0;
+  z-index: 2;
+}
+
+body.app-game-focus .seat-side-right .seat-side-head {
+  order: 1;
+  transform: none;
+  padding-left: 8px;
+  padding-right: var(--side-seat-head-offset);
+}
+
+body.app-game-focus .seat-side-right .seat-side-rack {
+  order: 2;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding-left: 0;
+  padding-right: 8px;
+  z-index: 2;
+}
+
+body.app-game-focus .table-opponent {
+  gap: 8px;
+}
+
+body.app-game-focus .seat-top-panel {
+  gap: 10px;
+  padding-top: 14px;
+  padding-bottom: 12px;
+}
+
+body.app-game-focus .seat-top-panel-compact {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding: 12px 18px 14px;
+}
+
+body.app-game-focus .seat-top-panel-compact .seat-top-head {
+  gap: 0;
+}
+
+body.app-game-focus .seat-top-rack {
+  overflow: visible;
+}
+
+  body.app-game-focus .seat-top-panel-compact .seat-top-rack {
+    justify-content: center;
+    overflow: visible;
+    align-items: flex-start;
+    min-height: 52px;
+    padding-top: 4px;
+    padding-bottom: 0;
+  }
+
+body.app-game-focus .seat-top-panel-compact .standing-side-tile {
+  width: 17px;
+  height: 24px;
+  margin-top: 0;
+}
+
+body.app-game-focus .seat-top-rack .tile-faceup,
+body.app-game-focus .seat-top-rack .tile-back {
+  width: 50px;
+  height: 66px;
+}
+
+body.app-game-focus .table-self {
+  padding: 10px 8px 12px;
+}
+
+.side-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.side-head span {
+  color: rgba(244, 238, 225, 0.72);
+}
+
+.hidden-hand,
+.visible-hand,
+.hand-grid,
+.discard-strip,
+.meld-strip,
+.meld-tiles,
+.action-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hidden-hand-horizontal {
+  flex-wrap: nowrap;
+}
+
+.hidden-hand-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-height: 0;
+}
+
+.hidden-hand-standing-horizontal {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: 24px;
+}
+
+.hidden-hand {
+  min-height: 70px;
+}
+
+.opponent-rack {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.opponent-rack .hidden-hand,
+.opponent-rack .visible-hand,
+.opponent-rack .meld-strip,
+.opponent-rack .meld-tiles {
+  flex-wrap: nowrap;
+}
+
+body.app-game-focus .table-opponent .opponent-rack {
+  justify-content: flex-start;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 4px;
+}
+
+body.app-game-focus .table-opponent.seat-top-panel-compact .opponent-rack {
+  justify-content: center;
+}
+
+body.app-game-focus .table-opponent .opponent-rack .hidden-hand,
+body.app-game-focus .table-opponent .opponent-rack .visible-hand,
+body.app-game-focus .table-opponent .opponent-rack .meld-strip {
+  flex: 0 0 auto;
+}
+
+body.app-game-focus .table-opponent.seat-top-panel-compact .opponent-rack .hidden-hand-standing-horizontal,
+body.app-game-focus .table-opponent.seat-top-panel-compact .opponent-rack .visible-hand-inline {
+  margin-inline: auto;
+}
+
+.table-self .hand-grid {
+  min-height: 0;
+}
+
+.self-hand-row {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.self-play-area {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.self-action-dock {
+  position: static;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-content: flex-start;
+  max-width: none;
+  width: 100%;
+}
+
+.self-action-dock .action-button {
+  min-width: 88px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #4d89db, #204a93);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 5px 12px rgba(11, 33, 73, 0.3);
+  color: #f8fbff;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.self-action-dock .action-button.action-emphasis {
+  background: linear-gradient(180deg, #c869dd, #7e2ca3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 5px 12px rgba(73, 17, 77, 0.28);
+}
+
+.table-opponent .hidden-hand,
+.table-self .hand-grid {
+  justify-content: center;
+  align-items: center;
+}
+
+.seat-side-panel .tile-back,
+.seat-side-panel .tile-faceup {
+  width: 32px;
+  height: 44px;
+}
+
+.standing-side-tile {
+  position: relative;
+  width: clamp(16px, 1.8vw, 18px);
+  height: 22px;
+  flex: 0 0 auto;
+  margin-top: -10px;
+  border-radius: 4px;
+  border: 1px solid rgba(77, 96, 78, 0.42);
+  background: #f4f2ea;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 1px 2px rgba(7, 19, 15, 0.1);
+}
+
+.hidden-hand-vertical .standing-side-tile + .standing-side-tile {
+  margin-top: -11px;
+}
+
+.seat-side-left .standing-side-tile {
+  background: linear-gradient(90deg, #f4f2ea 0 72%, #47b63c 72% 100%);
+}
+
+.seat-side-right .standing-side-tile {
+  background: linear-gradient(90deg, #47b63c 0 28%, #f4f2ea 28% 100%);
+}
+
+.seat-top-panel-compact .standing-side-tile,
+.hidden-hand-standing-horizontal .standing-side-tile {
+  background: linear-gradient(180deg, #f4f2ea 0 10%, #47b63c 10% 100%);
+}
+
+.table-opponent .discard-strip,
+.table-self .discard-strip,
+.meld-strip {
+  justify-content: center;
+}
+
+.meld-strip-inline,
+.meld-strip-inline .meld-tiles,
+.hidden-hand-inline,
+.visible-hand-inline {
+  flex-wrap: nowrap;
+}
+
+.meld-group {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.meld-tag {
+  color: rgba(244, 238, 225, 0.78);
+  font-size: 0.82rem;
+}
+
+.meld-strip-compact {
+  gap: 6px;
+}
+
+.meld-group-compact {
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 12px;
+}
+
+.meld-group-compact .meld-tag {
+  font-size: 0.72rem;
+}
+
+.meld-group-compact .meld-tiles {
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.tile {
+  appearance: none;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  overflow: visible;
+  flex: 0 0 auto;
+}
+
+body.app-game-focus .tile {
+  width: auto;
+  height: auto;
+}
+
+.tile-faceup,
+.tile-back {
+  width: 92px;
+  height: 120px;
+  border-radius: 8px;
+}
+
+body.app-game-focus .tile-faceup,
+body.app-game-focus .tile-back {
+  width: 108px;
+  height: 140px;
+}
+
+body.app-game-focus .table-opponent .tile-faceup,
+body.app-game-focus .table-opponent .tile-back {
+  width: 54px;
+  height: 70px;
+}
+
+body.app-game-focus .table-self {
+  --self-tile-gap: clamp(0px, 0.18vw, 2px);
+  --self-tile-width: clamp(42px, calc((100vw - 168px) / 15), 82px);
+  --self-meld-tile-width: calc(var(--self-tile-width) * 0.56);
+  --self-hand-width: calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right));
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  align-content: stretch;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.app-game-focus .table-self .tile-faceup,
+body.app-game-focus .table-self .tile-back {
+  width: var(--self-tile-width);
+  height: auto;
+  aspect-ratio: 27 / 35;
+}
+
+body.app-game-focus .table-self .hand-grid {
+  gap: var(--self-tile-gap);
+  flex: 1 1 auto;
+  width: auto;
+  max-width: none;
+  flex-wrap: nowrap;
+  justify-content: center;
+  overflow: visible;
+  margin-inline: 0;
+  min-width: 0;
+}
+
+body.app-game-focus .table-self .self-hand-row {
+  flex-wrap: nowrap;
+  gap: clamp(4px, 0.8vw, 10px);
+  justify-content: center;
+  align-items: flex-end;
+  align-self: start;
+  margin-top: 0;
+  width: 100%;
+  min-width: 0;
+  padding-inline: 2px;
+}
+
+body.app-game-focus .table-self .hand-grid .tile-faceup,
+body.app-game-focus .table-self .hand-grid .tile-back,
+body.app-game-focus .table-self .drawn-tile-slot .tile-faceup,
+body.app-game-focus .table-self .drawn-tile-slot .tile-back {
+  aspect-ratio: 25 / 35;
+}
+
+body.app-game-focus .table-self {
+  --self-head-second-row-height: 52px;
+  --self-head-height: 96px;
+  --self-action-dock-height: 48px;
+  --self-action-dock-max-width: min(48%, 320px);
+}
+
+body.app-game-focus .table-self .side-head-self {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title status"
+    "melds melds";
+  grid-template-rows: auto var(--self-head-second-row-height);
+  align-items: start;
+  gap: 6px 10px;
+  height: var(--self-head-height);
+  min-height: var(--self-head-height);
+  overflow: visible;
+}
+
+body.app-game-focus .table-self .self-head-title {
+  grid-area: title;
+  min-width: 0;
+}
+
+body.app-game-focus .table-self .self-head-title h3 {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.app-game-focus .table-self .self-head-melds {
+  grid-area: melds;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  height: var(--self-head-second-row-height);
+  min-height: var(--self-head-second-row-height);
+  overflow: visible;
+}
+
+body.app-game-focus .table-self .self-head-melds .meld-strip {
+  justify-content: center;
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-block: 4px 6px;
+}
+
+body.app-game-focus .table-self .self-head-status {
+  grid-area: status;
+  text-align: right;
+  white-space: nowrap;
+  align-self: center;
+}
+
+body.app-game-focus .table-self .self-play-area {
+  display: block;
+  margin-top: auto;
+  min-height: 0;
+}
+
+body.app-game-focus .table-self .self-play-area.self-play-area-floating {
+  padding-top: var(--self-action-dock-height);
+}
+
+body.app-game-focus .table-self .self-action-dock-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--self-action-dock-height);
+  min-height: 0;
+  pointer-events: none;
+  z-index: 60;
+}
+
+body.app-game-focus .table-self .self-action-dock {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-height: var(--self-action-dock-height);
+  width: auto;
+  max-width: var(--self-action-dock-max-width);
+  align-items: flex-start;
+  pointer-events: auto;
+  z-index: 61;
+}
+
+body.app-game-focus .table-self .self-play-area.has-action-dock {
+  padding-top: var(--self-action-dock-height);
+}
+
+body.app-game-focus .table-self .self-hand-row {
+  align-self: center;
+  margin-top: auto;
+}
+
+body.app-game-focus .table-side .empty-strip {
+  display: none;
+}
+
+body.app-game-focus .table-side .meld-strip {
+  gap: 8px;
+  align-items: center;
+}
+
+body.app-game-focus .table-side .meld-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+body.app-game-focus .table-side .meld-tag {
+  display: none;
+}
+
+body.app-game-focus .table-side .meld-tiles {
+  gap: 3px;
+  flex-wrap: nowrap;
+}
+
+body.app-game-focus .table-opponent .meld-strip .tile-faceup {
+  width: 38px;
+  height: auto;
+  aspect-ratio: 27 / 35;
+}
+
+body.app-game-focus .table-self .meld-strip .tile-faceup {
+  width: var(--self-meld-tile-width);
+  height: auto;
+  aspect-ratio: 27 / 35;
+}
+
+.tile::before {
+  content: none;
+}
+
+.tile-face {
+  width: 100%;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.tile-faceup {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.tile-faceup .tile-face {
+  background: transparent;
+  border-radius: 0;
+}
+
+.tile-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.tile-art-svg {
+  overflow: visible;
+}
+
+.tile-caption {
+  display: none;
+}
+
+.tile-back {
+  background: linear-gradient(180deg, #f9fff4 0%, #e8f3d4 100%);
+  border: 0;
+  box-shadow: 0 4px 10px rgba(10, 20, 16, 0.18);
+  overflow: hidden;
+}
+
+.tile-back::before {
+  content: none;
+}

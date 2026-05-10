@@ -12,6 +12,7 @@ type LobbyControllerLike = ControllerLike & {
     difficulty: string;
     drawRevealSeconds: number;
     playerName: string;
+    playerCount: number;
     rulesetId: string;
     scoringEnabled: boolean;
   }) => Promise<unknown>;
@@ -27,6 +28,7 @@ type SubmitCreateRoomDeps = {
   getController: () => LobbyControllerLike;
   normalizeDrawRevealSecondsValue: (value: unknown) => number;
   normalizeScoringEnabled: (value: unknown) => boolean;
+  normalizeSoloPlayerCount: (value: unknown) => number;
   render: () => void;
   soloModeValue: AppGameMode;
   updateShareLink: (room: AppRoomLike | null) => void;
@@ -54,6 +56,7 @@ export async function submitCreateRoom(appState: AppState, deps: SubmitCreateRoo
         rulesetId: appState.selectedRulesetId || deps.defaultRulesetId,
         drawRevealSeconds: readCreateDrawRevealSeconds(appState, deps.normalizeDrawRevealSecondsValue),
         difficulty: appState.selectedSoloDifficulty,
+        playerCount: deps.normalizeSoloPlayerCount(appState.selectedSoloPlayerCount),
         scoringEnabled: readCreateScoringEnabled(appState, deps.normalizeScoringEnabled),
       });
       appState.message = "已開始單人對局。";
