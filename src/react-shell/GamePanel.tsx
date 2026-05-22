@@ -4,6 +4,7 @@ import type { LobbyBridgeActions, LobbyBridgeSnapshot } from "./useAppBridge";
 type GamePanelProps = {
   gamePanel: LobbyBridgeSnapshot["gamePanel"];
   seatCount: number;
+  isSoloMode: boolean;
   actions: LobbyBridgeActions;
   fullscreenActive: boolean;
   fullscreenSupported: boolean;
@@ -44,14 +45,27 @@ actions.runGameCommand(
 actions.leaveRoom()
 */
 
-export function GamePanel({ gamePanel, seatCount, actions, fullscreenActive, fullscreenSupported }: GamePanelProps) {
+export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscreenActive, fullscreenSupported }: GamePanelProps) {
   const tableStageClassName = gamePanel.tableStage.hasResult ? "table-stage has-result" : "table-stage";
   const fullscreenLabel = fullscreenActive ? "離開全螢幕" : "全螢幕顯示";
   const focusNote = fullscreenSupported ? gamePanel.focusNote : "這個瀏覽器目前不支援全螢幕。";
   const [topDiscardRow, bottomDiscardRow, leftDiscardRow, rightDiscardRow] = gamePanel.tableStage.discardRows;
   const isFourSeatTable = seatCount >= 4;
-  const tableShellClassName = `table-shell ${isFourSeatTable ? "table-shell-four" : "table-shell-two"}`;
-  const tableCenterClassName = `table-center ${isFourSeatTable ? "table-center-four" : "table-center-two"}`;
+  const isTwoSeatSolo = isSoloMode && !isFourSeatTable;
+  const tableShellClassName = [
+    "table-shell",
+    isFourSeatTable ? "table-shell-four" : "table-shell-two",
+    isTwoSeatSolo ? "table-shell-two-solo" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const tableCenterClassName = [
+    "table-center",
+    isFourSeatTable ? "table-center-four" : "table-center-two",
+    isTwoSeatSolo ? "table-center-two-solo" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const actionState = gamePanel.tableStage.actions;
   const topDiscardLabel = topDiscardRow?.label || gamePanel.tableStage.opponentSection.title || "對家";
   const bottomDiscardLabel = bottomDiscardRow?.label || gamePanel.tableStage.selfSection.title || "你";
@@ -77,10 +91,16 @@ export function GamePanel({ gamePanel, seatCount, actions, fullscreenActive, ful
                 </span>
               ))}
             </div>
-            <span className="focus-note">{focusNote}</span>
-            <button className="ghost-button focus-toggle" type="button" onClick={() => void actions.toggleFullscreen()}>
-              {fullscreenLabel}
-            </button>
+            <div className="game-head-button-row">
+              <button className="ghost-button focus-home" type="button" onClick={() => void actions.leaveRoom()}>
+                回主畫面
+              </button>
+              {fullscreenSupported ? (
+                <button className="ghost-button focus-toggle" type="button" onClick={() => void actions.toggleFullscreen()}>
+                  {fullscreenLabel}
+                </button>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </div>

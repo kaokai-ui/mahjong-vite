@@ -300,6 +300,7 @@ export function AppShell() {
           <GamePanel
             gamePanel={snapshot.gamePanel}
             seatCount={Number(snapshot.gamePanel.tableStage.seatCount || snapshot.lobby.soloPlayerCount || 2)}
+            isSoloMode={isSoloMode}
             actions={actions}
             fullscreenActive={pageMode.fullscreenActive}
             fullscreenSupported={pageMode.fullscreenSupported}

@@ -203,11 +203,20 @@ body.app-game-focus #game-panel.panel .panel-head {
   gap: 10px;
 }
 
+.game-head-button-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .focus-note {
   color: var(--muted);
   font-size: 0.88rem;
 }
 
+.focus-home,
 .focus-toggle {
   white-space: nowrap;
 }

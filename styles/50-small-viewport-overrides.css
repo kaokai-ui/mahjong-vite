@@ -58,6 +58,10 @@
     align-items: stretch;
   }
 
+  .game-head-button-row {
+    justify-content: flex-start;
+  }
+
   .tile {
     width: auto;
     height: auto;
@@ -127,6 +131,36 @@ body.app-game-focus .table-center-two .discard-line-horizontal {
   min-height: 40px;
 }
 
+body.app-game-focus .table-center-two.table-center-two-solo .table-center-board {
+  grid-template-rows: minmax(64px, auto) 10px minmax(84px, auto);
+  gap: 6px;
+  min-height: 164px;
+  align-content: start;
+}
+
+body.app-game-focus .table-center-two.table-center-two-solo .discard-lane-top,
+body.app-game-focus .table-center-two.table-center-two-solo .discard-lane-bottom {
+  min-height: 64px;
+  align-content: start;
+  padding-block: 2px;
+  padding-inline: 18px;
+}
+
+body.app-game-focus .table-center-two.table-center-two-solo .discard-lane-bottom {
+  min-height: 84px;
+  padding-top: 0;
+  padding-bottom: 4px;
+}
+
+body.app-game-focus .table-center-two.table-center-two-solo .discard-line-horizontal {
+  min-height: 48px;
+  align-items: flex-start;
+}
+
+body.app-game-focus .table-center-two.table-center-two-solo .discard-claimed {
+  transform: translateY(2px);
+}
+
 body.app-native-fullscreen.app-game-focus .table-center-two .table-center-board {
   grid-template-rows: minmax(48px, auto) 6px minmax(48px, auto);
   gap: 2px;
@@ -142,4 +176,83 @@ body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-bottom
 
 body.app-native-fullscreen.app-game-focus .table-center-two .discard-line-horizontal {
   min-height: 36px;
+}
+
+body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .table-center-board {
+  grid-template-rows: minmax(56px, auto) 8px minmax(80px, auto);
+  gap: 4px;
+  min-height: 144px;
+  align-content: start;
+}
+
+body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-top,
+body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-bottom {
+  min-height: 56px;
+  align-content: start;
+  padding-block: 0;
+  padding-inline: 16px;
+}
+
+body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-bottom {
+  min-height: 80px;
+  padding-bottom: 4px;
+}
+
+body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-line-horizontal {
+  min-height: 44px;
+  align-items: flex-start;
+}
+
+@media (max-height: 820px) and (orientation: landscape) {
+  body.app-native-fullscreen.app-game-focus .table-shell-two.table-shell-two-solo {
+    grid-template-rows: 148px minmax(0, 1fr) 236px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .table-center-board {
+    grid-template-rows: minmax(56px, auto) 6px minmax(76px, auto);
+    gap: 2px;
+    min-height: 140px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-top,
+  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-bottom {
+    min-height: 56px;
+    padding-inline: 14px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-top {
+    min-height: 60px;
+    padding-bottom: 3px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-bottom {
+    min-height: 76px;
+    padding-bottom: 3px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-line-horizontal {
+    min-height: 44px;
+    overflow-y: visible;
+    padding-bottom: 3px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-top .discard-line-horizontal {
+    min-height: 46px;
+    align-items: flex-start;
+    padding-bottom: 4px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body.app-game-focus .table-shell-two.table-shell-two-solo .table-self {
+    padding-bottom: 22px;
+  }
+
+  body.app-game-focus .table-shell-two.table-shell-two-solo .self-play-area {
+    padding-bottom: 10px;
+  }
+
+  body.app-game-focus .table-shell-two.table-shell-two-solo .self-hand-row {
+    transform: translateY(-40px);
+  }
 }

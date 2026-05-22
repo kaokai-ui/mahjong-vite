@@ -514,6 +514,11 @@ body.app-game-focus .table-center.table-center-two {
   overflow: visible;
 }
 
+body.app-game-focus .table-center.table-center-two.table-center-two-solo .table-center-board {
+  grid-template-rows: minmax(64px, auto) 8px minmax(72px, auto);
+  min-height: 156px;
+}
+
 body.app-game-focus .seat-side-panel {
   min-height: 0;
   align-items: stretch;

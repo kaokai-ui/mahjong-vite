@@ -84,6 +84,10 @@ body.app-game-focus .table-shell-two {
   gap: 18px;
 }
 
+body.app-game-focus .table-shell-two.table-shell-two-solo {
+  grid-template-rows: 156px minmax(0, 1fr) 248px;
+}
+
 body.app-game-focus .table-shell-four {
   height: 100%;
   min-height: 0;
