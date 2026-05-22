@@ -162,20 +162,28 @@ body.app-game-focus .table-center-two.table-center-two-solo .discard-claimed {
 }
 
 body.app-native-fullscreen.app-game-focus .table-center-two .table-center-board {
-  grid-template-rows: minmax(48px, auto) 6px minmax(48px, auto);
-  gap: 2px;
-  min-height: 110px;
+  grid-template-rows: minmax(56px, auto) 8px minmax(80px, auto);
+  gap: 4px;
+  min-height: 144px;
+  align-content: start;
 }
 
 body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-top,
 body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-bottom {
-  min-height: 48px;
+  min-height: 56px;
+  align-content: start;
   padding-block: 0;
-  padding-inline: 14px;
+  padding-inline: 16px;
+}
+
+body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-bottom {
+  min-height: 80px;
+  padding-bottom: 4px;
 }
 
 body.app-native-fullscreen.app-game-focus .table-center-two .discard-line-horizontal {
-  min-height: 36px;
+  min-height: 44px;
+  align-items: flex-start;
 }
 
 body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .table-center-board {
@@ -204,42 +212,42 @@ body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-sol
 }
 
 @media (max-height: 820px) and (orientation: landscape) {
-  body.app-native-fullscreen.app-game-focus .table-shell-two.table-shell-two-solo {
-    grid-template-rows: 148px minmax(0, 1fr) 236px;
-  }
-
-  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .table-center-board {
+  body.app-native-fullscreen.app-game-focus .table-center-two .table-center-board {
     grid-template-rows: minmax(56px, auto) 6px minmax(76px, auto);
     gap: 2px;
     min-height: 140px;
   }
 
-  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-top,
-  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-bottom {
+  body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-top,
+  body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-bottom {
     min-height: 56px;
     padding-inline: 14px;
   }
 
-  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-top {
+  body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-top {
     min-height: 60px;
     padding-bottom: 3px;
   }
 
-  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-bottom {
+  body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-bottom {
     min-height: 76px;
     padding-bottom: 3px;
   }
 
-  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-line-horizontal {
+  body.app-native-fullscreen.app-game-focus .table-center-two .discard-line-horizontal {
     min-height: 44px;
     overflow-y: visible;
     padding-bottom: 3px;
   }
 
-  body.app-native-fullscreen.app-game-focus .table-center-two.table-center-two-solo .discard-lane-top .discard-line-horizontal {
+  body.app-native-fullscreen.app-game-focus .table-center-two .discard-lane-top .discard-line-horizontal {
     min-height: 46px;
     align-items: flex-start;
     padding-bottom: 4px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-two.table-shell-two-solo {
+    grid-template-rows: 148px minmax(0, 1fr) 236px;
   }
 }
 
