@@ -37,6 +37,9 @@ jobs:
         env:
           VITE_BASE_PATH: /mahjong-vite/
 
+      - name: Copy viewport probe into Pages artifact
+        run: cp ipad-viewport-probe.html dist/ipad-viewport-probe.html
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
