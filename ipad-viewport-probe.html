@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no,date=no,email=no,address=no" />
+    <title>iPad Viewport Probe</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+        --bg: #f4efe4;
+        --panel: rgba(255, 255, 255, 0.9);
+        --ink: #16352e;
+        --muted: #51615b;
+        --line: rgba(22, 53, 46, 0.14);
+        --accent: #1f7a5b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        background:
+          radial-gradient(circle at top left, rgba(201, 164, 76, 0.18), transparent 22%),
+          radial-gradient(circle at bottom right, rgba(31, 122, 91, 0.16), transparent 26%),
+          linear-gradient(160deg, #f7f2e8 0%, #efe6d4 52%, #efe9db 100%);
+        color: var(--ink);
+      }
+
+      .app {
+        width: min(980px, calc(100% - 24px));
+        margin: 0 auto;
+        padding:
+          calc(18px + env(safe-area-inset-top))
+          calc(12px + env(safe-area-inset-right))
+          calc(18px + env(safe-area-inset-bottom))
+          calc(12px + env(safe-area-inset-left));
+        display: grid;
+        gap: 14px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 16px;
+        box-shadow: 0 10px 24px rgba(10, 26, 22, 0.08);
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1,
+      h2 {
+        font-family: "Noto Serif TC", "PMingLiU", serif;
+      }
+
+      .hero {
+        display: grid;
+        gap: 10px;
+      }
+
+      .hero p,
+      .hint,
+      .status-note {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 14px;
+        padding: 12px 16px;
+        font: inherit;
+        cursor: pointer;
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent), #14543f);
+      }
+
+      button.secondary {
+        color: var(--ink);
+        background: rgba(22, 53, 46, 0.08);
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+      }
+
+      .status-chip {
+        border-radius: 16px;
+        padding: 12px 14px;
+        background: rgba(31, 122, 91, 0.08);
+        border: 1px solid rgba(31, 122, 91, 0.14);
+      }
+
+      .status-chip strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .metric-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.96rem;
+      }
+
+      .metric-table th,
+      .metric-table td {
+        border-bottom: 1px solid var(--line);
+        padding: 9px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .metric-table th {
+        width: 220px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      code,
+      pre,
+      textarea {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      pre,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--ink);
+        padding: 12px;
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+
+      pre {
+        overflow: auto;
+        min-height: 180px;
+      }
+
+      textarea {
+        min-height: 180px;
+        resize: vertical;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.82rem;
+        background: rgba(22, 53, 46, 0.08);
+        color: var(--ink);
+      }
+
+      .event-log {
+        display: grid;
+        gap: 6px;
+        max-height: 220px;
+        overflow: auto;
+      }
+
+      .event-log li {
+        list-style: none;
+        margin: 0;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: rgba(22, 53, 46, 0.06);
+      }
+
+      #safe-area-probe {
+        position: fixed;
+        inset: 0;
+        visibility: hidden;
+        pointer-events: none;
+        padding:
+          env(safe-area-inset-top)
+          env(safe-area-inset-right)
+          env(safe-area-inset-bottom)
+          env(safe-area-inset-left);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="safe-area-probe" aria-hidden="true"></div>
+    <main class="app">
+      <section class="card hero">
+        <h1>iPad Viewport Probe</h1>
+        <p>用這頁量實機 iPad 在 Safari / 加到主畫面 / 全螢幕下的實際可用高度、safe area、visualViewport 和 fullscreen 狀態。</p>
+        <div class="actions">
+          <button id="capture-button" type="button">重新量測</button>
+          <button id="fullscreen-button" type="button">請求全螢幕</button>
+          <button id="exit-fullscreen-button" class="secondary" type="button">離開全螢幕</button>
+          <button id="copy-button" class="secondary" type="button">複製 JSON</button>
+        </div>
+        <p class="hint">建議量兩次：1. 正常 Safari 分頁 2. 進入你平常會玩的全螢幕狀態，再按一次重新量測並把 JSON 貼給我。</p>
+      </section>
+
+      <section class="card">
+        <div class="status-grid">
+          <div class="status-chip">
+            <strong>display-mode</strong>
+            <span id="display-mode-chip">-</span>
+          </div>
+          <div class="status-chip">
+            <strong>fullscreen</strong>
+            <span id="fullscreen-chip">-</span>
+          </div>
+          <div class="status-chip">
+            <strong>standalone</strong>
+            <span id="standalone-chip">-</span>
+          </div>
+          <div class="status-chip">
+            <strong>目前網址</strong>
+            <span id="location-chip">-</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>核心數值</h2>
+        <table class="metric-table">
+          <tbody id="metric-table-body"></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>JSON</h2>
+        <p class="status-note">把下面整段複製給我，我就能把模擬 viewport 改成更接近你實機的狀態。</p>
+        <textarea id="json-output" readonly></textarea>
+      </section>
+
+      <section class="card">
+        <h2>事件紀錄</h2>
+        <p class="status-note">這裡會記錄 resize、orientation、fullscreenchange、visualViewport resize 等事件，幫助判斷 iPad 進全螢幕後實際發生了什麼。</p>
+        <ul id="event-log" class="event-log"></ul>
+      </section>
+    </main>
+
+    <script>
+      const metricTableBody = document.getElementById("metric-table-body");
+      const jsonOutput = document.getElementById("json-output");
+      const eventLog = document.getElementById("event-log");
+      const displayModeChip = document.getElementById("display-mode-chip");
+      const fullscreenChip = document.getElementById("fullscreen-chip");
+      const standaloneChip = document.getElementById("standalone-chip");
+      const locationChip = document.getElementById("location-chip");
+      const safeAreaProbe = document.getElementById("safe-area-probe");
+
+      const eventEntries = [];
+
+      function pushEvent(label) {
+        const timestamp = new Date().toISOString();
+        eventEntries.unshift({ timestamp, label });
+        if (eventEntries.length > 18) {
+          eventEntries.length = 18;
+        }
+
+        eventLog.innerHTML = "";
+        for (const entry of eventEntries) {
+          const item = document.createElement("li");
+          item.textContent = `${entry.timestamp}  ${entry.label}`;
+          eventLog.appendChild(item);
+        }
+      }
+
+      function readSafeAreaInsets() {
+        const style = window.getComputedStyle(safeAreaProbe);
+        return {
+          top: Math.round(parseFloat(style.paddingTop || "0")),
+          right: Math.round(parseFloat(style.paddingRight || "0")),
+          bottom: Math.round(parseFloat(style.paddingBottom || "0")),
+          left: Math.round(parseFloat(style.paddingLeft || "0")),
+        };
+      }
+
+      function readDisplayModes() {
+        const candidates = ["fullscreen", "standalone", "minimal-ui", "browser"];
+        return candidates.filter((mode) => window.matchMedia(`(display-mode: ${mode})`).matches);
+      }
+
+      function readFullscreenState() {
+        const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement || null;
+        return {
+          active: Boolean(fullscreenElement),
+          elementTag: fullscreenElement ? fullscreenElement.tagName : "",
+          enabled: Boolean(document.fullscreenEnabled || document.webkitFullscreenEnabled),
+        };
+      }
+
+      function getMetrics() {
+        const viewport = window.visualViewport;
+        const root = document.documentElement;
+        const screenOrientation = screen.orientation || {};
+        const fullscreen = readFullscreenState();
+        const displayModes = readDisplayModes();
+        const safeAreaInsets = readSafeAreaInsets();
+        const bodyStyle = window.getComputedStyle(document.body);
+        const rootStyle = window.getComputedStyle(root);
+
+        return {
+          capturedAt: new Date().toISOString(),
+          locationHref: window.location.href,
+          referrer: document.referrer || "",
+          userAgent: navigator.userAgent,
+          platform: navigator.platform || "",
+          maxTouchPoints: Number(navigator.maxTouchPoints || 0),
+          devicePixelRatio: Number(window.devicePixelRatio || 0),
+          standaloneNavigator: Boolean(navigator.standalone),
+          displayModes,
+          fullscreen,
+          window: {
+            innerWidth: window.innerWidth,
+            innerHeight: window.innerHeight,
+            outerWidth: window.outerWidth,
+            outerHeight: window.outerHeight,
+            scrollX: Math.round(window.scrollX || 0),
+            scrollY: Math.round(window.scrollY || 0),
+          },
+          documentElement: {
+            clientWidth: root.clientWidth,
+            clientHeight: root.clientHeight,
+            scrollWidth: root.scrollWidth,
+            scrollHeight: root.scrollHeight,
+          },
+          visualViewport: viewport
+            ? {
+                width: Math.round(viewport.width),
+                height: Math.round(viewport.height),
+                offsetLeft: Math.round(viewport.offsetLeft),
+                offsetTop: Math.round(viewport.offsetTop),
+                pageLeft: Math.round(viewport.pageLeft),
+                pageTop: Math.round(viewport.pageTop),
+                scale: Number(viewport.scale || 0),
+              }
+            : null,
+          screen: {
+            width: Number(screen.width || 0),
+            height: Number(screen.height || 0),
+            availWidth: Number(screen.availWidth || 0),
+            availHeight: Number(screen.availHeight || 0),
+          },
+          orientation: {
+            type: screenOrientation.type || "",
+            angle: Number(screenOrientation.angle || window.orientation || 0),
+          },
+          safeAreaInsets,
+          appLikeMetrics: {
+            stableViewportWidth: Math.round((viewport && viewport.width) || window.innerWidth || root.clientWidth || 0),
+            stableViewportHeight: Math.round((viewport && viewport.height) || window.innerHeight || root.clientHeight || 0),
+            appGameFocusHeightCssVar: rootStyle.getPropertyValue("--app-game-focus-height").trim(),
+          },
+          computedStyles: {
+            bodyPaddingTop: bodyStyle.paddingTop,
+            bodyPaddingRight: bodyStyle.paddingRight,
+            bodyPaddingBottom: bodyStyle.paddingBottom,
+            bodyPaddingLeft: bodyStyle.paddingLeft,
+          },
+        };
+      }
+
+      function renderMetrics(metrics) {
+        displayModeChip.textContent = metrics.displayModes.join(", ") || "none";
+        fullscreenChip.textContent = metrics.fullscreen.active
+          ? `active (${metrics.fullscreen.elementTag || "unknown"})`
+          : "inactive";
+        standaloneChip.textContent = String(metrics.standaloneNavigator);
+        locationChip.textContent = metrics.locationHref;
+
+        const rows = [
+          ["capturedAt", metrics.capturedAt],
+          ["locationHref", metrics.locationHref],
+          ["userAgent", metrics.userAgent],
+          ["platform", metrics.platform],
+          ["devicePixelRatio", metrics.devicePixelRatio],
+          ["displayModes", metrics.displayModes.join(", ") || "none"],
+          ["fullscreen.active", metrics.fullscreen.active],
+          ["fullscreen.enabled", metrics.fullscreen.enabled],
+          ["window.inner", `${metrics.window.innerWidth} x ${metrics.window.innerHeight}`],
+          ["window.outer", `${metrics.window.outerWidth} x ${metrics.window.outerHeight}`],
+          ["documentElement.client", `${metrics.documentElement.clientWidth} x ${metrics.documentElement.clientHeight}`],
+          [
+            "visualViewport",
+            metrics.visualViewport
+              ? `${metrics.visualViewport.width} x ${metrics.visualViewport.height}, scale ${metrics.visualViewport.scale}, offset ${metrics.visualViewport.offsetLeft},${metrics.visualViewport.offsetTop}`
+              : "null",
+          ],
+          ["screen", `${metrics.screen.width} x ${metrics.screen.height}`],
+          ["screen.avail", `${metrics.screen.availWidth} x ${metrics.screen.availHeight}`],
+          ["orientation", `${metrics.orientation.type || "unknown"} @ ${metrics.orientation.angle}`],
+          [
+            "safeAreaInsets",
+            `top ${metrics.safeAreaInsets.top}, right ${metrics.safeAreaInsets.right}, bottom ${metrics.safeAreaInsets.bottom}, left ${metrics.safeAreaInsets.left}`,
+          ],
+          [
+            "appLikeMetrics",
+            `${metrics.appLikeMetrics.stableViewportWidth} x ${metrics.appLikeMetrics.stableViewportHeight}, css ${metrics.appLikeMetrics.appGameFocusHeightCssVar || "(empty)"}`,
+          ],
+        ];
+
+        metricTableBody.innerHTML = "";
+        for (const [label, value] of rows) {
+          const row = document.createElement("tr");
+          const th = document.createElement("th");
+          const td = document.createElement("td");
+          th.textContent = label;
+          td.textContent = String(value);
+          row.appendChild(th);
+          row.appendChild(td);
+          metricTableBody.appendChild(row);
+        }
+
+        jsonOutput.value = JSON.stringify(metrics, null, 2);
+      }
+
+      async function requestFullscreen() {
+        const root = document.documentElement;
+        const request =
+          (typeof root.requestFullscreen === "function" && root.requestFullscreen.bind(root)) ||
+          (typeof root.webkitRequestFullscreen === "function" && root.webkitRequestFullscreen.bind(root));
+
+        if (!request) {
+          pushEvent("requestFullscreen unavailable");
+          return;
+        }
+
+        try {
+          await request();
+          pushEvent("requestFullscreen resolved");
+          refreshMetrics();
+        } catch (error) {
+          pushEvent(`requestFullscreen rejected: ${error && error.message ? error.message : error}`);
+        }
+      }
+
+      async function exitFullscreen() {
+        const exit =
+          (typeof document.exitFullscreen === "function" && document.exitFullscreen.bind(document)) ||
+          (typeof document.webkitExitFullscreen === "function" && document.webkitExitFullscreen.bind(document));
+
+        if (!exit) {
+          pushEvent("exitFullscreen unavailable");
+          return;
+        }
+
+        try {
+          await exit();
+          pushEvent("exitFullscreen resolved");
+          refreshMetrics();
+        } catch (error) {
+          pushEvent(`exitFullscreen rejected: ${error && error.message ? error.message : error}`);
+        }
+      }
+
+      async function copyJson() {
+        const text = jsonOutput.value;
+        try {
+          if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            await navigator.clipboard.writeText(text);
+          } else {
+            jsonOutput.focus();
+            jsonOutput.select();
+            document.execCommand("copy");
+          }
+          pushEvent("copied JSON");
+        } catch (error) {
+          pushEvent(`copy failed: ${error && error.message ? error.message : error}`);
+        }
+      }
+
+      function refreshMetrics() {
+        renderMetrics(getMetrics());
+      }
+
+      document.getElementById("capture-button").addEventListener("click", () => {
+        pushEvent("manual capture");
+        refreshMetrics();
+      });
+
+      document.getElementById("fullscreen-button").addEventListener("click", () => {
+        pushEvent("request fullscreen button");
+        void requestFullscreen();
+      });
+
+      document.getElementById("exit-fullscreen-button").addEventListener("click", () => {
+        pushEvent("exit fullscreen button");
+        void exitFullscreen();
+      });
+
+      document.getElementById("copy-button").addEventListener("click", () => {
+        void copyJson();
+      });
+
+      window.addEventListener("resize", () => {
+        pushEvent("window resize");
+        refreshMetrics();
+      });
+
+      window.addEventListener("orientationchange", () => {
+        pushEvent("orientationchange");
+        refreshMetrics();
+      });
+
+      document.addEventListener("fullscreenchange", () => {
+        pushEvent("fullscreenchange");
+        refreshMetrics();
+      });
+
+      document.addEventListener("webkitfullscreenchange", () => {
+        pushEvent("webkitfullscreenchange");
+        refreshMetrics();
+      });
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", () => {
+          pushEvent("visualViewport resize");
+          refreshMetrics();
+        });
+
+        window.visualViewport.addEventListener("scroll", () => {
+          pushEvent("visualViewport scroll");
+          refreshMetrics();
+        });
+      }
+
+      pushEvent("probe loaded");
+      refreshMetrics();
+    </script>
+  </body>
+</html>
