@@ -1,3 +1,5 @@
+import { GAME_MODE_ONLINE_4P } from "./game-mode.js";
+
 const SOLO_GAME_MODE = "solo-bot";
 
 export type BridgePlayerLike = {
@@ -80,6 +82,10 @@ export function getPlayerById(room: BridgeRoomLike, playerId: string | null | un
 
 export function isSoloRoom(room: BridgeRoomLike): boolean {
   return Boolean(room && ((room.meta && room.meta.gameMode === SOLO_GAME_MODE) || room.gameMode === SOLO_GAME_MODE));
+}
+
+export function isOnlineFourPlayerRoom(room: BridgeRoomLike): boolean {
+  return Boolean(room && ((room.meta && room.meta.gameMode === GAME_MODE_ONLINE_4P) || room.gameMode === GAME_MODE_ONLINE_4P));
 }
 
 export function formatSeat(seat: number | null | undefined): string {
@@ -241,6 +247,11 @@ export function describeGamePhase(game: BridgeGameLike, playerSeat: number | nul
   }
 
   if (game.phase === "discard") {
+    if (game.turnSeat !== playerSeat && isOnlineFourPlayerRoom(room)) {
+      const turnPlayerName = getPlayerDisplayName(getPlayers(room), game.turnSeat);
+      return `等待${turnPlayerName}出牌`;
+    }
+
     return game.turnSeat === playerSeat
       ? "輪到你出牌，請點一張手牌。"
       : isSoloRoom(room)

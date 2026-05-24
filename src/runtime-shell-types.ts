@@ -43,7 +43,9 @@ export type AppGameLike = NonNullable<BridgeGameLike> & {
   wall?: unknown[];
   players?: AppRoundStateLike[];
   latestDiscard?: {
+    id?: number;
     tileId?: string;
+    seat?: number;
     claimed?: boolean;
   };
   result?: AppGameResultLike;

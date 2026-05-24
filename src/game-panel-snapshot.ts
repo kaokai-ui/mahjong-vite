@@ -9,6 +9,7 @@ import {
   getSelfStatusText,
   getTileDisplayName,
   getTileThemeClass,
+  isOnlineFourPlayerRoom,
 } from "./bridge-view-helpers";
 import type {
   BridgeDiscardSnapshot,
@@ -195,6 +196,7 @@ export function buildGameTableStageSnapshot(context: GamePanelContextLike | null
       player: leftPlayer,
       game,
       room: context.room,
+      players,
       roundState: leftRoundState,
       emptySubtitle: "等待牌列",
     }),
@@ -202,6 +204,7 @@ export function buildGameTableStageSnapshot(context: GamePanelContextLike | null
       player: rightPlayer,
       game,
       room: context.room,
+      players,
       roundState: rightRoundState,
       emptySubtitle: "等待牌列",
     }),
@@ -429,6 +432,38 @@ function createMeldSnapshots(melds: MeldLike[] | null | undefined = []): BridgeM
   return meldItems.map((meld) => createMeldSnapshot(meld)).filter(isDefined);
 }
 
+function getOnlineFourPlayerActivitySubtitle(
+  room: GamePanelContextLike["room"] | null,
+  game: GameLike | null,
+  players: PlayerLike[] | null | undefined,
+): string {
+  if (!isOnlineFourPlayerRoom(room) || !game || game.status !== "playing") {
+    return "";
+  }
+
+  const activityLines: string[] = [];
+  const latestDiscardSeat = typeof game.latestDiscard?.seat === "number" ? game.latestDiscard.seat : null;
+  const latestDiscardTileId = game.latestDiscard?.tileId || "";
+  if (latestDiscardSeat !== null && latestDiscardTileId) {
+    const discardPlayerName = getPlayerDisplayName(players, latestDiscardSeat);
+    activityLines.push(`${discardPlayerName}打${getTileDisplayName(getTileType(latestDiscardTileId))}`);
+  }
+
+  if (typeof game.turnSeat === "number") {
+    const turnPlayerName = getPlayerDisplayName(players, game.turnSeat);
+    if (game.phase === "discard") {
+      activityLines.push(`輪到${turnPlayerName}打牌`);
+    } else if (game.phase === "draw") {
+      activityLines.push(`輪到${turnPlayerName}摸牌`);
+    } else if ((game.phase === "response" || game.phase === "robKong") && typeof game.pendingClaim?.toSeat === "number") {
+      const responsePlayerName = getPlayerDisplayName(players, game.pendingClaim.toSeat);
+      activityLines.push(`等待${responsePlayerName}回應`);
+    }
+  }
+
+  return activityLines.filter(Boolean).join("\n");
+}
+
 function getOpponentSectionSnapshot(context: GamePanelContextLike): BridgeOpponentSectionSnapshot {
   const opponent = context.opponent || null;
   const game = context.game || null;
@@ -453,12 +488,14 @@ function getSeatSectionSnapshot({
   player,
   game,
   room,
+  players,
   roundState,
   emptySubtitle,
 }: {
   player: PlayerLike | null;
   game: GameLike | null;
   room: GamePanelContextLike["room"] | null;
+  players?: PlayerLike[] | null;
   roundState: RoundStateLike;
   emptySubtitle: string;
 }): BridgeOpponentSectionSnapshot {
@@ -480,9 +517,11 @@ function getSelfSectionSnapshot(context: GamePanelContextLike): BridgeSelfSectio
   const currentPlayer = context.currentPlayer;
   const game = context.game || null;
   const seat = context.seat;
+  const players = context.players;
   const selfRoundState = context.selfRoundState || EMPTY_ROUND_STATE;
   const clientState = context.clientState || {};
   const drawReveal = context.drawReveal || null;
+  const onlineFourPlayerActivitySubtitle = getOnlineFourPlayerActivitySubtitle(room, game, players);
 
   if (!currentPlayer) {
     return getEmptyGameTableStageSnapshot().selfSection;
@@ -525,7 +564,7 @@ function getSelfSectionSnapshot(context: GamePanelContextLike): BridgeSelfSectio
   return {
     title: currentPlayer.name || "你",
     scoreBadge: getSeatScoreSummary(game, currentPlayer.seat),
-    statusText: getSelfStatusText(clientState, game, seat, room),
+    statusText: onlineFourPlayerActivitySubtitle || getSelfStatusText(clientState, game, seat, room),
     handTiles,
     drawnTile: drawnTileButton
       ? {

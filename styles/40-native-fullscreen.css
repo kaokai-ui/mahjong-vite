@@ -14,7 +14,7 @@
     --table-center-board-rows: 36px minmax(112px, 1fr) 78px;
     --table-center-board-gap: 2px;
     grid-template-columns: minmax(54px, 0.34fr) minmax(0, 3.02fr) minmax(54px, 0.34fr);
-    grid-template-rows: 88px minmax(0, 1fr) 210px;
+    grid-template-rows: 96px minmax(0, 1fr) 210px;
     gap: 4px;
   }
 
@@ -33,22 +33,37 @@
 
   body.app-native-fullscreen.app-game-focus .seat-top-panel-compact {
     width: min(100%, 920px);
-    padding: 4px 12px 10px;
+    padding: 4px 12px 12px;
   }
 
   body.app-native-fullscreen.app-game-focus .seat-top-rack {
-    min-height: 46px;
-    gap: 2px;
+    min-height: 54px;
+    gap: 3px;
+    overflow: visible;
+    padding-bottom: 2px;
   }
 
   body.app-native-fullscreen.app-game-focus .seat-top-rack .tile-faceup,
   body.app-native-fullscreen.app-game-focus .seat-top-rack .tile-back {
-    width: 36px;
-    height: 50px;
+    width: 38px;
+    height: auto;
+    aspect-ratio: 27 / 35;
   }
 
-  body.app-native-fullscreen.app-game-focus .seat-side-melds .tile-faceup {
-    width: 18px;
+  body.app-native-fullscreen.app-game-focus .seat-side-rack {
+    gap: 4px;
+    overflow: visible;
+  }
+
+  body.app-native-fullscreen.app-game-focus .seat-side-melds {
+    gap: 4px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .seat-side-melds .tile-faceup,
+  body.app-native-fullscreen.app-game-focus .seat-side-melds .tile-back {
+    width: 38px;
+    height: auto;
+    aspect-ratio: 27 / 35;
   }
 
   body.app-native-fullscreen.app-game-focus .table-self {
@@ -80,9 +95,17 @@
     gap: 1px;
   }
 
-  body.app-game-focus .table-shell-four .seat-side-panel .tile-faceup,
-  body.app-game-focus .table-shell-four .seat-side-panel .tile-back {
+  body.app-game-focus .table-shell-four .seat-side-visible-hand .tile-faceup,
+  body.app-game-focus .table-shell-four .seat-side-visible-hand .tile-back {
     width: 18px;
+    height: auto;
+  }
+
+  body.app-game-focus .table-shell-four .seat-side-melds .tile-faceup,
+  body.app-game-focus .table-shell-four .seat-side-melds .tile-back,
+  body.app-game-focus .table-shell-four .seat-side-panel .hidden-hand-vertical .tile-faceup,
+  body.app-game-focus .table-shell-four .seat-side-panel .tile-back {
+    width: 28px;
     height: auto;
   }
 

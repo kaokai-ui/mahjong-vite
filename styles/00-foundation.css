@@ -117,6 +117,18 @@ body.app-game-focus #game-panel.panel .panel-head {
   min-height: 0;
 }
 
+body.app-game-focus #game-panel.panel .panel-head > div:first-child {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
+
+body.app-native-fullscreen.app-game-focus #game-panel.panel .panel-head > div:first-child {
+  flex-wrap: nowrap;
+}
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(320px, 420px);
@@ -209,6 +221,18 @@ body.app-game-focus #game-panel.panel .panel-head {
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.game-topbar-notice {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(420px, calc(100vw - 32px));
+}
+
+.game-topbar-notice .banner {
+  padding: 10px 14px;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(4, 18, 14, 0.16);
 }
 
 .focus-note {

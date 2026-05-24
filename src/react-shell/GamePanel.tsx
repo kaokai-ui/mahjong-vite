@@ -8,6 +8,7 @@ type GamePanelProps = {
   actions: LobbyBridgeActions;
   fullscreenActive: boolean;
   fullscreenSupported: boolean;
+  noticeBanner: LobbyBridgeSnapshot["lobby"]["noticeBanner"];
 };
 
 /*
@@ -45,7 +46,7 @@ actions.runGameCommand(
 actions.leaveRoom()
 */
 
-export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscreenActive, fullscreenSupported }: GamePanelProps) {
+export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscreenActive, fullscreenSupported, noticeBanner }: GamePanelProps) {
   const tableStageClassName = gamePanel.tableStage.hasResult ? "table-stage has-result" : "table-stage";
   const fullscreenLabel = fullscreenActive ? "離開全螢幕" : "全螢幕顯示";
   const focusNote = fullscreenSupported ? gamePanel.focusNote : "這個瀏覽器目前不支援全螢幕。";
@@ -80,7 +81,11 @@ export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscree
       <div className="panel-head">
         <div>
           <h2>{gamePanel.title}</h2>
-          <p>{gamePanel.description}</p>
+          {noticeBanner ? (
+            <div className="game-topbar-notice">
+              <div className={`banner banner-${noticeBanner.tone}`}>{noticeBanner.message}</div>
+            </div>
+          ) : null}
         </div>
         {gamePanel.showFocusControls ? (
           <div className="game-head-actions">

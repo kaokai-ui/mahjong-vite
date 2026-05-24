@@ -8,7 +8,7 @@ import type {
 
 function splitSeatSubtitle(subtitle: string) {
   const parts = String(subtitle || "")
-    .split(/[繚?蒸/]/)
+    .split(/\n+/)
     .map((part) => part.trim())
     .filter(Boolean);
 
@@ -27,6 +27,7 @@ export function TopSeatSection({
 }) {
   const subtitleParts = splitSeatSubtitle(section.subtitle);
   const topSeatMeta = subtitleParts.primary || section.subtitle;
+  const topSeatMetaDetail = subtitleParts.secondary || "";
 
   return (
     <section className={`table-side table-opponent seat-top-panel ${compactStandingRack ? "seat-top-panel-compact" : ""}`.trim()}>
@@ -36,6 +37,7 @@ export function TopSeatSection({
           <h3 className="seat-top-name">{section.title}</h3>
           {topSeatMeta ? <span className="seat-top-inline-meta">{topSeatMeta}</span> : null}
         </div>
+        {topSeatMetaDetail ? <span className="seat-top-meta-line">{topSeatMetaDetail}</span> : null}
       </div>
       <div className={`opponent-rack seat-top-rack ${compactStandingRack ? "seat-top-rack-standing" : ""}`.trim()}>
         <MeldStrip melds={section.melds} />
@@ -76,6 +78,7 @@ export function EdgeSeatSection({
           <strong className="seat-side-name">{section.title}</strong>
         </div>
         {subtitleParts.primary ? <span className="seat-side-role">{subtitleParts.primary}</span> : null}
+        {subtitleParts.secondary ? <span className="seat-side-role seat-side-detail">{subtitleParts.secondary}</span> : null}
       </div>
       <div className="seat-side-rack">
         {direction === "right" && section.melds.length ? (
@@ -139,11 +142,8 @@ export function SelfSection({
             {section.title}
             {section.scoreBadge ? <span className="score-badge">{section.scoreBadge}</span> : null}
           </h3>
+          <span className="self-head-status">{section.statusText}</span>
         </div>
-        <div className="self-head-melds">
-          <MeldStrip melds={section.melds} />
-        </div>
-        <span className="self-head-status">{section.statusText}</span>
       </div>
       <div
         className={[
@@ -151,11 +151,16 @@ export function SelfSection({
           showFloatingActions ? "self-play-area-floating" : "",
           hasFloatingActions ? "has-action-dock" : "",
         ]
-          .filter(Boolean)
-          .join(" ")}
+            .filter(Boolean)
+            .join(" ")}
       >
         {showFloatingActions ? (
           <div className="self-action-dock-slot">{hasFloatingActions ? <FloatingActionDock actionState={actionState} actions={actions} /> : null}</div>
+        ) : null}
+        {section.melds.length ? (
+          <div className="self-play-melds">
+            <MeldStrip melds={section.melds} />
+          </div>
         ) : null}
         <div className={`self-hand-row ${section.drawnTile ? "has-drawn-tile" : ""}`.trim()}>
           <div className="hand-grid">

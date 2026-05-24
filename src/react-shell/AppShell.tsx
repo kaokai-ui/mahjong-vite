@@ -15,13 +15,15 @@ function MessageBanner({
   id,
   as: Tag = "div",
   message,
+  className = "",
 }: {
   id: string;
   as?: "div" | "section";
   message: { tone: "error" | "info"; message: string } | null;
+  className?: string;
 }) {
   return (
-    <Tag id={id}>
+    <Tag id={id} className={className}>
       {message ? <div className={`banner banner-${message.tone}`}>{message.message}</div> : null}
     </Tag>
   );
@@ -46,6 +48,7 @@ export function AppShell() {
   const pageMode = usePageModeEffects(snapshot);
   const lobby = snapshot.lobby;
   const ready = snapshot.ready;
+  const inGameTable = Boolean(snapshot.gamePanel.tableStage.visible);
   const isSoloMode = ready ? lobby.mode === "solo-bot" : false;
   const isFourPlayerSolo = lobby.soloPlayerCount === "4";
   const requestGameFullscreen = () => {
@@ -129,7 +132,7 @@ export function AppShell() {
         </header>
 
         <main className="layout">
-          <MessageBanner id="notice-banner" as="section" message={lobby.noticeBanner} />
+          {!inGameTable ? <MessageBanner id="notice-banner" as="section" message={lobby.noticeBanner} /> : null}
 
           <section className="panel lobby-panel">
             <div className="panel-head">
@@ -304,6 +307,7 @@ export function AppShell() {
             actions={actions}
             fullscreenActive={pageMode.fullscreenActive}
             fullscreenSupported={pageMode.fullscreenSupported}
+            noticeBanner={inGameTable ? lobby.noticeBanner : null}
           />
           {/* Migration contract reference: seatCount={Number(snapshot.lobby.soloPlayerCount || 2)} */}
         </main>

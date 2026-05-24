@@ -302,6 +302,11 @@ body.app-game-focus .table-center {
   color: rgba(244, 238, 225, 0.78);
 }
 
+.seat-side-head .seat-side-detail {
+  align-self: start;
+  color: rgba(244, 238, 225, 0.72);
+}
+
 .seat-side-position-label {
   display: none;
 }
@@ -354,7 +359,8 @@ body.app-game-focus .table-center {
   align-items: center;
 }
 
-.seat-side-melds .tile-faceup {
+.seat-side-melds .tile-faceup,
+.seat-side-melds .tile-back {
   width: 24px;
   height: auto;
   aspect-ratio: 27 / 35;
@@ -420,7 +426,7 @@ body.app-game-focus .seat-side-left .seat-side-head {
 body.app-game-focus .seat-side-left .seat-side-rack {
   order: 2;
   justify-content: flex-start;
-  overflow: hidden;
+  overflow: visible;
   padding-left: 8px;
   padding-right: 0;
   z-index: 2;
@@ -436,7 +442,7 @@ body.app-game-focus .seat-side-right .seat-side-head {
 body.app-game-focus .seat-side-right .seat-side-rack {
   order: 2;
   justify-content: flex-end;
-  overflow: hidden;
+  overflow: visible;
   padding-left: 0;
   padding-right: 8px;
   z-index: 2;
@@ -820,60 +826,53 @@ body.app-game-focus .table-self {
 
 body.app-game-focus .table-self .side-head-self {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "title status"
-    "melds melds";
-  grid-template-rows: auto var(--self-head-second-row-height);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "title";
+  grid-template-rows: auto;
   align-items: start;
-  gap: 6px 10px;
-  height: var(--self-head-height);
-  min-height: var(--self-head-height);
+  justify-items: start;
+  justify-content: start;
+  gap: 4px;
+  height: auto;
+  min-height: 0;
   overflow: visible;
 }
 
 body.app-game-focus .table-self .self-head-title {
   grid-area: title;
+  display: grid;
+  gap: 4px;
   min-width: 0;
+  width: 100%;
+  justify-self: start;
+  align-self: start;
+  justify-items: start;
+  text-align: left;
 }
 
 body.app-game-focus .table-self .self-head-title h3 {
   min-width: 0;
+  width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-body.app-game-focus .table-self .self-head-melds {
-  grid-area: melds;
-  min-width: 0;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  height: var(--self-head-second-row-height);
-  min-height: var(--self-head-second-row-height);
-  overflow: visible;
-}
-
-body.app-game-focus .table-self .self-head-melds .meld-strip {
-  justify-content: center;
-  flex-wrap: nowrap;
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: visible;
-  padding-block: 4px 6px;
+  text-align: left;
 }
 
 body.app-game-focus .table-self .self-head-status {
-  grid-area: status;
-  text-align: right;
-  white-space: nowrap;
-  align-self: center;
+  width: 100%;
+  justify-self: start;
+  text-align: left;
+  white-space: pre-line;
+  line-height: 1.35;
+  align-self: start;
 }
 
 body.app-game-focus .table-self .self-play-area {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8px;
   margin-top: auto;
   min-height: 0;
 }
@@ -907,6 +906,24 @@ body.app-game-focus .table-self .self-action-dock {
 
 body.app-game-focus .table-self .self-play-area.has-action-dock {
   padding-top: var(--self-action-dock-height);
+}
+
+body.app-game-focus .table-self .self-play-melds {
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  overflow: visible;
+}
+
+body.app-game-focus .table-self .self-play-melds .meld-strip {
+  justify-content: center;
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-block: 4px 2px;
 }
 
 body.app-game-focus .table-self .self-hand-row {
@@ -947,8 +964,9 @@ body.app-game-focus .table-opponent .meld-strip .tile-faceup {
   aspect-ratio: 27 / 35;
 }
 
-body.app-game-focus .table-self .meld-strip .tile-faceup {
-  width: var(--self-meld-tile-width);
+body.app-game-focus .table-self .meld-strip .tile-faceup,
+body.app-game-focus .table-self .meld-strip .tile-back {
+  width: 49.4px;
   height: auto;
   aspect-ratio: 27 / 35;
 }
