@@ -83,6 +83,7 @@ export type GameResultOverlaySnapshot = {
   eyebrow: string;
   title: string;
   kindLabel: string;
+  sourceLabel: string;
   detail: string;
   winningTile: BridgeTileSnapshot | null;
   handTitle: string;

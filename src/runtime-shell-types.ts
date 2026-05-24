@@ -24,6 +24,7 @@ export type AppRoundStateLike = {
 export type AppGameResultLike = {
   winKind?: string;
   winnerSeat?: number;
+  loserSeat?: number | number[] | null;
   message?: string;
   winningTileId?: string;
   patterns?: Array<string | null | undefined>;

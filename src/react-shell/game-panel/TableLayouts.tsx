@@ -81,6 +81,7 @@ export function ResultOverlay({
           <span className="result-eyebrow">{overlay.eyebrow}</span>
           {overlay.kindLabel ? <div className="result-kind">{overlay.kindLabel}</div> : null}
           <h3 className="result-title">{overlay.title}</h3>
+          {overlay.sourceLabel ? <p className="result-source">{overlay.sourceLabel}</p> : null}
           {overlay.winningTile ? (
             <div className="result-winning-tile">
               <TileFaceButton tile={overlay.winningTile} />

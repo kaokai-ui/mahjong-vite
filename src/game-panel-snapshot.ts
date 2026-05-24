@@ -50,6 +50,7 @@ type ResultTaiBreakdownLike = {
 type ResultLike = {
   winKind?: string;
   winnerSeat?: number;
+  loserSeat?: number | number[] | null;
   message?: string;
   winningTileId?: string;
   patterns?: Array<string | null | undefined>;
@@ -326,7 +327,14 @@ function buildResultOverlaySnapshot(
   const winKindLabel =
     game.result.winKind === "selfDraw" ? "自摸" : game.result.winKind === "robKong" ? "搶槓" : "胡牌";
   const winnerName = getPlayerDisplayName(players, game.result.winnerSeat);
+  const loserSeat = Array.isArray(game.result.loserSeat) ? game.result.loserSeat[0] : game.result.loserSeat;
   const patternText = getResultPatternText(game.result);
+  const sourceLabel =
+    game.result.winKind === "discardWin" && typeof loserSeat === "number"
+      ? `放炮：${getPlayerDisplayName(players, loserSeat)}`
+      : game.result.winKind === "robKong" && typeof loserSeat === "number"
+        ? `被搶槓：${getPlayerDisplayName(players, loserSeat)}`
+        : "";
   const detail = isDraw ? game.result.message || "本局流局。" : `牌型：${patternText}`;
   const hand = !isDraw ? buildResultHandSnapshot(game) : null;
   const scoringSummary = !isDraw ? buildResultScoringSnapshot(game.result) : null;
@@ -336,6 +344,7 @@ function buildResultOverlaySnapshot(
     eyebrow: isDraw ? "對局結果" : "胡牌結果",
     title: isDraw ? "流局" : winnerName,
     kindLabel: isDraw ? "" : winKindLabel,
+    sourceLabel,
     detail,
     winningTile: !isDraw ? createTileSnapshot(game.result.winningTileId) : null,
     handTitle: hand ? hand.title : "",
@@ -371,6 +380,7 @@ function getEmptyResultOverlaySnapshot(): GameResultOverlaySnapshot {
     eyebrow: "",
     title: "",
     kindLabel: "",
+    sourceLabel: "",
     detail: "",
     winningTile: null,
     handTitle: "",
