@@ -1,4 +1,5 @@
 import { DEFAULT_RULESET, RULE_PRESETS, getRuleset } from "./rules.js";
+import { GAME_MODE_ONLINE_2P, GAME_MODE_ONLINE_4P } from "./game-mode.js";
 
 export const FIREBASE_ROOM_ID_MAX_LENGTH = 8;
 export const FIREBASE_RANDOM_ROOM_CODE_LENGTH = 6;
@@ -6,6 +7,8 @@ export const FIREBASE_RANDOM_ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456
 
 export const FIREBASE_RULESET_IDS = Object.freeze(Object.keys(RULE_PRESETS));
 export const FIREBASE_RULESET_ID_REGEX_SOURCE = `^(${FIREBASE_RULESET_IDS.join("|")})$`;
+export const FIREBASE_GAME_MODE_IDS = Object.freeze([GAME_MODE_ONLINE_2P, GAME_MODE_ONLINE_4P]);
+export const FIREBASE_GAME_MODE_REGEX_SOURCE = `^(${FIREBASE_GAME_MODE_IDS.join("|")})$`;
 export const FIREBASE_TILE_ID_REGEX_SOURCE = "^[A-Za-z0-9-]{2,16}$";
 export const FIREBASE_TILE_TYPE_REGEX_SOURCE = "^[A-Za-z0-9-]{1,8}$";
 
@@ -40,6 +43,7 @@ function buildFirebaseCommandPayloadTypeRule(commandTypePath, commandType, condi
 }
 
 export const FIREBASE_RULESET_VALIDATE_RULE = buildFirebaseStringMatchValidateRule(FIREBASE_RULESET_ID_REGEX_SOURCE);
+export const FIREBASE_GAME_MODE_VALIDATE_RULE = buildFirebaseStringMatchValidateRule(FIREBASE_GAME_MODE_REGEX_SOURCE);
 export const FIREBASE_COMMAND_TYPE_VALIDATE_RULE = buildFirebaseStringMatchValidateRule(FIREBASE_COMMAND_TYPE_REGEX_SOURCE);
 export const FIREBASE_TILE_ID_VALIDATE_RULE = buildFirebaseStringMatchValidateRule(FIREBASE_TILE_ID_REGEX_SOURCE);
 export const FIREBASE_TILE_TYPE_VALIDATE_RULE = buildFirebaseStringMatchValidateRule(FIREBASE_TILE_TYPE_REGEX_SOURCE);
@@ -62,10 +66,19 @@ export const FIREBASE_ROOM_META_PLAYER_COUNT_VALIDATE_RULE =
 export const FIREBASE_ROOM_META_OPEN_VALIDATE_RULE =
   "newData.isBoolean() && ((newData.parent().child('seats/1').exists() && newData.val() == false) || " +
   "(!newData.parent().child('seats/1').exists() && newData.val() == true))";
+export const FIREBASE_ROOM_META_GAME_MODE_VALIDATE_RULE = FIREBASE_GAME_MODE_VALIDATE_RULE;
+export const FIREBASE_ROOM_META_TABLE_PLAYER_COUNT_VALIDATE_RULE =
+  "newData.isNumber() && ((newData.parent().child('gameMode').val() == 'online-4p' && newData.val() == 4) || " +
+  "(newData.parent().child('gameMode').val() != 'online-4p' && newData.val() == 2))";
 export const FIREBASE_ROOM_META_SEAT_BROWSER_ID0_VALIDATE_RULE =
   "newData.isString() && newData.val() == newData.parent().parent().child('hostBrowserId').val()";
 export const FIREBASE_ROOM_META_SEAT_BROWSER_ID1_VALIDATE_RULE =
   "newData.exists() == false || (newData.isString() && newData.parent().parent().child('seats/1').exists())";
+export const FIREBASE_ROOM_META_BOT_DIFFICULTY_VALIDATE_RULE =
+  "newData.isString() && newData.val().matches(/^(easy|normal|hard|god)$/)";
+export const FIREBASE_ROOM_META_BOT_THINKING_VALIDATE_RULE = "newData.isBoolean()";
+export const FIREBASE_ROOM_META_BOT_THINKING_SEAT_VALIDATE_RULE =
+  "newData.exists() == false || (newData.isNumber() && (newData.val() == 1 || newData.val() == 3))";
 export const FIREBASE_COMMAND_PAYLOAD_VALIDATE_RULE =
   buildFirebaseCommandPayloadValidateRule("newData.parent().child('type').val()");
 export const FIREBASE_COMMAND_ENVELOPE_VALIDATE_RULE =
@@ -87,11 +100,16 @@ export const FIREBASE_ROOM_META_VALIDATE_RULES = Object.freeze({
   hostPlayerId: FIREBASE_ROOM_META_HOST_PLAYER_VALIDATE_RULE,
   participant: FIREBASE_ROOM_META_PARTICIPANT_VALIDATE_RULE,
   playerCount: FIREBASE_ROOM_META_PLAYER_COUNT_VALIDATE_RULE,
+  gameMode: FIREBASE_ROOM_META_GAME_MODE_VALIDATE_RULE,
+  tablePlayerCount: FIREBASE_ROOM_META_TABLE_PLAYER_COUNT_VALIDATE_RULE,
   open: FIREBASE_ROOM_META_OPEN_VALIDATE_RULE,
   seat0: FIREBASE_ROOM_META_SEAT0_VALIDATE_RULE,
   seat1: FIREBASE_ROOM_META_SEAT1_VALIDATE_RULE,
   seatBrowserId0: FIREBASE_ROOM_META_SEAT_BROWSER_ID0_VALIDATE_RULE,
   seatBrowserId1: FIREBASE_ROOM_META_SEAT_BROWSER_ID1_VALIDATE_RULE,
+  botDifficulty: FIREBASE_ROOM_META_BOT_DIFFICULTY_VALIDATE_RULE,
+  botThinking: FIREBASE_ROOM_META_BOT_THINKING_VALIDATE_RULE,
+  botThinkingSeat: FIREBASE_ROOM_META_BOT_THINKING_SEAT_VALIDATE_RULE,
 });
 
 function buildFirebaseCommandPayloadValidateRule(commandTypePath, payloadPath = "newData") {

@@ -7,6 +7,11 @@ import {
   syncRoomPanelRulesetState,
 } from "./app-shell-state";
 import { createRandomFirebaseRoomId, normalizeFirebaseRoomId } from "./firebase-rules-contract.js";
+import {
+  GAME_MODE_ONLINE_2P,
+  GAME_MODE_SOLO as GAME_MODE_SOLO_VALUE,
+  normalizeAppGameMode,
+} from "./game-mode.js";
 import { DEFAULT_RULESET, getRuleset } from "./rules.js";
 import { DEFAULT_SCORING_ENABLED, normalizeScoringEnabled } from "./scoring.js";
 import {
@@ -23,8 +28,8 @@ export const SOLO_DIFFICULTY_STORAGE_KEY = "mahjong-solo-difficulty";
 export const SOLO_PLAYER_COUNT_STORAGE_KEY = "mahjong-solo-player-count";
 export const SCORING_ENABLED_STORAGE_KEY = "mahjong-scoring-enabled";
 export const DEFAULTS_VERSION_STORAGE_KEY = "mahjong-defaults-version";
-export const GAME_MODE_ONLINE = "online";
-export const GAME_MODE_SOLO = "solo-bot";
+export const GAME_MODE_ONLINE = GAME_MODE_ONLINE_2P;
+export const GAME_MODE_SOLO = GAME_MODE_SOLO_VALUE;
 export const DEFAULTS_VERSION = "20260501-solo-player-count-entry";
 export const DEFAULT_RULESET_ID = DEFAULT_RULESET;
 
@@ -82,7 +87,7 @@ export function normalizeGameMode(value: unknown): AppGameMode {
     return GAME_MODE_SOLO;
   }
 
-  return value === GAME_MODE_SOLO ? GAME_MODE_SOLO : GAME_MODE_ONLINE;
+  return normalizeAppGameMode(value);
 }
 
 export function normalizeRulesetId(value?: string) {

@@ -116,6 +116,9 @@ async function buildController(
   const { appState, soloModeValue, syncRoomPanelRulesetState, normalizeRulesetId, render } = context;
   const callbacks: ControllerCallbacks = {
     onRoomChange: (room) => {
+      if (room?.meta?.gameMode && room.meta.gameMode !== soloModeValue) {
+        appState.selectedMode = room.meta.gameMode as AppGameMode;
+      }
       appState.room = room;
       syncRoomPanelRulesetState(appState, { room, normalizeRulesetId });
       render();

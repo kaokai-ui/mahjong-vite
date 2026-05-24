@@ -173,8 +173,8 @@ export function buildGameTableStageSnapshot(context: GamePanelContextLike | null
   const discardRows = {
     top: getDiscardRowSnapshot(topPlayer ? "對家" : "", topRoundState.discards, topPlayer ? "尚未打牌" : ""),
     bottom: getDiscardRowSnapshot(currentPlayer.name ? "你" : "", selfRoundState.discards, "尚未打牌"),
-    left: getDiscardRowSnapshot(leftPlayer ? "左家" : "", leftRoundState.discards, ""),
-    right: getDiscardRowSnapshot(rightPlayer ? "右家" : "", rightRoundState.discards, ""),
+    left: getDiscardRowSnapshot(leftPlayer ? "西家" : "", leftRoundState.discards, ""),
+    right: getDiscardRowSnapshot(rightPlayer ? "東家" : "", rightRoundState.discards, ""),
   };
 
   return {
@@ -650,7 +650,16 @@ function getBotDifficultyLabel(room: GamePanelContextLike["room"] | null, player
     return "";
   }
 
-  const seatCount = Math.max(2, Number(room.meta?.soloPlayerCount || room.activePlayers?.length || 2));
+  const seatCount = Math.max(
+    2,
+    Number(
+      room.meta?.tablePlayerCount ||
+      room.meta?.soloPlayerCount ||
+      room.game?.players?.length ||
+      room.activePlayers?.reduce((maxSeat, activePlayer) => Math.max(maxSeat, (activePlayer?.seat ?? -1) + 1), 0) ||
+      2,
+    ),
+  );
   const difficulty = (
     room.meta?.botDifficulties?.[String(player.seat)] ||
     getSoloBotProfile(player.seat, seatCount, room.meta?.soloDifficulty || DEFAULT_SOLO_DIFFICULTY).difficulty

@@ -4,7 +4,7 @@ import type {
   BridgeRoomLike,
 } from "./bridge-view-helpers";
 
-export type AppGameMode = "online" | "solo-bot";
+export type AppGameMode = "online-2p" | "online-4p" | "solo-bot";
 
 export type AppPlayerLike = BridgePlayerLike;
 
@@ -66,9 +66,13 @@ export type AppRoomLike = NonNullable<BridgeRoomLike> & {
     message?: string;
   } | null;
   meta?: (NonNullable<BridgeRoomLike>["meta"] & {
+    gameMode?: AppGameMode;
     soloDifficulty?: string;
     soloPlayerCount?: number;
+    tablePlayerCount?: number;
     botDifficulties?: Record<string, string>;
+    botThinking?: boolean;
+    botThinkingSeat?: number | null;
   }) | null;
 };
 

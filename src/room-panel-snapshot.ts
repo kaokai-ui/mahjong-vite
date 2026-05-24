@@ -27,6 +27,7 @@ type GameLike = {
   turnSeat?: number | null;
   wall?: unknown[];
   scoringEnabled?: boolean;
+  players?: unknown[];
 };
 
 type RoomLike = {
@@ -36,6 +37,7 @@ type RoomLike = {
   meta?: {
     soloDifficulty?: string;
     soloPlayerCount?: number;
+    tablePlayerCount?: number;
     botDifficulties?: Record<string, string>;
     gameMode?: string;
   } | null;
@@ -78,7 +80,9 @@ export function buildRoomPanelSnapshot(context: BuildRoomPanelSnapshotContext): 
 
   const game = room.game || null;
   const isSoloMode = isSoloRoom(room);
-  const canStart = players.length === 2 && (!game || game.status !== "playing");
+  const seatCount = getRoomSeatCount(room, players);
+  const joinedHumanCount = players.filter((player) => player && player.type !== "bot").length;
+  const canStart = joinedHumanCount === 2 && (!game || game.status !== "playing");
   const currentRuleset = getRuleset(room.rulesetId || game?.rulesetId || DEFAULT_RULESET);
   const selectedRoomRulesetId = getRuleset(roomPanelRulesetId || currentRuleset.id).id;
   const displayRuleset = !game || game.status !== "playing" ? getRuleset(selectedRoomRulesetId) : currentRuleset;
@@ -87,7 +91,6 @@ export function buildRoomPanelSnapshot(context: BuildRoomPanelSnapshotContext): 
   const currentPlayerSeat = currentPlayer ? currentPlayer.seat : 0;
   const scoringStatus = isScoringEnabled(game) ? "開啟" : "關閉";
   const soloDifficultyKey = (room.meta?.soloDifficulty || DEFAULT_SOLO_DIFFICULTY) as keyof typeof SOLO_DIFFICULTY_LABELS;
-  const seatCount = isSoloMode ? Math.max(2, Number(room.meta?.soloPlayerCount || players.length || 2)) : 2;
   const seats: RoomPanelSnapshot["seats"] = Array.from({ length: seatCount }, (_, seat) => seat).map((seat) => {
     const player = players.find((item) => item && item.seat === seat);
     if (!player) {
@@ -133,7 +136,7 @@ export function buildRoomPanelSnapshot(context: BuildRoomPanelSnapshotContext): 
     phaseCopy: describeGamePhase(game, currentPlayerSeat, room),
     seats,
     pills: [
-      isSoloMode ? "模式：單人對電腦" : "",
+      getModePill(room, isSoloMode, seatCount),
       isSoloMode
         ? seatCount >= 4
           ? "電腦陣容：夏曉蘭（賭神）／楊貴妃（普通）／李善德（困難）"
@@ -142,6 +145,7 @@ export function buildRoomPanelSnapshot(context: BuildRoomPanelSnapshotContext): 
               SOLO_DIFFICULTY_LABELS[DEFAULT_SOLO_DIFFICULTY]
             }`
         : "",
+      !isSoloMode && seatCount >= 4 ? "電腦座位：左家 / 右家" : "",
       `規則：${displayRuleset.name}`,
       `台數計算：${scoringStatus}`,
       isScoringEnabled(game) ? "統計：胡牌數（分數）" : "",
@@ -155,4 +159,28 @@ export function buildRoomPanelSnapshot(context: BuildRoomPanelSnapshotContext): 
 
 function isNonEmptyString(value: string): value is string {
   return Boolean(value);
+}
+
+function getRoomSeatCount(room: RoomLike, players: PlayerLike[]) {
+  if (room.game && Array.isArray(room.game.players) && room.game.players.length >= 2) {
+    return Math.max(2, room.game.players.length);
+  }
+
+  if (isSoloRoom(room)) {
+    return Math.max(2, Number(room.meta?.soloPlayerCount || players.length || 2));
+  }
+
+  return Math.max(2, Number(room.meta?.tablePlayerCount || 2));
+}
+
+function getModePill(room: RoomLike, isSoloMode: boolean, seatCount: number) {
+  if (isSoloMode) {
+    return "模式：單人對電腦";
+  }
+
+  if (room.meta?.gameMode === "online-4p" || seatCount >= 4) {
+    return "模式：雙人遊戲4p";
+  }
+
+  return "模式：雙人遊戲2p";
 }

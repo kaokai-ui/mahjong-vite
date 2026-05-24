@@ -1,6 +1,14 @@
 import { normalizeGameState } from "./game.js";
 import { DEFAULT_RULESET } from "./rules.js";
 import { normalizeFirebaseRulesetId } from "./firebase-rules-contract.js";
+import {
+  GAME_MODE_ONLINE_2P,
+  GAME_MODE_ONLINE_4P,
+  GAME_MODE_SOLO,
+  getOnlineHumanSeatForSlot,
+  getOnlineTablePlayerCount,
+  normalizeAppGameMode,
+} from "./game-mode.js";
 
 const ROOM_EXPIRATION_MS = 8 * 24 * 60 * 60 * 1000;
 
@@ -17,6 +25,7 @@ function normalizeRoom(room, meta = null) {
     roomId: room.roomId || (normalizedMeta && normalizedMeta.roomId) || "",
     hostPlayerId: room.hostPlayerId || (normalizedMeta && normalizedMeta.hostPlayerId) || "",
     rulesetId: normalizeFirebaseRulesetId(room.rulesetId || (normalizedMeta && normalizedMeta.rulesetId) || DEFAULT_RULESET),
+    gameMode: normalizeRoomGameMode(room.gameMode || normalizedMeta?.gameMode),
     meta: normalizedMeta,
     players: normalizedPlayers,
     activePlayers: buildActivePlayers(normalizedPlayers, normalizedMeta),
@@ -30,52 +39,90 @@ function normalizeRoomMeta(meta) {
     return null;
   }
 
+  const gameMode = normalizeRoomGameMode(meta.gameMode);
   return {
     roomId: meta.roomId || "",
     hostPlayerId: meta.hostPlayerId || "",
     hostBrowserId: meta.hostBrowserId || "",
     godViewEnabled: Boolean(meta.godViewEnabled),
     rulesetId: normalizeFirebaseRulesetId(meta.rulesetId || DEFAULT_RULESET),
+    gameMode,
     createdAt: typeof meta.createdAt === "number" ? meta.createdAt : 0,
     updatedAt: typeof meta.updatedAt === "number" ? meta.updatedAt : 0,
     playerCount: typeof meta.playerCount === "number" ? meta.playerCount : 0,
+    tablePlayerCount: normalizeTablePlayerCount(meta.tablePlayerCount, gameMode),
     open: Boolean(meta.open),
     participants: meta.participants || {},
     seats: meta.seats || {},
     seatBrowserIds: meta.seatBrowserIds || {},
+    botDifficulties: meta.botDifficulties || {},
+    botThinking: Boolean(meta.botThinking),
+    botThinkingSeat: typeof meta.botThinkingSeat === "number" ? meta.botThinkingSeat : null,
   };
+}
+
+function normalizeRoomGameMode(mode) {
+  if (mode === GAME_MODE_SOLO) {
+    return GAME_MODE_SOLO;
+  }
+
+  return normalizeAppGameMode(mode);
+}
+
+function normalizeTablePlayerCount(value, gameMode) {
+  const parsed = Number(value);
+  if (Number.isFinite(parsed) && parsed >= 4) {
+    return 4;
+  }
+
+  return getOnlineTablePlayerCount(gameMode || GAME_MODE_ONLINE_2P);
 }
 
 function buildActivePlayers(players, meta) {
   const normalizedPlayers = players || {};
+  const activePlayers = Object.values(normalizedPlayers)
+    .filter(Boolean)
+    .filter((player) => shouldIncludeRoomPlayer(player, meta))
+    .map((player) => ({
+      ...player,
+      id: player.id || "",
+      seat: typeof player.seat === "number" ? player.seat : 0,
+    }))
+    .sort((left, right) => left.seat - right.seat);
+
   if (!meta || !meta.seats) {
-    return Object.values(normalizedPlayers).sort((left, right) => left.seat - right.seat);
+    return activePlayers;
   }
 
-  return [0, 1]
-    .map((seat) => {
-      const playerId = getSeatValue(meta, seat);
-      if (!playerId) {
-        return null;
-      }
+  const playersById = new Map(activePlayers.map((player) => [player.id, player]));
+  for (const slot of [0, 1]) {
+    const playerId = getSeatValue(meta, slot);
+    if (!playerId || playersById.has(playerId)) {
+      continue;
+    }
 
-      const player = normalizedPlayers[playerId];
-      if (player) {
-        return {
-          ...player,
-          id: player.id || playerId,
-          seat,
-        };
-      }
+    activePlayers.push({
+      id: playerId,
+      name: "",
+      seat: getOnlineHumanSeatForSlot(meta.gameMode || GAME_MODE_ONLINE_2P, slot),
+      joinedAt: 0,
+      type: "human",
+    });
+  }
 
-      return {
-        id: playerId,
-        name: "",
-        seat,
-        joinedAt: 0,
-      };
-    })
-    .filter(Boolean);
+  return activePlayers.sort((left, right) => left.seat - right.seat);
+}
+
+function shouldIncludeRoomPlayer(player, meta) {
+  if (!player) {
+    return false;
+  }
+
+  if (!meta) {
+    return true;
+  }
+
+  return player.type === "bot" || getSeatForPlayer(meta, player.id || "") != null;
 }
 
 function getActivePlayers(room) {
@@ -88,6 +135,22 @@ function getActivePlayers(room) {
   }
 
   return buildActivePlayers(room.players || {}, room.meta || null);
+}
+
+function getRoomTablePlayerCount(room) {
+  if (!room) {
+    return 2;
+  }
+
+  if (room.game && Array.isArray(room.game.players) && room.game.players.length >= 2) {
+    return room.game.players.length >= 4 ? 4 : 2;
+  }
+
+  if (room.meta && typeof room.meta.tablePlayerCount === "number") {
+    return room.meta.tablePlayerCount >= 4 ? 4 : 2;
+  }
+
+  return getActivePlayers(room).some((player) => player && player.seat >= 2) ? 4 : 2;
 }
 
 function isParticipant(meta, playerId) {
@@ -180,6 +243,7 @@ export {
   getActivePlayers,
   getCommandRulesetId,
   getCommandTimestamp,
+  getRoomTablePlayerCount,
   getSeatForBrowser,
   getSeatForPlayer,
   getSeatValue,
@@ -187,6 +251,7 @@ export {
   isRoomExpired,
   normalizeRoom,
   normalizeRoomMeta,
+  normalizeRoomGameMode,
   seatExists,
   stripUndefined,
 };

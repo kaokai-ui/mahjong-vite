@@ -1,4 +1,5 @@
 import { onValue } from "firebase/database";
+import { createPendingNetworkBotEntry } from "./network-bot-runtime.js";
 import { formatFirebaseClientError } from "./network-client-errors.js";
 import { getPendingCommands, processCommandEntry as processNetworkCommandEntry } from "./network-command-processor.js";
 import { normalizeRoom, normalizeRoomMeta } from "./network-room-helpers.js";
@@ -74,7 +75,8 @@ export function queuePendingRoomCommand(controller) {
   }
 
   const pendingCommands = getPendingCommands(controller.room);
-  if (!pendingCommands.length) {
+  const nextEntry = pendingCommands.length ? pendingCommands[0] : createPendingNetworkBotEntry(controller.room);
+  if (!nextEntry) {
     return;
   }
 
@@ -84,7 +86,7 @@ export function queuePendingRoomCommand(controller) {
       processNetworkCommandEntry({
         roomId: controller.roomId,
         room: controller.room,
-        entry: pendingCommands[0],
+        entry: nextEntry,
         repository: {
           removeRoomCommand,
           writeHostGameState,

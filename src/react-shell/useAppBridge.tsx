@@ -109,7 +109,7 @@ export type LobbyBridgeSnapshot = {
     gameFocusActive: boolean;
   };
   lobby: {
-    mode: "online" | "solo-bot";
+    mode: "online-2p" | "online-4p" | "solo-bot";
     playerName: string;
     createRoomCode: string;
     joinRoomCode: string;

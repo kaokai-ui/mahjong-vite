@@ -64,3 +64,121 @@
     gap: 4px 8px;
   }
 }
+
+@media (min-width: 1181px) and (hover: hover) and (pointer: fine) {
+  /* Keep desktop 4P side discards and side-seat content aligned across windowed/fullscreen modes. */
+  body.app-game-focus .table-shell-four .seat-side-rack {
+    gap: 4px;
+  }
+
+  body.app-game-focus .table-shell-four .seat-side-melds {
+    gap: 4px;
+  }
+
+  body.app-game-focus .table-shell-four .seat-side-meld-tiles,
+  body.app-game-focus .table-shell-four .seat-side-visible-hand {
+    gap: 1px;
+  }
+
+  body.app-game-focus .table-shell-four .seat-side-panel .tile-faceup,
+  body.app-game-focus .table-shell-four .seat-side-panel .tile-back {
+    width: 18px;
+    height: auto;
+  }
+
+  body.app-game-focus .table-shell-four .table-center-four {
+    --four-seat-discard-side-label-width: 12px;
+    --four-seat-discard-side-gap: 2px;
+    --four-seat-discard-side-tile-width: 22px;
+    --four-seat-discard-column-gap: 2px;
+    --four-seat-discard-column-min-width: 22px;
+  }
+
+  /* Fullscreen desktop gets wider side seats so side melds can stay fully visible. */
+  body.app-native-fullscreen.app-game-focus .table-shell-four {
+    --side-seat-panel-width: 228px;
+    --side-seat-panel-inline-padding: 12px;
+    --table-center-board-rows: 42px minmax(118px, 1fr) 88px;
+    --table-center-board-gap: 4px;
+    --table-center-four-middle-columns: 132px minmax(0, 1fr) 132px;
+    --table-center-four-middle-gap: 6px;
+    --table-center-core-width: min(100%, calc(100% - 8px));
+    --table-center-core-height: min(100%, 22%);
+    --side-seat-head-offset: 28px;
+    grid-template-columns: minmax(180px, 0.98fr) minmax(0, 2.22fr) minmax(180px, 0.98fr);
+    grid-template-rows: 104px minmax(0, 1fr) 248px;
+    gap: 6px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .table-side {
+    padding: 8px 10px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-top-panel {
+    gap: 6px;
+    padding-top: 8px;
+    padding-bottom: 10px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-top-panel-compact {
+    width: min(100%, 960px);
+    padding: 6px 14px 12px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-top-rack {
+    min-height: 52px;
+    gap: 3px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-top-rack .tile-faceup,
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-top-rack .tile-back {
+    width: 40px;
+    height: 54px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-side-rack {
+    gap: 6px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-side-melds {
+    gap: 6px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-side-meld-tiles,
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-side-visible-hand {
+    gap: 3px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-side-panel .tile-faceup,
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-side-panel .tile-back {
+    width: 40px;
+    height: 54px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .seat-side-panel {
+    align-self: end;
+    margin-bottom: 6px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .table-center-four {
+    width: calc(100% - 320px);
+    max-width: 920px;
+    padding: 8px 0 12px;
+    --four-seat-discard-top-min-height: 42px;
+    --four-seat-discard-bottom-min-height: 88px;
+    --four-seat-discard-side-label-width: 10px;
+    --four-seat-discard-side-gap: 1px;
+    --four-seat-discard-side-tile-width: 38px;
+    --four-seat-discard-column-gap: 2px;
+    --four-seat-discard-column-min-width: 38px;
+  }
+
+  body.app-native-fullscreen.app-game-focus .table-shell-four .table-self {
+    --self-tile-width: clamp(36px, calc((100vw - 160px) / 16), 64px);
+    --self-meld-tile-width: calc(var(--self-tile-width) * 0.56);
+    --self-head-second-row-height: 48px;
+    --self-head-height: 88px;
+    --self-action-dock-height: 44px;
+    padding: 8px 6px 10px;
+  }
+}

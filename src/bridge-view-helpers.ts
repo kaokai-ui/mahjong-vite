@@ -187,7 +187,7 @@ export function getSelfStatusText(
   if (hasSelectableActions(clientState)) {
     return "請點選可用操作";
   }
-  if (isSoloRoom(room) && room?.meta?.botThinking) {
+  if (room?.meta?.botThinking) {
     return "等待電腦思考";
   }
   if (game && game.status === "playing") {
@@ -232,7 +232,7 @@ export function describeGamePhase(game: BridgeGameLike, playerSeat: number | nul
     return game.result && game.result.message ? game.result.message : "本局已結束，可以重新開局。";
   }
 
-  if (isSoloRoom(room) && room?.meta?.botThinking) {
+  if (room?.meta?.botThinking) {
     return "電腦思考中...";
   }
 

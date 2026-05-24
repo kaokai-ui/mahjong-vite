@@ -79,7 +79,7 @@ export function AppShell() {
             <span className="eyebrow">Mahjong Modes</span>
             <h1>雙人 13 張麻將</h1>
             <p>
-              支援雙人連線、單機 2 人與單機 4 人模式；多人同步使用 Firebase Realtime Database，也可在平板上封裝成離線單機 App。
+              支援雙人遊戲 2p、雙人遊戲 4p、單機 2 人與單機 4 人模式；多人同步使用 Firebase Realtime Database，也可在平板上封裝成離線單機 App。
             </p>
           </div>
           <div className="hero-card">

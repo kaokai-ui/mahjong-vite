@@ -18,14 +18,14 @@ table-center-middle ${isFourSeatTable ? "is-four-seat" : ""}
 showFloatingActions={isFourSeatTable}
 label={topDiscardRow?.label || gamePanel.tableStage.opponentSection.title || "對家"}
 label={bottomDiscardRow?.label || gamePanel.tableStage.selfSection.title || "你"}
-label={leftDiscardRow?.label || "左家"}
-label={rightDiscardRow?.label || "右家"}
+ label={leftDiscardRow?.label || "西家"}
+ label={rightDiscardRow?.label || "東家"}
 tiles={topDiscardRow?.tiles || []}
 tiles={bottomDiscardRow?.tiles || []}
 tiles={leftDiscardRow?.tiles || []}
 tiles={rightDiscardRow?.tiles || []}
-positionLabel="左家" section={gamePanel.tableStage.leftSection}
-positionLabel="右家" section={gamePanel.tableStage.rightSection}
+ positionLabel="西家" section={gamePanel.tableStage.leftSection}
+ positionLabel="東家" section={gamePanel.tableStage.rightSection}
 table-shell table-shell-four
 table-center table-center-four
 gamePanel.tableStage.actions.buttons.length
@@ -69,11 +69,11 @@ export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscree
   const actionState = gamePanel.tableStage.actions;
   const topDiscardLabel = topDiscardRow?.label || gamePanel.tableStage.opponentSection.title || "對家";
   const bottomDiscardLabel = bottomDiscardRow?.label || gamePanel.tableStage.selfSection.title || "你";
-  const leftDiscardLabel = leftDiscardRow?.label || "左家";
-  const rightDiscardLabel = rightDiscardRow?.label || "右家";
+  const leftDiscardLabel = leftDiscardRow?.label || "西家";
+  const rightDiscardLabel = rightDiscardRow?.label || "東家";
   const emptyDiscardPlaceholder = "尚未打牌";
-  const sideSeatLeftLabel = "左家";
-  const sideSeatRightLabel = "右家";
+  const sideSeatLeftLabel = "西家";
+  const sideSeatRightLabel = "東家";
 
   return (
     <section id="game-panel" className="panel">

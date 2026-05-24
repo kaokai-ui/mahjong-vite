@@ -1,8 +1,10 @@
+import { isOnlineGameMode } from "./game-mode.js";
 import type { AppGameMode, AppRoomLike, AppState, ControllerLike } from "./runtime-shell-types";
 
 type LobbyControllerLike = ControllerLike & {
   createRoom?: (payload: {
     drawRevealSeconds: number;
+    gameMode: AppGameMode;
     playerName: string;
     roomId: string;
     rulesetId: string;
@@ -51,6 +53,7 @@ export async function submitCreateRoom(appState: AppState, deps: SubmitCreateRoo
       if (!controller.createSoloGame) {
         throw new Error("Solo controller is missing createSoloGame().");
       }
+
       await controller.createSoloGame({
         playerName: appState.playerName,
         rulesetId: appState.selectedRulesetId || deps.defaultRulesetId,
@@ -59,7 +62,8 @@ export async function submitCreateRoom(appState: AppState, deps: SubmitCreateRoo
         playerCount: deps.normalizeSoloPlayerCount(appState.selectedSoloPlayerCount),
         scoringEnabled: readCreateScoringEnabled(appState, deps.normalizeScoringEnabled),
       });
-      appState.message = "已開始單人對局。";
+
+      appState.message = "已建立單人對局。";
       appState.lastLobbyAction = "";
       deps.clearShareLink();
       deps.render();
@@ -70,14 +74,17 @@ export async function submitCreateRoom(appState: AppState, deps: SubmitCreateRoo
     if (!controller.createRoom) {
       throw new Error("Online controller is missing createRoom().");
     }
+
     await controller.createRoom({
       roomId: appState.createRoomCode,
       playerName: appState.playerName,
+      gameMode: appState.selectedMode,
       rulesetId: appState.selectedRulesetId || deps.defaultRulesetId,
       drawRevealSeconds: readCreateDrawRevealSeconds(appState, deps.normalizeDrawRevealSecondsValue),
       scoringEnabled: readCreateScoringEnabled(appState, deps.normalizeScoringEnabled),
     });
-    appState.message = "已建立房間。";
+
+    appState.message = "已建立連線房間。";
     appState.lastLobbyAction = "";
     deps.updateShareLink(appState.room);
     deps.render();
@@ -92,19 +99,21 @@ export async function submitJoinRoom(appState: AppState, deps: SubmitJoinRoomDep
   appState.lastLobbyAction = "join";
 
   try {
-    if (appState.selectedMode !== deps.onlineModeValue) {
-      throw new Error("單人模式不需要加入房間。");
+    if (!isOnlineGameMode(appState.selectedMode)) {
+      throw new Error("目前模式不是連線房間。");
     }
 
     const controller = deps.getController();
     if (!controller.joinRoom) {
       throw new Error("Online controller is missing joinRoom().");
     }
+
     await controller.joinRoom({
       roomId: appState.joinRoomCode,
       playerName: appState.playerName,
     });
-    appState.message = "已加入房間。";
+
+    appState.message = "已加入連線房間。";
     appState.lastLobbyAction = "";
     deps.updateShareLink(appState.room);
     deps.render();
@@ -126,5 +135,6 @@ function getErrorMessage(error: unknown) {
   if (error instanceof Error) {
     return error.message;
   }
+
   return String(error);
 }

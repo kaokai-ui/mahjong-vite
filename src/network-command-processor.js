@@ -36,7 +36,7 @@ async function processCommandEntry({ roomId, room, entry, repository }) {
 
   try {
     if (command.type === "startGame") {
-      if (players.length < 2) {
+      if ((Number(room.meta?.playerCount) || 0) < 2) {
         errorMessage = "兩位玩家都加入房間後才能開始對局。";
       } else if (room.game && room.game.status === "playing") {
         return;
