@@ -581,7 +581,7 @@ function getSelfSectionSnapshot(context: GamePanelContextLike): BridgeSelfSectio
     statusText: onlineFourPlayerSyncStatus.text || getSelfStatusText(clientState, game, seat, room),
     statusTone: onlineFourPlayerSyncStatus.tone,
     activityText: onlineFourPlayerActivityText,
-    drawNoticeText: getOnlineFourPlayerDrawNoticeText(room, drawReveal),
+    drawNoticeText: getOnlineFourPlayerDrawNoticeText(room, currentPlayer, game, drawReveal),
     handTiles,
     drawnTile: drawnTileButton
       ? {
@@ -596,13 +596,26 @@ function getSelfSectionSnapshot(context: GamePanelContextLike): BridgeSelfSectio
 
 function getOnlineFourPlayerDrawNoticeText(
   room: GamePanelContextLike["room"] | null,
+  currentPlayer: PlayerLike | null | undefined,
+  game: GameLike | null,
   drawReveal: DrawRevealLike | null,
 ): string {
-  if (!isOnlineFourPlayerRoom(room) || !drawReveal?.tileId) {
+  if (!isOnlineFourPlayerRoom(room) || !currentPlayer || !game) {
     return "";
   }
 
-  return `你剛剛摸到 ${getTileDisplayName(getTileType(drawReveal.tileId))}`;
+  const lastDraw = game.lastDraw || null;
+  if (!lastDraw || lastDraw.initial || lastDraw.seat !== currentPlayer.seat || !lastDraw.tileId) {
+    return "";
+  }
+
+  const latestDiscardSeat = typeof game.latestDiscard?.seat === "number" ? game.latestDiscard.seat : null;
+  if (latestDiscardSeat === currentPlayer.seat) {
+    return "";
+  }
+
+  const noticeTileId = drawReveal?.tileId || lastDraw.tileId;
+  return `你剛剛摸到 ${getTileDisplayName(getTileType(noticeTileId))}`;
 }
 
 function getOnlineFourPlayerSyncStatus(
@@ -618,6 +631,14 @@ function getOnlineFourPlayerSyncStatus(
   }
 
   const localDebug = room.localDebug || null;
+  const isHostClient = room.hostPlayerId === currentPlayer.id;
+  if (!isHostClient) {
+    return {
+      text: "",
+      tone: "normal",
+    };
+  }
+
   const lastCombinedSnapshotAt = Number(localDebug?.lastCombinedSnapshotAt) || 0;
   if (!lastCombinedSnapshotAt) {
     return {
@@ -631,12 +652,9 @@ function getOnlineFourPlayerSyncStatus(
   const roomAgeMs = Math.max(0, now - (Number(localDebug?.lastRoomSnapshotAt) || lastCombinedSnapshotAt));
   const metaAgeMs = Math.max(0, now - (Number(localDebug?.lastRoomMetaSnapshotAt) || lastCombinedSnapshotAt));
   const pendingCommandCount = Math.max(0, Number(localDebug?.pendingCommandCount) || 0);
-  const isHostClient = room.hostPlayerId === currentPlayer.id;
 
   let headline = `同步：正常（${formatElapsedDebugTime(combinedAgeMs)}前）`;
-  if (!isHostClient && pendingCommandCount > 0 && combinedAgeMs >= 1200) {
-    headline = `同步中：等待屋主套用（${pendingCommandCount}）`;
-  } else if (combinedAgeMs >= 4000) {
+  if (combinedAgeMs >= 4000) {
     headline = `同步延遲：${formatElapsedDebugTime(combinedAgeMs)}未更新`;
   }
 
