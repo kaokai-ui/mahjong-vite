@@ -610,6 +610,7 @@ body.app-game-focus .table-opponent.seat-top-panel-compact .opponent-rack .visib
   border-radius: 16px;
   background: rgba(250, 247, 238, 0.92);
   color: #173c31;
+  font-size: 19px;
   box-shadow: 0 10px 22px rgba(13, 42, 34, 0.12);
 }
 
@@ -903,7 +904,7 @@ body.app-game-focus .table-shell-four .table-self .self-hand-messages {
   max-width: clamp(136px, 18vw, 220px);
   align-self: center;
   padding: 8px 10px;
-  font-size: clamp(11px, 1.1vw, 14px);
+  font-size: clamp(15px, 1.45vw, 18px);
 }
 
 body.app-game-focus .table-shell-four .table-self .self-hand-activity,
