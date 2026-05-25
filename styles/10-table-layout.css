@@ -610,7 +610,8 @@ body.app-game-focus .table-opponent.seat-top-panel-compact .opponent-rack .visib
   border-radius: 16px;
   background: rgba(250, 247, 238, 0.92);
   color: #173c31;
-  font-size: 19px;
+  font-size: 22px;
+  font-weight: 600;
   box-shadow: 0 10px 22px rgba(13, 42, 34, 0.12);
 }
 
@@ -618,11 +619,11 @@ body.app-game-focus .table-opponent.seat-top-panel-compact .opponent-rack .visib
 .self-hand-draw-note {
   min-width: 0;
   white-space: pre-line;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .self-hand-draw-note {
-  font-weight: 600;
+  font-weight: 700;
   color: #245545;
 }
 
@@ -904,12 +905,12 @@ body.app-game-focus .table-shell-four .table-self .self-hand-messages {
   max-width: clamp(136px, 18vw, 220px);
   align-self: center;
   padding: 8px 10px;
-  font-size: clamp(15px, 1.45vw, 18px);
+  font-size: clamp(20px, 1.9vw, 24px);
 }
 
 body.app-game-focus .table-shell-four .table-self .self-hand-activity,
 body.app-game-focus .table-shell-four .table-self .self-hand-draw-note {
-  line-height: 1.35;
+  line-height: 1.5;
 }
 
 body.app-game-focus .table-self .self-play-area {
