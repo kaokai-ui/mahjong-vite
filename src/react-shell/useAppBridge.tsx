@@ -69,6 +69,9 @@ export type BridgeSelfSectionSnapshot = {
   title: string;
   scoreBadge: string;
   statusText: string;
+  statusTone: "normal" | "warn";
+  activityText: string;
+  drawNoticeText: string;
   handTiles: BridgeTileActionSnapshot[];
   drawnTile: {
     button: BridgeTileActionSnapshot;

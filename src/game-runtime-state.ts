@@ -25,12 +25,22 @@ type PlayerRoundStateLike = {
   hand?: string[];
 } | null | undefined;
 
+type RoomLike = {
+  gameMode?: string;
+  meta?: {
+    gameMode?: string;
+  } | null;
+} | null | undefined;
+
+const ONLINE_WATCHDOG_TICK_MS = 1000;
+
 export type GameRuntimeState = {
   drawRevealKey: string;
   drawRevealCompletedKey: string;
   drawRevealEndsAt: number;
   countdownTimer: number;
   autoDrawKey: string;
+  onlineWatchdogTimer: number;
 };
 
 export type AutoDrawContext = {
@@ -64,6 +74,7 @@ export function createGameRuntimeState(): GameRuntimeState {
     drawRevealEndsAt: 0,
     countdownTimer: 0,
     autoDrawKey: "",
+    onlineWatchdogTimer: 0,
   };
 }
 
@@ -71,6 +82,7 @@ export function resetGameRuntimeState(state: GameRuntimeState) {
   state.autoDrawKey = "";
   state.drawRevealCompletedKey = "";
   clearDrawRevealState(state);
+  clearOnlineWatchdogTimer(state);
 }
 
 export function triggerAutoDrawIfNeeded(state: GameRuntimeState, context: AutoDrawContext) {
@@ -156,12 +168,39 @@ export function normalizeDrawRevealSecondsValue(value: unknown): number {
   return Math.min(6, Math.max(0, Math.round(parsed)));
 }
 
+export function syncOnlineWatchdogRenderTimer(
+  state: GameRuntimeState,
+  room: RoomLike,
+  scheduleRender: () => void,
+) {
+  if (!shouldWatchOnlineRoom(room)) {
+    clearOnlineWatchdogTimer(state);
+    return;
+  }
+
+  if (state.onlineWatchdogTimer) {
+    return;
+  }
+
+  state.onlineWatchdogTimer = window.setTimeout(() => {
+    state.onlineWatchdogTimer = 0;
+    scheduleRender();
+  }, ONLINE_WATCHDOG_TICK_MS);
+}
+
 function clearDrawRevealState(state: GameRuntimeState) {
   state.drawRevealKey = "";
   state.drawRevealEndsAt = 0;
   if (state.countdownTimer) {
     window.clearTimeout(state.countdownTimer);
     state.countdownTimer = 0;
+  }
+}
+
+function clearOnlineWatchdogTimer(state: GameRuntimeState) {
+  if (state.onlineWatchdogTimer) {
+    window.clearTimeout(state.onlineWatchdogTimer);
+    state.onlineWatchdogTimer = 0;
   }
 }
 
@@ -201,4 +240,9 @@ function formatDrawRevealCountdown(remainingMs: number): string {
 
   const tenths = Math.max(1, Math.floor(remainingMs / DRAW_REVEAL_FINAL_STEP_MS));
   return (tenths / 10).toFixed(1);
+}
+
+function shouldWatchOnlineRoom(room: RoomLike) {
+  const gameMode = String(room?.meta?.gameMode || room?.gameMode || "").trim();
+  return gameMode === "online-2p" || gameMode === "online-4p";
 }

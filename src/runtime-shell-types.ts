@@ -68,6 +68,12 @@ export type AppRoomLike = NonNullable<BridgeRoomLike> & {
     playerId?: string;
     message?: string;
   } | null;
+  localDebug?: {
+    lastRoomSnapshotAt?: number;
+    lastRoomMetaSnapshotAt?: number;
+    lastCombinedSnapshotAt?: number;
+    pendingCommandCount?: number;
+  } | null;
   meta?: (NonNullable<BridgeRoomLike>["meta"] & {
     gameMode?: AppGameMode;
     soloDifficulty?: string;

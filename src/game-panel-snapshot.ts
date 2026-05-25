@@ -143,6 +143,9 @@ export function getEmptyGameTableStageSnapshot(): GameTableStageSnapshot {
       title: "",
       scoreBadge: "",
       statusText: "等待中",
+      statusTone: "normal",
+      activityText: "",
+      drawNoticeText: "",
       handTiles: [],
       drawnTile: null,
       melds: [],
@@ -442,7 +445,7 @@ function createMeldSnapshots(melds: MeldLike[] | null | undefined = []): BridgeM
   return meldItems.map((meld) => createMeldSnapshot(meld)).filter(isDefined);
 }
 
-function getOnlineFourPlayerActivitySubtitle(
+function getOnlineFourPlayerActivityText(
   room: GamePanelContextLike["room"] | null,
   game: GameLike | null,
   players: PlayerLike[] | null | undefined,
@@ -531,7 +534,8 @@ function getSelfSectionSnapshot(context: GamePanelContextLike): BridgeSelfSectio
   const selfRoundState = context.selfRoundState || EMPTY_ROUND_STATE;
   const clientState = context.clientState || {};
   const drawReveal = context.drawReveal || null;
-  const onlineFourPlayerActivitySubtitle = getOnlineFourPlayerActivitySubtitle(room, game, players);
+  const onlineFourPlayerActivityText = getOnlineFourPlayerActivityText(room, game, players);
+  const onlineFourPlayerSyncStatus = getOnlineFourPlayerSyncStatus(room, currentPlayer, game);
 
   if (!currentPlayer) {
     return getEmptyGameTableStageSnapshot().selfSection;
@@ -574,7 +578,10 @@ function getSelfSectionSnapshot(context: GamePanelContextLike): BridgeSelfSectio
   return {
     title: currentPlayer.name || "你",
     scoreBadge: getSeatScoreSummary(game, currentPlayer.seat),
-    statusText: onlineFourPlayerActivitySubtitle || getSelfStatusText(clientState, game, seat, room),
+    statusText: onlineFourPlayerSyncStatus.text || getSelfStatusText(clientState, game, seat, room),
+    statusTone: onlineFourPlayerSyncStatus.tone,
+    activityText: onlineFourPlayerActivityText,
+    drawNoticeText: getOnlineFourPlayerDrawNoticeText(room, drawReveal),
     handTiles,
     drawnTile: drawnTileButton
       ? {
@@ -585,6 +592,72 @@ function getSelfSectionSnapshot(context: GamePanelContextLike): BridgeSelfSectio
       : null,
     melds: createMeldSnapshots(selfRoundState.melds),
   };
+}
+
+function getOnlineFourPlayerDrawNoticeText(
+  room: GamePanelContextLike["room"] | null,
+  drawReveal: DrawRevealLike | null,
+): string {
+  if (!isOnlineFourPlayerRoom(room) || !drawReveal?.tileId) {
+    return "";
+  }
+
+  return `你剛剛摸到 ${getTileDisplayName(getTileType(drawReveal.tileId))}`;
+}
+
+function getOnlineFourPlayerSyncStatus(
+  room: GamePanelContextLike["room"] | null,
+  currentPlayer: PlayerLike | null | undefined,
+  game: GameLike | null,
+): { text: string; tone: BridgeSelfSectionSnapshot["statusTone"] } {
+  if (!room || !isOnlineFourPlayerRoom(room) || !currentPlayer || !game || game.status !== "playing") {
+    return {
+      text: "",
+      tone: "normal",
+    };
+  }
+
+  const localDebug = room.localDebug || null;
+  const lastCombinedSnapshotAt = Number(localDebug?.lastCombinedSnapshotAt) || 0;
+  if (!lastCombinedSnapshotAt) {
+    return {
+      text: "同步：等待第一個房間快照\n4P debug：初始化中",
+      tone: "warn",
+    };
+  }
+
+  const now = Date.now();
+  const combinedAgeMs = Math.max(0, now - lastCombinedSnapshotAt);
+  const roomAgeMs = Math.max(0, now - (Number(localDebug?.lastRoomSnapshotAt) || lastCombinedSnapshotAt));
+  const metaAgeMs = Math.max(0, now - (Number(localDebug?.lastRoomMetaSnapshotAt) || lastCombinedSnapshotAt));
+  const pendingCommandCount = Math.max(0, Number(localDebug?.pendingCommandCount) || 0);
+  const isHostClient = room.hostPlayerId === currentPlayer.id;
+
+  let headline = `同步：正常（${formatElapsedDebugTime(combinedAgeMs)}前）`;
+  if (!isHostClient && pendingCommandCount > 0 && combinedAgeMs >= 1200) {
+    headline = `同步中：等待屋主套用（${pendingCommandCount}）`;
+  } else if (combinedAgeMs >= 4000) {
+    headline = `同步延遲：${formatElapsedDebugTime(combinedAgeMs)}未更新`;
+  }
+
+  return {
+    text: [
+      headline,
+      `4P debug：${isHostClient ? "屋主端" : "客方端"} / room ${formatElapsedDebugTime(roomAgeMs)} / meta ${formatElapsedDebugTime(metaAgeMs)} / queue ${pendingCommandCount}`,
+    ].join("\n"),
+    tone: combinedAgeMs >= 4000 ? "warn" : "normal",
+  };
+}
+
+function formatElapsedDebugTime(elapsedMs: number) {
+  const normalizedMs = Math.max(0, Number(elapsedMs) || 0);
+  if (normalizedMs < 1000) {
+    return `${(normalizedMs / 1000).toFixed(1)}秒`;
+  }
+  if (normalizedMs < 10000) {
+    return `${(normalizedMs / 1000).toFixed(1)}秒`;
+  }
+  return `${Math.round(normalizedMs / 1000)}秒`;
 }
 
 function buildResultHandSnapshot(

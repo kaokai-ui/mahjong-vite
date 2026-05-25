@@ -9,6 +9,7 @@ type CreateAppRenderRuntimeDeps = {
   resetGameRuntimeState: () => void;
   runtimeState: GameRuntimeState;
   syncBridgeSnapshot: () => void;
+  syncOnlineWatchdogRenderTimer: (state: GameRuntimeState, room: AppState["room"], scheduleRender: () => void) => void;
   triggerAutoDrawIfNeeded: (state: GameRuntimeState, context: AutoDrawContext) => void;
 };
 
@@ -21,6 +22,7 @@ export function createAppRenderRuntime(appState: AppState, deps: CreateAppRender
       getController: deps.getController,
       render,
     });
+    deps.syncOnlineWatchdogRenderTimer(deps.runtimeState, appState.room, render);
     deps.syncBridgeSnapshot();
   };
 

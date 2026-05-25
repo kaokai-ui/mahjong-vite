@@ -142,7 +142,11 @@ export function SelfSection({
             {section.title}
             {section.scoreBadge ? <span className="score-badge">{section.scoreBadge}</span> : null}
           </h3>
-          <span className="self-head-status">{section.statusText}</span>
+          {section.statusText ? (
+            <span className={`self-head-status ${section.statusTone === "warn" ? "is-warn" : ""}`.trim()}>
+              {section.statusText}
+            </span>
+          ) : null}
         </div>
       </div>
       <div
@@ -172,6 +176,12 @@ export function SelfSection({
             <div className={`drawn-tile-slot ${section.drawnTile.isGracePeriod ? "is-grace-period" : ""}`.trim()}>
               <TileCommandButton button={section.drawnTile.button} actions={actions} />
               {section.drawnTile.countdownLabel ? <span className="draw-countdown">{section.drawnTile.countdownLabel}</span> : null}
+            </div>
+          ) : null}
+          {section.activityText || section.drawNoticeText ? (
+            <div className="self-hand-messages" aria-live="polite">
+              {section.activityText ? <div className="self-hand-activity">{section.activityText}</div> : null}
+              {section.drawNoticeText ? <div className="self-hand-draw-note">{section.drawNoticeText}</div> : null}
             </div>
           ) : null}
         </div>

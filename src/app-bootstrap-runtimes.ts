@@ -23,6 +23,7 @@ import {
   getDrawRevealState,
   normalizeDrawRevealSecondsValue,
   resetGameRuntimeState,
+  syncOnlineWatchdogRenderTimer,
   triggerAutoDrawIfNeeded,
 } from "./game-runtime-state";
 import { normalizeScoringEnabled } from "./scoring.js";
@@ -82,6 +83,7 @@ export function createBootstrapRuntimes(appState: AppState, runtimeState: GameRu
     resetGameRuntimeState: () => resetGameRuntimeState(runtimeState),
     runtimeState,
     syncBridgeSnapshot: () => bridgeRuntime!.syncBridgeSnapshot(),
+    syncOnlineWatchdogRenderTimer,
     triggerAutoDrawIfNeeded,
   }) as RenderRuntime;
 

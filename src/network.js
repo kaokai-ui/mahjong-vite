@@ -36,6 +36,8 @@ export class NetworkController {
     this.roomSnapshot = "";
     this.roomData = null;
     this.roomMeta = null;
+    this.lastRoomSnapshotAt = 0;
+    this.lastRoomMetaSnapshotAt = 0;
     this.commandChain = Promise.resolve();
     this.processingCommand = false;
     this.roomUnsubscribe = null;

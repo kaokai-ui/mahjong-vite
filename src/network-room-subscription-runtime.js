@@ -24,6 +24,8 @@ export function leaveSubscribedRoom(controller) {
   controller.roomSnapshot = "";
   controller.roomData = null;
   controller.roomMeta = null;
+  controller.lastRoomSnapshotAt = 0;
+  controller.lastRoomMetaSnapshotAt = 0;
   controller.processingCommand = false;
   controller.onRoomChange(null);
 }
@@ -35,6 +37,7 @@ export function subscribeToRoomState(controller, roomId) {
   controller.roomMetaUnsubscribe = onValue(
     dbRef(`roomMeta/${roomId}`),
     (snapshot) => {
+      controller.lastRoomMetaSnapshotAt = Date.now();
       controller.roomMeta = normalizeRoomMeta(snapshot.val());
       emitCombinedRoomState(controller);
     },
@@ -46,6 +49,7 @@ export function subscribeToRoomState(controller, roomId) {
   controller.roomUnsubscribe = onValue(
     dbRef(`rooms/${roomId}`),
     (snapshot) => {
+      controller.lastRoomSnapshotAt = Date.now();
       controller.roomData = snapshot.val();
       emitCombinedRoomState(controller);
       queuePendingRoomCommand(controller);
@@ -57,7 +61,13 @@ export function subscribeToRoomState(controller, roomId) {
 }
 
 export function emitCombinedRoomState(controller) {
-  const nextRoom = normalizeRoom(controller.roomData, controller.roomMeta);
+  const baseRoom = normalizeRoom(controller.roomData, controller.roomMeta);
+  const nextRoom = baseRoom
+    ? {
+        ...baseRoom,
+        localDebug: buildRoomLocalDebugSnapshot(controller, baseRoom),
+      }
+    : null;
   const nextSnapshot = JSON.stringify(nextRoom);
   const changed = nextSnapshot !== controller.roomSnapshot;
 
@@ -67,6 +77,19 @@ export function emitCombinedRoomState(controller) {
   if (changed) {
     controller.onRoomChange(controller.room);
   }
+}
+
+function buildRoomLocalDebugSnapshot(controller, room) {
+  const lastRoomSnapshotAt = Number(controller.lastRoomSnapshotAt) || 0;
+  const lastRoomMetaSnapshotAt = Number(controller.lastRoomMetaSnapshotAt) || 0;
+  const lastCombinedSnapshotAt = Math.max(lastRoomSnapshotAt, lastRoomMetaSnapshotAt);
+
+  return {
+    lastRoomSnapshotAt,
+    lastRoomMetaSnapshotAt,
+    lastCombinedSnapshotAt,
+    pendingCommandCount: room && room.commands ? Object.keys(room.commands).length : 0,
+  };
 }
 
 export function queuePendingRoomCommand(controller) {
