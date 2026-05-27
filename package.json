@@ -7,6 +7,7 @@
     "build": "vite build",
     "build:online": "node scripts/build-app-variant.mjs mahjong-online",
     "build:solo-offline": "node scripts/build-app-variant.mjs mahjong-solo-offline",
+    "generate:pwa-icons": "\"C:\\Users\\KKHu\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" scripts/generate-pwa-icons.py",
     "preview": "vite preview --configLoader native --host 0.0.0.0 --port 4173",
     "cap:copy:solo-offline": "node scripts/run-capacitor-variant.mjs mahjong-solo-offline copy",
     "cap:sync:solo-offline": "node scripts/run-capacitor-variant.mjs mahjong-solo-offline sync",

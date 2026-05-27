@@ -1,6 +1,7 @@
 import "../styles.css";
 import { createRoot } from "react-dom/client";
 import { ONLINE_MULTIPLAYER_ENABLED } from "./app-variant";
+import { registerPwaServiceWorker } from "./pwa";
 
 function shouldLoadLocalOverride() {
   if (!ONLINE_MULTIPLAYER_ENABLED) {
@@ -56,5 +57,7 @@ async function bootstrapReactApp() {
     </AppBridgeProvider>,
   );
 }
+
+registerPwaServiceWorker();
 
 void bootstrapReactApp();

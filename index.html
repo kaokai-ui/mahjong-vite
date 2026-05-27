@@ -37,10 +37,58 @@
         text-decoration: none !important;
       }
     </style>
-    <link rel="icon" href="data:," />
     <script>
       window.__APP_VERSION__ = "20260524-topbar-notice-1";
       document.documentElement.dataset.appVersion = window.__APP_VERSION__;
+
+      (function () {
+        var head = document.head || document.getElementsByTagName("head")[0];
+        var versionQuery = window.__APP_VERSION__ ? "?appVersion=" + encodeURIComponent(window.__APP_VERSION__) : "";
+
+        function appendHeadNode(tagName, attributes) {
+          var node = document.createElement(tagName);
+          Object.keys(attributes).forEach(function (key) {
+            node.setAttribute(key, attributes[key]);
+          });
+          head.appendChild(node);
+        }
+
+        appendHeadNode("meta", {
+          name: "apple-mobile-web-app-title",
+          content: "雙人 13 張麻將",
+        });
+        appendHeadNode("link", {
+          rel: "manifest",
+          href: "./site.webmanifest" + versionQuery,
+        });
+        appendHeadNode("link", {
+          rel: "icon",
+          type: "image/png",
+          sizes: "32x32",
+          href: "./pwa/favicon-32.png" + versionQuery,
+        });
+        appendHeadNode("link", {
+          rel: "icon",
+          type: "image/png",
+          sizes: "16x16",
+          href: "./pwa/favicon-16.png" + versionQuery,
+        });
+        appendHeadNode("link", {
+          rel: "apple-touch-icon",
+          sizes: "180x180",
+          href: "./pwa/apple-touch-icon-180.png" + versionQuery,
+        });
+        appendHeadNode("link", {
+          rel: "apple-touch-icon",
+          sizes: "167x167",
+          href: "./pwa/apple-touch-icon-167.png" + versionQuery,
+        });
+        appendHeadNode("link", {
+          rel: "apple-touch-icon",
+          sizes: "152x152",
+          href: "./pwa/apple-touch-icon-152.png" + versionQuery,
+        });
+      })();
 
       document.addEventListener("DOMContentLoaded", function () {
         var badge = document.getElementById("app-version-badge");
@@ -48,71 +96,6 @@
           badge.textContent = "版號 " + window.__APP_VERSION__;
         }
       });
-    </script>
-    <script>
-      (function () {
-        var host = (window.location && window.location.hostname) || "";
-        var isLocalDevHost =
-          host === "localhost" ||
-          host === "127.0.0.1" ||
-          /^192\.168\./.test(host) ||
-          /^10\./.test(host) ||
-          /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-        window.__IS_LOCAL_DEV_HOST__ = isLocalDevHost;
-
-        if (!window.__IS_LOCAL_DEV_HOST__ || typeof window.fetch !== "function" || typeof window.URL !== "function") {
-          return;
-        }
-
-        var currentVersion = String(window.__APP_VERSION__ || "");
-        var currentUrl = new URL(window.location.href);
-
-        function buildVersionedUrl(version) {
-          var nextUrl = new URL(window.location.href);
-          nextUrl.searchParams.delete("__version_probe__");
-          nextUrl.searchParams.set("v", version);
-          return nextUrl.toString();
-        }
-
-        function normalizeVersionUrl(version) {
-          if (!version) {
-            return;
-          }
-
-          if (currentUrl.searchParams.get("v") === version) {
-            return;
-          }
-
-          window.history.replaceState(null, "", buildVersionedUrl(version));
-        }
-
-        fetch("./?__version_probe__=" + Date.now(), {
-          cache: "no-store",
-          credentials: "same-origin",
-        })
-          .then(function (response) {
-            return response.text();
-          })
-          .then(function (html) {
-            var match = html.match(/window\.__APP_VERSION__ = "([^"]+)"/);
-            var latestVersion = match ? String(match[1] || "") : "";
-
-            if (!latestVersion) {
-              normalizeVersionUrl(currentVersion);
-              return;
-            }
-
-            if (latestVersion !== currentVersion) {
-              window.location.replace(buildVersionedUrl(latestVersion));
-              return;
-            }
-
-            normalizeVersionUrl(latestVersion);
-          })
-          .catch(function () {
-            normalizeVersionUrl(currentVersion);
-          });
-      })();
     </script>
     <script>
       (function () {
