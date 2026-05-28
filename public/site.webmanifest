@@ -1,6 +1,6 @@
 {
   "name": "雙人 13 張麻將",
-  "short_name": "麻將",
+  "short_name": "雙人麻將",
   "description": "雙人 13 張麻將連線與單機對局。",
   "lang": "zh-Hant",
   "start_url": "./",
