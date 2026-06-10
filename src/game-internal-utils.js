@@ -24,11 +24,17 @@ export function getSeatRange(gameOrCount) {
   return Array.from({ length: playerCount }, (_, seat) => seat);
 }
 
+function getTurnOrderDirection(gameOrCount) {
+  return getPlayerCount(gameOrCount) >= 4 ? -1 : 1;
+}
+
 export function getNextSeat(seat, gameOrCount, step = 1) {
   const playerCount = getPlayerCount(gameOrCount);
   const normalizedSeat = ((Number(seat) % playerCount) + playerCount) % playerCount;
   const normalizedStep = Number.isFinite(step) ? Math.round(step) : 1;
-  return ((normalizedSeat + normalizedStep) % playerCount + playerCount) % playerCount;
+  return (
+    ((normalizedSeat + normalizedStep * getTurnOrderDirection(gameOrCount)) % playerCount + playerCount) % playerCount
+  );
 }
 
 export function getOtherSeats(gameOrCount, seat) {
@@ -39,7 +45,9 @@ export function getSeatDistance(fromSeat, toSeat, gameOrCount) {
   const playerCount = getPlayerCount(gameOrCount);
   const normalizedFrom = ((Number(fromSeat) % playerCount) + playerCount) % playerCount;
   const normalizedTo = ((Number(toSeat) % playerCount) + playerCount) % playerCount;
-  return ((normalizedTo - normalizedFrom) % playerCount + playerCount) % playerCount;
+  return (
+    (((normalizedTo - normalizedFrom) * getTurnOrderDirection(gameOrCount)) % playerCount + playerCount) % playerCount
+  );
 }
 
 export function isNextSeat(fromSeat, candidateSeat, gameOrCount) {
