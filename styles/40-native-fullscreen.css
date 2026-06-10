@@ -110,11 +110,23 @@
   }
 
   body.app-game-focus .table-shell-four .table-center-four {
+    --four-seat-discard-side-width: auto;
+    --four-seat-discard-side-padding-top: 0;
+    --four-seat-discard-side-align-content: stretch;
+    --four-seat-discard-side-min-height: 0;
+    --four-seat-discard-side-overflow: hidden;
     --four-seat-discard-side-label-width: 12px;
     --four-seat-discard-side-gap: 2px;
     --four-seat-discard-side-tile-width: 22px;
     --four-seat-discard-column-gap: 2px;
     --four-seat-discard-column-min-width: 22px;
+    --four-seat-discard-column-min-height: auto;
+    --four-seat-discard-column-align-self: auto;
+  }
+
+  body.app-game-focus .table-shell-four .table-center-four .discard-lane-left,
+  body.app-game-focus .table-shell-four .table-center-four .discard-lane-right {
+    justify-self: stretch;
   }
 
   /* Fullscreen desktop gets wider side seats so side melds can stay fully visible. */
