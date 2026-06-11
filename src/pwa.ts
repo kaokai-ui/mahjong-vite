@@ -1,5 +1,26 @@
 import { ONLINE_MULTIPLAYER_ENABLED } from "./app-variant";
 
+function activateWaitingServiceWorker(registration: ServiceWorkerRegistration) {
+  registration.waiting?.postMessage({ type: "SKIP_WAITING" });
+}
+
+function watchServiceWorkerUpdates(registration: ServiceWorkerRegistration) {
+  activateWaitingServiceWorker(registration);
+
+  registration.addEventListener("updatefound", () => {
+    const installingWorker = registration.installing;
+    if (!installingWorker) {
+      return;
+    }
+
+    installingWorker.addEventListener("statechange", () => {
+      if (installingWorker.state === "installed") {
+        activateWaitingServiceWorker(registration);
+      }
+    });
+  });
+}
+
 export function registerPwaServiceWorker() {
   if (!ONLINE_MULTIPLAYER_ENABLED) {
     return;
@@ -21,9 +42,24 @@ export function registerPwaServiceWorker() {
   }
 
   window.addEventListener("load", () => {
+    const hadActiveController = Boolean(navigator.serviceWorker.controller);
+    let didReloadForControllerSwap = false;
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadActiveController || didReloadForControllerSwap) {
+        return;
+      }
+
+      didReloadForControllerSwap = true;
+      window.location.reload();
+    });
+
     void navigator.serviceWorker
       .register(serviceWorkerUrl.toString(), { scope: serviceWorkerBaseUrl.pathname })
-      .then((registration) => registration.update())
+      .then((registration) => {
+        watchServiceWorkerUpdates(registration);
+        return registration.update();
+      })
       .catch((error) => {
         console.warn("PWA service worker registration failed:", error);
       });
