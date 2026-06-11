@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no,date=no,email=no,address=no" />
+    <meta name="theme-color" content="#0d3028" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>單人4p麻將</title>
+    <meta
+      name="description"
+      content="極簡單人 4 人麻將入口，開頁直接開始單機四人局。"
+    />
+    <script>
+      window.__APP_VERSION__ = "20260612-sologame-icon-1";
+      document.documentElement.dataset.appVersion = window.__APP_VERSION__;
+      document.documentElement.dataset.appShellVariant = "solo-4p-minimal";
+
+      (function () {
+        var head = document.head || document.getElementsByTagName("head")[0];
+        var versionQuery = window.__APP_VERSION__ ? "?appVersion=" + encodeURIComponent(window.__APP_VERSION__) : "";
+
+        function appendHeadNode(tagName, attributes) {
+          var node = document.createElement(tagName);
+          Object.keys(attributes).forEach(function (key) {
+            node.setAttribute(key, attributes[key]);
+          });
+          head.appendChild(node);
+        }
+
+        appendHeadNode("meta", {
+          name: "apple-mobile-web-app-title",
+          content: "單人4p麻將",
+        });
+        appendHeadNode("link", {
+          rel: "manifest",
+          href: "./sologame.webmanifest" + versionQuery,
+        });
+        appendHeadNode("link", {
+          rel: "icon",
+          type: "image/png",
+          sizes: "32x32",
+          href: "./pwa/sologame-favicon-32.png" + versionQuery,
+        });
+        appendHeadNode("link", {
+          rel: "icon",
+          type: "image/png",
+          sizes: "16x16",
+          href: "./pwa/sologame-favicon-16.png" + versionQuery,
+        });
+        appendHeadNode("link", {
+          rel: "apple-touch-icon",
+          sizes: "180x180",
+          href: "./pwa/sologame-apple-touch-icon-180.png" + versionQuery,
+        });
+        appendHeadNode("link", {
+          rel: "apple-touch-icon",
+          sizes: "167x167",
+          href: "./pwa/sologame-apple-touch-icon-167.png" + versionQuery,
+        });
+        appendHeadNode("link", {
+          rel: "apple-touch-icon",
+          sizes: "152x152",
+          href: "./pwa/sologame-apple-touch-icon-152.png" + versionQuery,
+        });
+      })();
+    </script>
+    <script>
+      (function () {
+        var root =
+          typeof globalThis !== "undefined"
+            ? globalThis
+            : typeof self !== "undefined"
+              ? self
+              : typeof window !== "undefined"
+                ? window
+                : {};
+        var cryptoApi = root.crypto;
+
+        if (!cryptoApi || typeof cryptoApi.randomUUID === "function" || typeof cryptoApi.getRandomValues !== "function") {
+          return;
+        }
+
+        cryptoApi.randomUUID = function () {
+          var bytes = new Uint8Array(16);
+          cryptoApi.getRandomValues(bytes);
+          bytes[6] = (bytes[6] & 15) | 64;
+          bytes[8] = (bytes[8] & 63) | 128;
+
+          var hex = "";
+          for (var index = 0; index < bytes.length; index += 1) {
+            var value = bytes[index].toString(16);
+            hex += value.length < 2 ? "0" + value : value;
+          }
+
+          return (
+            hex.slice(0, 8) +
+            "-" +
+            hex.slice(8, 12) +
+            "-" +
+            hex.slice(12, 16) +
+            "-" +
+            hex.slice(16, 20) +
+            "-" +
+            hex.slice(20)
+          );
+        };
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="boot-warning" class="banner banner-error" hidden>
+      <span id="boot-warning-text">
+        載入遊戲時發生問題，請重新整理頁面；如果仍無法操作，請回報這行訊息仍有顯示。
+      </span>
+    </div>
+    <div id="app-root"></div>
+    <script>
+      (function () {
+        var warning = document.getElementById("boot-warning");
+        var warningText = document.getElementById("boot-warning-text");
+
+        function showBootWarning(message) {
+          if (warningText && message) {
+            warningText.textContent = message;
+          }
+          if (warning) {
+            warning.hidden = false;
+          }
+        }
+
+        window.addEventListener("error", function (event) {
+          if (document.documentElement.dataset.appReady === "yes") {
+            return;
+          }
+
+          var errorMessage =
+            (event.error && event.error.message) ||
+            event.message ||
+            "Unknown error";
+          showBootWarning("載入遊戲時發生錯誤：" + errorMessage);
+        });
+
+        window.addEventListener("unhandledrejection", function (event) {
+          if (document.documentElement.dataset.appReady === "yes") {
+            return;
+          }
+
+          var reason = event.reason;
+          var errorMessage =
+            (reason && reason.message) ||
+            (typeof reason === "string" ? reason : "Unknown error");
+          showBootWarning("載入遊戲時發生錯誤：" + errorMessage);
+        });
+      })();
+    </script>
+    <script type="module" src="./src/sologame-main.tsx"></script>
+  </body>
+</html>
