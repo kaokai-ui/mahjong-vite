@@ -4,9 +4,14 @@ const appVersion = serviceWorkerUrl.searchParams.get("appVersion") || "dev";
 const cachePrefix = "mahjong-pwa";
 const shellCacheName = `${cachePrefix}-shell-${appVersion}`;
 const assetCacheName = `${cachePrefix}-asset-${appVersion}`;
-const appShellCacheKey = new Request(new URL("./", scopeUrl).toString(), { cache: "reload" });
 const shellPrecacheUrls = [
   "./",
+  "./sologame.html",
+  "./pwa/sologame-icon-192.png",
+  "./pwa/sologame-icon-512.png",
+  "./pwa/sologame-icon-maskable-192.png",
+  "./pwa/sologame-icon-maskable-512.png",
+  "./pwa/sologame-apple-touch-icon-180.png",
   "./pwa/icon-192.png",
   "./pwa/icon-512.png",
   "./pwa/icon-maskable-192.png",
@@ -67,15 +72,16 @@ self.addEventListener("fetch", (event) => {
 
 async function handleNavigationRequest(request) {
   const cache = await caches.open(shellCacheName);
+  const navigationCacheKey = createNavigationCacheKey(request.url);
 
   try {
     const response = await fetch(request, { cache: "no-store" });
     if (response && response.ok) {
-      await cache.put(appShellCacheKey, response.clone());
+      await cache.put(navigationCacheKey, response.clone());
     }
     return response;
   } catch (error) {
-    const cached = await cache.match(appShellCacheKey);
+    const cached = (await cache.match(navigationCacheKey)) || (await cache.match(createNavigationCacheKey(scopeUrl)));
     if (cached) {
       return cached;
     }
@@ -98,7 +104,7 @@ async function handleAssetRequest(request) {
 }
 
 function shouldHandleAssetRequest(requestUrl) {
-  if (requestUrl.pathname.endsWith("/site.webmanifest")) {
+  if (requestUrl.pathname.endsWith(".webmanifest")) {
     return false;
   }
 
@@ -110,4 +116,10 @@ function shouldHandleAssetRequest(requestUrl) {
     requestUrl.pathname.endsWith(".png") ||
     requestUrl.pathname.endsWith(".svg")
   );
+}
+
+function createNavigationCacheKey(url) {
+  const requestUrl = new URL(url);
+  const normalizedUrl = new URL(requestUrl.pathname, scopeUrl);
+  return new Request(normalizedUrl.toString(), { cache: "reload" });
 }
