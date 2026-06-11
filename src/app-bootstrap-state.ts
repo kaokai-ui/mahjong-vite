@@ -12,6 +12,7 @@ import {
   GAME_MODE_SOLO as GAME_MODE_SOLO_VALUE,
   normalizeAppGameMode,
 } from "./game-mode.js";
+import { getAppShellVariantPreset } from "./page-shell-variant";
 import { DEFAULT_RULESET, getRuleset } from "./rules.js";
 import { DEFAULT_SCORING_ENABLED, normalizeScoringEnabled } from "./scoring.js";
 import {
@@ -76,6 +77,7 @@ export function createInitializedAppState(): AppState {
     }),
   );
 
+  applyAppShellVariantPreset(appState);
   syncModeSpecificInputs(appState, { createRandomRoomId: createRandomFirebaseRoomId, soloModeValue: GAME_MODE_SOLO });
   syncRoomPanelRulesetState(appState, { room: null, normalizeRulesetId });
 
@@ -113,4 +115,18 @@ function createDefaultAppState(): AppState {
     roomPanelRulesetDirty: false,
     roomPanelRoomId: "",
   };
+}
+
+function applyAppShellVariantPreset(appState: AppState) {
+  const preset = getAppShellVariantPreset();
+  if (!preset) {
+    return;
+  }
+
+  appState.selectedMode = normalizeGameMode(preset.mode);
+  appState.selectedRulesetId = normalizeRulesetId(preset.rulesetId);
+  appState.selectedDrawRevealSeconds = preset.drawRevealSeconds;
+  appState.selectedSoloDifficulty = normalizeSoloDifficulty(preset.soloDifficulty);
+  appState.selectedSoloPlayerCount = normalizeSoloPlayerCount(preset.soloPlayerCount);
+  appState.selectedScoringEnabled = normalizeScoringEnabled(preset.scoringEnabled);
 }
