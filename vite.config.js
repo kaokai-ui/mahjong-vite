@@ -35,6 +35,12 @@ export default defineConfig({
   base: normalizeBasePath(process.env.VITE_BASE_PATH || appVariantConfig.basePath),
   build: {
     outDir: appVariantConfig.webDir,
+    rollupOptions: {
+      input: {
+        main: resolve(rootDir, "index.html"),
+        sologame: resolve(rootDir, "sologame.html"),
+      },
+    },
   },
   plugins: [react()],
   resolve: {

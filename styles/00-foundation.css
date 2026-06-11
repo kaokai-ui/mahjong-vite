@@ -45,6 +45,10 @@ select {
   padding: 18px 0 40px;
 }
 
+html[data-app-shell-variant="solo-4p-minimal"] .app-shell {
+  width: min(920px, calc(100% - 24px));
+}
+
 body.app-game-focus {
   --game-focus-notice-bottom-offset: clamp(164px, 19vh, 238px);
   overflow-x: hidden;
@@ -135,6 +139,55 @@ body.app-native-fullscreen.app-game-focus #game-panel.panel .panel-head > div:fi
   gap: 18px;
   align-items: stretch;
   margin-bottom: 18px;
+}
+
+.solo4p-launcher {
+  display: grid;
+  gap: 22px;
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.solo4p-launcher-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.solo4p-launcher-copy h1 {
+  margin: 0;
+  font-family: "Noto Serif TC", "PMingLiU", serif;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.08;
+}
+
+.solo4p-launcher-copy p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.solo4p-launcher-form {
+  display: grid;
+  gap: 14px;
+}
+
+.solo4p-launcher-form .field {
+  margin-bottom: 0;
+}
+
+.solo4p-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: rgba(23, 32, 29, 0.06);
+  border: 1px solid rgba(23, 32, 29, 0.08);
+  color: var(--accent-strong);
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
 .hero-copy,
@@ -312,6 +365,10 @@ body.app-solo-mode #join-room-form {
   display: none !important;
 }
 
+body.app-game-focus .solo4p-launcher {
+  display: none;
+}
+
 .lobby-card,
 .room-card,
 .log-card {
@@ -458,6 +515,12 @@ body.app-solo-mode #join-room-form {
 .form-feedback-info {
   background: rgba(31, 122, 91, 0.12);
   color: var(--accent-strong);
+}
+
+@media (max-width: 720px) {
+  .solo4p-launcher {
+    padding: 22px 18px;
+  }
 }
 
 #boot-warning[hidden] {

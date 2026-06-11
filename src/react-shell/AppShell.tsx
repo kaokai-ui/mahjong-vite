@@ -1,4 +1,5 @@
 import { GamePanel } from "./GamePanel";
+import { isSoloFourPlayerMinimalShell } from "../page-shell-variant";
 import { RoomPanel } from "./RoomPanel";
 import {
   AVAILABLE_GAME_MODE_OPTIONS,
@@ -46,6 +47,7 @@ function FormFeedback({
 export function AppShell() {
   const { snapshot, actions } = useAppBridge();
   const pageMode = usePageModeEffects(snapshot);
+  const isMinimalSoloShell = isSoloFourPlayerMinimalShell();
   const lobby = snapshot.lobby;
   const ready = snapshot.ready;
   const inGameTable = Boolean(snapshot.gamePanel.tableStage.visible);
@@ -69,6 +71,74 @@ export function AppShell() {
     : "建立新房後，把房號分享給另一位玩家；雙方都加入後就可以開始對局。";
   const createRoomTitle = isSoloMode ? (isFourPlayerSolo ? "四人單機模式" : "單人對電腦") : "建立房間";
   const createRoomSubmitLabel = isSoloMode ? (isFourPlayerSolo ? "開始四人單機" : "開始單人遊戲") : "建立房間";
+
+  if (isMinimalSoloShell) {
+    return (
+      <div className="app-shell">
+        <main className="layout">
+          {!inGameTable ? (
+            <>
+              <MessageBanner id="notice-banner" as="section" message={lobby.noticeBanner} />
+              <section className="panel solo4p-launcher">
+                <div className="solo4p-launcher-copy">
+                  <span className="eyebrow">Solo 4P</span>
+                  <h1>單人4p模式</h1>
+                  <p>輸入玩家名稱後，就會直接用預設設定開始四人單機對局。</p>
+                </div>
+                <form
+                  id="create-room-form"
+                  className="solo4p-launcher-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    requestGameFullscreen();
+                    void actions.submitCreate();
+                  }}
+                >
+                  <label className="field">
+                    <span>玩家名稱</span>
+                    <input
+                      id="player-name-input"
+                      type="text"
+                      maxLength={16}
+                      placeholder="請輸入你的名字"
+                      value={lobby.playerName}
+                      onChange={(event) => actions.setPlayerName(event.currentTarget.value)}
+                    />
+                  </label>
+                  <div className="solo4p-mode-pill" aria-label="遊戲模式">
+                    單人4p模式
+                  </div>
+                  <button
+                    id="create-room-submit-button"
+                    className="primary-button"
+                    type="submit"
+                    data-submit-action="create-room"
+                    disabled={lobby.createDisabled}
+                  >
+                    開始遊戲
+                  </button>
+                  <FormFeedback id="create-room-feedback" feedback={lobby.createFeedback} />
+                </form>
+              </section>
+              <section id="game-panel" className="panel" hidden aria-hidden="true"></section>
+            </>
+          ) : null}
+
+          {inGameTable ? (
+            <GamePanel
+              gamePanel={snapshot.gamePanel}
+              seatCount={Number(snapshot.gamePanel.tableStage.seatCount || 4)}
+              isSoloMode
+              actions={actions}
+              fullscreenActive={pageMode.fullscreenActive}
+              fullscreenSupported={pageMode.fullscreenSupported}
+              noticeBanner={inGameTable ? lobby.noticeBanner : null}
+            />
+          ) : null}
+        </main>
+      </div>
+    );
+  }
 
   return (
     <>
