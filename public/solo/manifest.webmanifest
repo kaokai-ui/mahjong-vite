@@ -3,9 +3,9 @@
   "short_name": "單人4p",
   "description": "極簡單人 4 人麻將入口。",
   "lang": "zh-Hant",
-  "start_url": "./solo/",
-  "scope": "./solo/",
-  "id": "./solo/",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone", "minimal-ui", "browser"],
   "orientation": "landscape",
@@ -13,25 +13,25 @@
   "theme_color": "#0d3028",
   "icons": [
     {
-      "src": "./pwa/sologame-icon-192.png",
+      "src": "../pwa/sologame-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./pwa/sologame-icon-512.png",
+      "src": "../pwa/sologame-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./pwa/sologame-icon-maskable-192.png",
+      "src": "../pwa/sologame-icon-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "./pwa/sologame-icon-maskable-512.png",
+      "src": "../pwa/sologame-icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
