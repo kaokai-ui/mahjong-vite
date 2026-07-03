@@ -9,6 +9,7 @@ import {
   getSelfStatusText,
   getTileDisplayName,
   getTileThemeClass,
+  isSoloRoom,
   isOnlineFourPlayerRoom,
 } from "./bridge-view-helpers";
 import type {
@@ -450,7 +451,7 @@ function getOnlineFourPlayerActivityText(
   game: GameLike | null,
   players: PlayerLike[] | null | undefined,
 ): string {
-  if (!isOnlineFourPlayerRoom(room) || !game || game.status !== "playing") {
+  if (!shouldShowFourPlayerHandMessages(room, game, players) || !game || game.status !== "playing") {
     return "";
   }
 
@@ -600,7 +601,7 @@ function getOnlineFourPlayerDrawNoticeText(
   game: GameLike | null,
   drawReveal: DrawRevealLike | null,
 ): string {
-  if (!isOnlineFourPlayerRoom(room) || !currentPlayer || !game) {
+  if (!shouldShowFourPlayerHandMessages(room, game, room?.activePlayers || null) || !currentPlayer || !game) {
     return "";
   }
 
@@ -665,6 +666,34 @@ function getOnlineFourPlayerSyncStatus(
     ].join("\n"),
     tone: combinedAgeMs >= 4000 ? "warn" : "normal",
   };
+}
+
+function shouldShowFourPlayerHandMessages(
+  room: GamePanelContextLike["room"] | null,
+  game: GameLike | null,
+  players: PlayerLike[] | null | undefined,
+) {
+  if (isOnlineFourPlayerRoom(room)) {
+    return true;
+  }
+
+  if (!isSoloRoom(room)) {
+    return false;
+  }
+
+  return getFourPlayerSeatCount(room, game, players) >= 4;
+}
+
+function getFourPlayerSeatCount(
+  room: GamePanelContextLike["room"] | null,
+  game: GameLike | null,
+  players: PlayerLike[] | null | undefined,
+) {
+  return Math.max(
+    Array.isArray(players) ? players.length : 0,
+    Number(room?.meta?.soloPlayerCount || room?.meta?.playerCount || 0),
+    Array.isArray(game?.players) ? game.players.length : 0,
+  );
 }
 
 function formatElapsedDebugTime(elapsedMs: number) {

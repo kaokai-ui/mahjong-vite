@@ -8,38 +8,15 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>雙人 13 張麻將</title>
+    <title>單人4p麻將</title>
     <meta
       name="description"
-      content="本機與平板可用的雙人 13 張麻將，支援單機與 Firebase 房間模式。"
+      content="極簡單人 4 人麻將入口，開頁直接開始單機四人局。"
     />
-    <style>
-      #app-version-badge {
-        position: fixed;
-        left: 10px;
-        top: 10px;
-        z-index: 9999;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(12, 42, 35, 0.92);
-        color: #f5ecd6;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
-        font: 700 12px/1.2 "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-        letter-spacing: 0.02em;
-      }
-
-      #app-version-badge,
-      #app-version-badge *,
-      #app-version-badge a {
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff;
-        text-decoration: none !important;
-      }
-    </style>
     <script>
-      window.__APP_VERSION__ = "20260529-sologame-shell-1";
+      window.__APP_VERSION__ = "20260612-sologame-icon-1";
       document.documentElement.dataset.appVersion = window.__APP_VERSION__;
+      document.documentElement.dataset.appShellVariant = "solo-4p-minimal";
 
       (function () {
         var head = document.head || document.getElementsByTagName("head")[0];
@@ -55,47 +32,40 @@
 
         appendHeadNode("meta", {
           name: "apple-mobile-web-app-title",
-          content: "雙人麻將",
+          content: "單人4p麻將",
         });
         appendHeadNode("link", {
           rel: "manifest",
-          href: "./site.webmanifest" + versionQuery,
+          href: "./manifest.webmanifest" + versionQuery,
         });
         appendHeadNode("link", {
           rel: "icon",
           type: "image/png",
           sizes: "32x32",
-          href: "./pwa/favicon-32.png" + versionQuery,
+          href: "../pwa/sologame-favicon-32.png" + versionQuery,
         });
         appendHeadNode("link", {
           rel: "icon",
           type: "image/png",
           sizes: "16x16",
-          href: "./pwa/favicon-16.png" + versionQuery,
+          href: "../pwa/sologame-favicon-16.png" + versionQuery,
         });
         appendHeadNode("link", {
           rel: "apple-touch-icon",
           sizes: "180x180",
-          href: "./pwa/apple-touch-icon-180.png" + versionQuery,
+          href: "../pwa/sologame-apple-touch-icon-180.png" + versionQuery,
         });
         appendHeadNode("link", {
           rel: "apple-touch-icon",
           sizes: "167x167",
-          href: "./pwa/apple-touch-icon-167.png" + versionQuery,
+          href: "../pwa/sologame-apple-touch-icon-167.png" + versionQuery,
         });
         appendHeadNode("link", {
           rel: "apple-touch-icon",
           sizes: "152x152",
-          href: "./pwa/apple-touch-icon-152.png" + versionQuery,
+          href: "../pwa/sologame-apple-touch-icon-152.png" + versionQuery,
         });
       })();
-
-      document.addEventListener("DOMContentLoaded", function () {
-        var badge = document.getElementById("app-version-badge");
-        if (badge) {
-          badge.textContent = "版號 " + window.__APP_VERSION__;
-        }
-      });
     </script>
     <script>
       (function () {
@@ -141,13 +111,11 @@
     </script>
   </head>
   <body>
-    <div id="app-version-badge">版號 20260529-sologame-shell-1</div>
     <div id="boot-warning" class="banner banner-error" hidden>
       <span id="boot-warning-text">
-        載入遊戲時發生問題，請重新整理頁面；如果是在 iPad Safari，也可以先回到首頁再重新進入。
+        載入遊戲時發生問題，請重新整理頁面；如果仍無法操作，請回報這行訊息仍有顯示。
       </span>
     </div>
-    <!-- Legacy migration fallback contract: id="game-panel" -->
     <div id="app-root"></div>
     <script>
       (function () {
@@ -188,6 +156,6 @@
         });
       })();
     </script>
-    <script type="module" src="./src/main.tsx"></script>
+    <script type="module" src="../src/sologame-main.tsx"></script>
   </body>
 </html>

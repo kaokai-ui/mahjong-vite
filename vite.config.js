@@ -38,6 +38,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(rootDir, "index.html"),
+        solo: resolve(rootDir, "solo/index.html"),
         sologame: resolve(rootDir, "sologame.html"),
       },
     },
