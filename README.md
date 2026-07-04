@@ -17,13 +17,16 @@
 - 單人模式已支援 `2 人局 / 4 人局` 切換
 - 四人單機模式已接上本機房間資料、3 名 bot 排程、四方位牌桌與結果畫面
 - 主要回歸測試已就位，包含：
-  - `npm run verify:migration`
   - `npm run test:game-engine`
   - `npm run test:bot-ai`
   - `npm run test:scoring`
   - `npm run test:solo-controller`
+  - `npm run test:network-helpers`
+  - `npm run test:network-controller`
   - `npm run test:network-live`
   - `npm run test:network-live:appcheck`
+  - `npm run test:layout:2p-tablet` / `test:layout:4p-tablet`（需 dev server，見「驗證指令」）
+  - `npm run verify:migration` ⚠️ 目前損壞，待修
 
 ## 四人單機進度
 
@@ -56,6 +59,21 @@ npm run dev
 
 - `http://127.0.0.1:4173/`
 - `http://localhost:4173/`
+
+## PWA 安裝（兩個獨立入口）
+
+正式站（GitHub Pages）提供**兩個各自獨立、互不干擾**的 PWA 安裝入口，安裝後會產生兩個獨立的桌面 App icon：
+
+| App | 網址 | manifest / scope |
+|---|---|---|
+| 雙人 13 張麻將 | `https://<pages-host>/mahjong-vite/` | `site.webmanifest`，scope 為根目錄 |
+| 單人 4p 麻將 | `https://<pages-host>/mahjong-vite/solo/` | `solo/manifest.webmanifest`，scope 為 `/solo/` |
+
+- 兩者是**同一份 Pages 部署下的不同路徑**，因 `id`/`scope`/`start_url` 分屬不同目錄而被瀏覽器認成兩個獨立 App，可同時安裝、不會互相覆蓋。
+- `sologame.html` 為相容用的轉址頁，會自動導向 `/solo/`。
+- 各入口有自己的 service worker（根 `sw.js`、`solo/sw.js`），快取前綴不同互不干擾；根 SW 不會攔截 `/solo/` 的導覽。
+- **更新方式**：已安裝者**無需移除**，有網路時開啟 App 即由 service worker 在背景抓新版並自動重載（`skipWaiting` + `controllerchange`，註冊時帶 `updateViaCache:"none"`）。發新版時記得 bump 各 HTML 的 `window.__APP_VERSION__` 讓快取失效。
+- **僅一次性遷移**：曾安裝「舊版兩入口共用 scope」的裝置，需解除安裝舊 icon、清除該網站資料 / unregister 舊 SW，並首次單獨安裝 `/solo/`，之後即全自動更新。
 
 ## App Variants
 
@@ -104,14 +122,25 @@ npm run cap:open:ios:solo-offline
 完整發佈前建議至少跑：
 
 ```powershell
-npm run verify:migration
 npm run test:game-engine
 npm run test:bot-ai
 npm run test:scoring
 npm run test:solo-controller
-npm run test:network-live:appcheck
+npm run test:network-helpers
+npm run test:network-controller
+npm run test:network-live:appcheck   # 需真實 Firebase 憑證
 node local-admin/scripts/four-player-solo-regression.mjs
 ```
+
+平板版面回歸需先啟動 dev server，再指向該網址執行：
+
+```powershell
+npm run dev   # 另開一個終端
+$env:TWO_PLAYER_TABLET_URL="http://127.0.0.1:4173/"; npm run test:layout:2p-tablet
+$env:FOUR_PLAYER_TABLET_URL="http://127.0.0.1:4173/"; npm run test:layout:4p-tablet
+```
+
+> 注意：`npm run verify:migration` 目前為損壞狀態（腳本讀取已不存在的 `src/app-bridge-defaults.ts`），修好前請勿依賴其結果。
 
 ## 專案結構
 
