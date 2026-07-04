@@ -2,7 +2,22 @@
 
 > 產生日期：2026-07-04
 > 範圍：`src/` 全域（89 檔 / ~13.5k 行）+ PWA/部署設定，分六大領域（遊戲引擎、Bot AI、單機控制、連線、React UI、PWA）平行審查。
-> 說明：以下為**審查發現**，多數尚未實際重現／修復，動手前建議先各自寫最小重現案例確認。嚴重度分「高 / 中 / 低」。
+> 嚴重度分「高 / 中 / 低」。
+
+## ✅ 修復狀態（2026-07-04，PR #3 已合併進 main）
+
+本報告列出的 **19 項 BUG 全數修復**，重構大多完成，皆為前端 client-side 變更、**未更動任何 Firebase 安全規則**。驗證：`tsc` 0 錯誤、六大單元測試套件全通過、2p/4p 平板版面回歸通過、`vite build` 成功。
+
+**依規範刻意跳過（無法保證行為 byte 等價，正確性優先）的重構，仍列為待辦：**
+- `src/bot-ai-claim-kong.js` claim/kong 候選建構資料驅動化（各分支 factory/參數/訊息異質）。
+- `src/firebase-rules-contract.js` payload schema 三處合併（輸出被安全規則鏡像測試逐字比對，不可冒險）。
+- 兩份 `sw.js` 以 `importScripts` 抽共用核心；三份 manifest / 兩份 entry HTML 內嵌腳本去重。
+
+**尚需其他環境確認的事項：**
+- 連線座位競態：正式修法為用戶端 `runTransaction`；單元測試 mock 無交易能力會退回等價的 read-then-set，故**交易競態本身需用真實 Firebase 做雙客戶端同時 join 驗證**。伺服端 `.write` 規則不在本 repo，仍建議另行核對線上規則。
+- `npm run verify:migration` 為**既有損壞**（腳本讀取不存在的 `src/app-bridge-defaults.ts`），與本次修復無關，需另行修腳本。
+
+以下保留原始審查明細作為變更依據與追蹤。
 
 ## 摘要
 
