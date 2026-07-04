@@ -15,7 +15,7 @@
 
 **尚需其他環境確認的事項：**
 - 連線座位競態：正式修法為用戶端 `runTransaction`；單元測試 mock 無交易能力會退回等價的 read-then-set，故**交易競態本身需用真實 Firebase 做雙客戶端同時 join 驗證**。伺服端 `.write` 規則不在本 repo，仍建議另行核對線上規則。
-- `npm run verify:migration` 為**既有損壞**（腳本讀取不存在的 `src/app-bridge-defaults.ts`），與本次修復無關，需另行修腳本。
+- ~~`npm run verify:migration` 為**既有損壞**（腳本讀取不存在的 `src/app-bridge-defaults.ts`）~~ → **已修復**：該腳本原為 React 遷移期的原始碼字串快照，已普遍鏽蝕（47 個引用檔中 11 個已被合併移除、契約字串大量漂移）。遷移既已完成，故精簡為一鍵整合驗證（production build + typecheck + 單元測試 + smoke + solo-offline build），移除逐字比對原始碼結構的斷言。
 
 以下保留原始審查明細作為變更依據與追蹤。
 

@@ -26,7 +26,7 @@
   - `npm run test:network-live`
   - `npm run test:network-live:appcheck`
   - `npm run test:layout:2p-tablet` / `test:layout:4p-tablet`（需 dev server，見「驗證指令」）
-  - `npm run verify:migration` ⚠️ 目前損壞，待修
+  - `npm run verify:migration`（一鍵整合：production build + typecheck + 單元測試 + smoke + solo-offline build）
 
 ## 四人單機進度
 
@@ -119,7 +119,13 @@ npm run cap:open:ios:solo-offline
 
 ## 驗證指令
 
-完整發佈前建議至少跑：
+發佈前建議先跑一鍵整合驗證（涵蓋 production build、`tsc`、核心單元測試、smoke、solo-offline build）：
+
+```powershell
+npm run verify:migration
+```
+
+需要個別跑或補充連線 / 版面驗證時：
 
 ```powershell
 npm run test:game-engine
@@ -140,7 +146,7 @@ $env:TWO_PLAYER_TABLET_URL="http://127.0.0.1:4173/"; npm run test:layout:2p-tabl
 $env:FOUR_PLAYER_TABLET_URL="http://127.0.0.1:4173/"; npm run test:layout:4p-tablet
 ```
 
-> 注意：`npm run verify:migration` 目前為損壞狀態（腳本讀取已不存在的 `src/app-bridge-defaults.ts`），修好前請勿依賴其結果。
+> 註：`verify:migration` 原為 React 遷移期的原始碼字串快照檢查，遷移完成後已精簡為上述整合驗證流程（不再逐字比對原始碼結構）。
 
 ## 專案結構
 
