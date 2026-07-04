@@ -332,7 +332,7 @@ function detectPatterns({ concealedTileTypes, melds, decomposition, basePatterns
   return [...patterns];
 }
 
-function isSevenPairs(tileTypes) {
+export function isSevenPairs(tileTypes) {
   if (tileTypes.length !== 14) {
     return false;
   }

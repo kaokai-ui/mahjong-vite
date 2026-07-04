@@ -5,8 +5,12 @@ import {
   getTileSuit,
   getTileType,
   isHonorTile,
+  isSevenPairs as isSevenPairsShape,
   isSuitTile,
 } from "./rules.js";
+
+const THIRTEEN_ORPHANS_PATTERN = "十三么";
+const ALL_HONORS_PATTERN = "字一色";
 
 export const SCORING_VERSION = "tai-v1";
 export const DEFAULT_SCORING_ENABLED = true;
@@ -152,6 +156,14 @@ export function evaluateWinningScore({
 
   if (isFullFlush(allTileTypes)) {
     pushTai(breakdown, "fullFlush", "清一色", 5);
+  }
+
+  if (isAllHonors(allTileTypes)) {
+    pushTai(breakdown, "allHonors", ALL_HONORS_PATTERN, 8);
+  }
+
+  if (isThirteenOrphans(evaluation)) {
+    pushTai(breakdown, "thirteenOrphans", THIRTEEN_ORPHANS_PATTERN, 8);
   }
 
   if (winKind === "selfDraw" && lastDrawSource === "supplement") {
@@ -365,12 +377,19 @@ function isAllPungs(groupSummary) {
 }
 
 function isSevenPairs(tileTypes, melds) {
-  if ((melds || []).length > 0 || (tileTypes || []).length !== 14) {
+  if ((melds || []).length > 0) {
     return false;
   }
 
-  const counts = Object.values(countTileTypes(tileTypes));
-  return counts.length === 7 && counts.every((count) => count === 2);
+  return isSevenPairsShape(tileTypes || []);
+}
+
+function isAllHonors(tileTypes = []) {
+  return tileTypes.length > 0 && tileTypes.every(isHonorTile);
+}
+
+function isThirteenOrphans(evaluation) {
+  return Boolean(evaluation && Array.isArray(evaluation.patterns) && evaluation.patterns.includes(THIRTEEN_ORPHANS_PATTERN));
 }
 
 function hasFullStraight(groupSummary) {

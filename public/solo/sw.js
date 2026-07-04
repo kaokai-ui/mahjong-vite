@@ -84,15 +84,20 @@ async function handleNavigationRequest(request) {
 }
 
 async function handleAssetRequest(request) {
-  const cache = await caches.open(assetCacheName);
-  const cached = await cache.match(request, { ignoreSearch: false });
+  const assetCache = await caches.open(assetCacheName);
+  // Icons are precached (into the shell cache) without a query string, but the
+  // HTML requests them versioned with "?appVersion=". Use ignoreSearch and also
+  // consult the shell cache so those precached icons actually match offline.
+  const cached =
+    (await assetCache.match(request, { ignoreSearch: true })) ||
+    (await (await caches.open(shellCacheName)).match(request, { ignoreSearch: true }));
   if (cached) {
     return cached;
   }
 
   const response = await fetch(request);
   if (response && response.ok) {
-    await cache.put(request, response.clone());
+    await assetCache.put(request, response.clone());
   }
   return response;
 }

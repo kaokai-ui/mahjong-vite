@@ -45,16 +45,19 @@ function useBodyModeClasses({
   snapshot: LobbyBridgeSnapshot;
   fullscreenActive: boolean;
 }) {
+  const isSoloMode = snapshot.lobby.mode === "solo-bot";
+  const gameFocusActive = snapshot.page.gameFocusActive;
+
   useEffect(() => {
     const body = document.body;
     if (!body) {
       return;
     }
 
-    body.classList.toggle("app-solo-mode", snapshot.lobby.mode === "solo-bot");
-    body.classList.toggle("app-game-focus", snapshot.page.gameFocusActive);
+    body.classList.toggle("app-solo-mode", isSoloMode);
+    body.classList.toggle("app-game-focus", gameFocusActive);
     body.classList.toggle("app-native-fullscreen", fullscreenActive);
-  }, [fullscreenActive, snapshot]);
+  }, [fullscreenActive, isSoloMode, gameFocusActive]);
 }
 
 function useGameFocusHeightLock(gameFocusActive: boolean) {

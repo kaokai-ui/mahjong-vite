@@ -30,6 +30,11 @@ function MessageBanner({
   );
 }
 
+function resolveSeatCount(tableSeatCount: number, soloPlayerCount: "2" | "4"): number {
+  // soloPlayerCount is a non-empty string, so it always wins when the table has no seat count yet.
+  return Number(tableSeatCount || soloPlayerCount);
+}
+
 function FormFeedback({
   id,
   feedback,
@@ -188,8 +193,8 @@ export function AppShell() {
                   <strong>{lobby.firebaseStatus.title}</strong>
                   <p>{lobby.firebaseStatus.description}</p>
                   <div className="pill-row">
-                    {lobby.firebaseStatus.pills.map((pill) => (
-                      <span key={pill} className="pill">
+                    {lobby.firebaseStatus.pills.map((pill, pillIndex) => (
+                      <span key={`${pill}-${pillIndex}`} className="pill">
                         {pill}
                       </span>
                     ))}
@@ -372,14 +377,13 @@ export function AppShell() {
           <RoomPanel ready={ready} roomPanel={snapshot.roomPanel} actions={roomActions} />
           <GamePanel
             gamePanel={snapshot.gamePanel}
-            seatCount={Number(snapshot.gamePanel.tableStage.seatCount || snapshot.lobby.soloPlayerCount || 2)}
+            seatCount={resolveSeatCount(snapshot.gamePanel.tableStage.seatCount, snapshot.lobby.soloPlayerCount)}
             isSoloMode={isSoloMode}
             actions={actions}
             fullscreenActive={pageMode.fullscreenActive}
             fullscreenSupported={pageMode.fullscreenSupported}
             noticeBanner={inGameTable ? lobby.noticeBanner : null}
           />
-          {/* Migration contract reference: seatCount={Number(snapshot.lobby.soloPlayerCount || 2)} */}
         </main>
       </div>
     </>

@@ -14,16 +14,18 @@ import {
   decideBotAction,
   normalizeSoloDifficulty,
 } from "./bot-ai.js";
+import { SOLO_STORAGE_KEYS } from "./solo-storage-keys.js";
 
-const PLAYER_NAME_KEY = "mahjong-player-name";
-const SOLO_DIFFICULTY_STORAGE_KEY = "mahjong-solo-difficulty";
-const SOLO_PLAYER_COUNT_STORAGE_KEY = "mahjong-solo-player-count";
+const PLAYER_NAME_KEY = SOLO_STORAGE_KEYS.playerName;
+const SOLO_DIFFICULTY_STORAGE_KEY = SOLO_STORAGE_KEYS.soloDifficulty;
+const SOLO_PLAYER_COUNT_STORAGE_KEY = SOLO_STORAGE_KEYS.soloPlayerCount;
 const HUMAN_PLAYER_ID = "solo-human";
 const HUMAN_BROWSER_ID = "solo-human-browser";
 const SOLO_ROOM_ID = "SOLO";
 const BOT_NAME_PREFIX = "電腦玩家";
 const DEFAULT_SOLO_PLAYER_COUNT = 2;
 const MAX_SOLO_PLAYER_COUNT = 4;
+const MAX_BOT_ACTION_RETRIES = 3;
 const SOLO_FOUR_PLAYER_BOT_PROFILES = [
   { name: "夏曉蘭", difficulty: "god" },
   { name: "楊貴妃", difficulty: "normal" },
@@ -58,6 +60,7 @@ export class SoloController {
     this.onStatusChange = typeof onStatusChange === "function" ? onStatusChange : () => {};
     this.room = null;
     this.botTimer = 0;
+    this.botActionFailureCount = 0;
     this.setupState = {
       configured: true,
       appCheckConfigured: false,
@@ -213,31 +216,26 @@ export class SoloController {
       return null;
     }
 
-    const game = normalizeGameState(this.room.game);
+    // room.game is already normalized by createSoloRoom, so no re-normalize here.
+    const game = this.room.game;
     const pendingClaim = game.pendingClaim || null;
     const botSeat = resolvePendingBotSeat(this.room, game, pendingClaim);
     if (botSeat === null) {
       return null;
     }
 
-    if (
-      (game.phase === "draw" || game.phase === "discard") &&
-      game.turnSeat === botSeat
-    ) {
-      const action = decideBotAction(game, botSeat, getBotDifficultyForSeat(this.room, botSeat));
-      return action ? { ...action, playerSeat: botSeat } : null;
+    // resolvePendingBotSeat already narrowed the phase (draw/discard -> turnSeat,
+    // response/robKong -> pendingClaim.toSeat), so the seat is the one to act.
+    const action = decideBotAction(game, botSeat, getBotDifficultyForSeat(this.room, botSeat));
+    if (!action) {
+      // A bot is on turn but produced no action: surface it instead of hanging silently.
+      const message = `電腦玩家（座位 ${botSeat}）無法決定動作，對局可能卡住。`;
+      console.warn("[SOLO] bot has no available action", { seat: botSeat, phase: game.phase });
+      this.onError(message);
+      return null;
     }
 
-    if (
-      ["response", "robKong"].includes(game.phase) &&
-      pendingClaim &&
-      pendingClaim.toSeat === botSeat
-    ) {
-      const action = decideBotAction(game, botSeat, getBotDifficultyForSeat(this.room, botSeat));
-      return action ? { ...action, playerSeat: botSeat } : null;
-    }
-
-    return null;
+    return { ...action, playerSeat: botSeat };
   }
 
   runBotAction(action) {
@@ -260,7 +258,23 @@ export class SoloController {
     });
 
     if (!result.ok) {
+      // Bot command rejected: recover to an operable state instead of freezing.
+      // Clear the thinking indicator, surface the error, and bounded-retry so a
+      // transient state change can resolve without an infinite retry loop.
+      this.setBotThinking(false, null);
       this.onError(result.message);
+      this.botActionFailureCount += 1;
+
+      if (this.botActionFailureCount <= MAX_BOT_ACTION_RETRIES) {
+        console.warn(
+          `[SOLO] bot action rejected, retrying (${this.botActionFailureCount}/${MAX_BOT_ACTION_RETRIES})`,
+          result.message,
+        );
+        this.queueBotTurnIfNeeded();
+      } else {
+        console.error("[SOLO] bot action repeatedly rejected, aborting bot turn", result.message);
+        this.botActionFailureCount = 0;
+      }
       return;
     }
 
@@ -275,6 +289,9 @@ export class SoloController {
     if (!this.room) {
       return;
     }
+
+    // A command applied successfully, so clear any accumulated bot-failure state.
+    this.botActionFailureCount = 0;
 
     const updatedAt = Date.now();
     this.room = createSoloRoom({

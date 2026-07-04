@@ -7,7 +7,6 @@ import {
   isHonorTile,
 } from "./rules.js";
 import {
-  DEFAULT_SOLO_DIFFICULTY,
   SOLO_DIFFICULTY_LABELS,
 } from "./bot-ai-profile.js";
 import {
@@ -56,7 +55,7 @@ function decideClaimAction(game, playerSeat, clientState, profile) {
     return decideStructuredClaimAction(game, playerSeat, clientState, options, pendingClaim);
   }
 
-  return decideEasyClaimAction(game, playerSeat, options, pendingClaim);
+  return decideEasyClaimAction(game, playerSeat, options, pendingClaim, profile);
 }
 
 function decideKongAction(game, playerSeat, player, clientState, profile) {
@@ -68,15 +67,16 @@ function decideKongAction(game, playerSeat, player, clientState, profile) {
     return decideStructuredKongAction(player, clientState);
   }
 
-  return decideEasyKongAction(player, clientState, profile.id);
+  return decideEasyKongAction(player, clientState, profile);
 }
 
-function decideEasyClaimAction(game, playerSeat, options, pendingClaim) {
+function decideEasyClaimAction(game, playerSeat, options, pendingClaim, profile) {
   const tileType = getTileType(pendingClaim.tileId || pendingClaim.tileType || "");
   const handCounts = countTileTypes(game.players[playerSeat].hand || []);
+  const claimEagerly = isEagerClaimProfile(profile);
 
   const kongOption = options.find((option) => option.type === "claimDiscardKong");
-  if (kongOption && shouldTakeSet(tileType, handCounts, DEFAULT_SOLO_DIFFICULTY, true)) {
+  if (kongOption && shouldTakeSet(tileType, handCounts, claimEagerly, true)) {
     return {
       type: "claimDiscardKong",
       delayMs: getBotDelay(),
@@ -86,7 +86,7 @@ function decideEasyClaimAction(game, playerSeat, options, pendingClaim) {
   }
 
   const pungOption = options.find((option) => option.type === "claimPung");
-  if (pungOption && shouldTakeSet(tileType, handCounts, DEFAULT_SOLO_DIFFICULTY, false)) {
+  if (pungOption && shouldTakeSet(tileType, handCounts, claimEagerly, false)) {
     return {
       type: "claimPung",
       delayMs: getBotDelay(),
@@ -318,9 +318,10 @@ function decideAdvancedClaimAction(game, playerSeat, clientState, options, pendi
   };
 }
 
-function decideEasyKongAction(player, clientState, difficulty) {
+function decideEasyKongAction(player, clientState, profile) {
+  const claimEagerly = isEagerClaimProfile(profile);
   const concealedKong = (clientState.concealedKongs || []).find((tileType) =>
-    shouldDeclareOwnKong(tileType, player.hand || [], difficulty),
+    shouldDeclareOwnKong(tileType, player.hand || [], claimEagerly),
   );
   if (concealedKong) {
     return {
@@ -333,7 +334,7 @@ function decideEasyKongAction(player, clientState, difficulty) {
   }
 
   const addedKong = (clientState.addedKongs || []).find((option) =>
-    shouldDeclareOwnKong(option.tileType, player.hand || [], difficulty),
+    shouldDeclareOwnKong(option.tileType, player.hand || [], claimEagerly),
   );
   if (addedKong) {
     return {
@@ -481,7 +482,7 @@ function decideAdvancedKongAction(game, playerSeat, player, clientState, profile
   return null;
 }
 
-function shouldTakeSet(tileType, handCounts, difficulty, isKong) {
+function shouldTakeSet(tileType, handCounts, claimEagerly, isKong) {
   if (!tileType) {
     return false;
   }
@@ -500,7 +501,7 @@ function shouldTakeSet(tileType, handCounts, difficulty, isKong) {
     return isolated || rank === 1 || rank === 9;
   }
 
-  return isolated || difficulty !== DEFAULT_SOLO_DIFFICULTY;
+  return isolated || claimEagerly;
 }
 
 function shouldTakeChow(neededTypes, handCounts) {
@@ -511,7 +512,7 @@ function shouldTakeChow(neededTypes, handCounts) {
   return neededTypes.every((tileType) => (handCounts[tileType] || 0) === 1);
 }
 
-function shouldDeclareOwnKong(tileType, handTileIds, difficulty) {
+function shouldDeclareOwnKong(tileType, handTileIds, claimEagerly) {
   const counts = countTileTypes(handTileIds || []);
   if (!tileType || (counts[tileType] || 0) <= 0) {
     return false;
@@ -521,12 +522,16 @@ function shouldDeclareOwnKong(tileType, handTileIds, difficulty) {
     return true;
   }
 
-  if (difficulty !== DEFAULT_SOLO_DIFFICULTY) {
+  if (claimEagerly) {
     return true;
   }
 
   const rank = getTileRank(tileType);
   return rank === 1 || rank === 9;
+}
+
+function isEagerClaimProfile(profile) {
+  return Boolean(profile) && profile.id === "easy";
 }
 
 function getBotDelay(min = 800, max = 1500) {

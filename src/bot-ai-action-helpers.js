@@ -7,7 +7,6 @@ import {
 } from "./bot-ai-hand-progress.js";
 import {
   evaluateAdvancedHand,
-  evaluateDiscardRisk,
 } from "./bot-ai-advanced-evaluator.js";
 import { evaluateLookaheadPotential } from "./bot-ai-lookahead.js";
 
@@ -123,7 +122,9 @@ function pickBestActionCandidate(candidates) {
     if (candidate.actionValue < best.actionValue) {
       return best;
     }
-    return candidate.progress.totalScore > best.progress.totalScore ? candidate : best;
+    const candidateScore = candidate.progress.totalScore ?? candidate.progress.score;
+    const bestScore = best.progress.totalScore ?? best.progress.score;
+    return candidateScore > bestScore ? candidate : best;
   }, null);
 }
 

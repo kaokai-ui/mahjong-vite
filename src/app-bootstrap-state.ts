@@ -14,6 +14,7 @@ import {
 } from "./game-mode.js";
 import { getAppShellVariantPreset } from "./page-shell-variant";
 import { DEFAULT_RULESET, getRuleset } from "./rules.js";
+import { SOLO_STORAGE_KEYS } from "./solo-storage-keys.js";
 import { DEFAULT_SCORING_ENABLED, normalizeScoringEnabled } from "./scoring.js";
 import {
   DEFAULT_SOLO_DIFFICULTY,
@@ -23,12 +24,12 @@ import {
 } from "./solo-controller.js";
 import type { AppGameMode, AppState } from "./runtime-shell-types";
 
-export const GAME_MODE_STORAGE_KEY = "mahjong-game-mode";
-export const PLAYER_NAME_STORAGE_KEY = "mahjong-player-name";
-export const SOLO_DIFFICULTY_STORAGE_KEY = "mahjong-solo-difficulty";
-export const SOLO_PLAYER_COUNT_STORAGE_KEY = "mahjong-solo-player-count";
-export const SCORING_ENABLED_STORAGE_KEY = "mahjong-scoring-enabled";
-export const DEFAULTS_VERSION_STORAGE_KEY = "mahjong-defaults-version";
+export const GAME_MODE_STORAGE_KEY = SOLO_STORAGE_KEYS.gameMode;
+export const PLAYER_NAME_STORAGE_KEY = SOLO_STORAGE_KEYS.playerName;
+export const SOLO_DIFFICULTY_STORAGE_KEY = SOLO_STORAGE_KEYS.soloDifficulty;
+export const SOLO_PLAYER_COUNT_STORAGE_KEY = SOLO_STORAGE_KEYS.soloPlayerCount;
+export const SCORING_ENABLED_STORAGE_KEY = SOLO_STORAGE_KEYS.scoringEnabled;
+export const DEFAULTS_VERSION_STORAGE_KEY = SOLO_STORAGE_KEYS.defaultsVersion;
 export const GAME_MODE_ONLINE = GAME_MODE_ONLINE_2P;
 export const GAME_MODE_SOLO = GAME_MODE_SOLO_VALUE;
 export const DEFAULTS_VERSION = "20260501-solo-player-count-entry";

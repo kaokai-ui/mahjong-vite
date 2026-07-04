@@ -83,12 +83,11 @@ function getCachedScoringPotential({
   analysisCache,
   profile,
 }) {
-  const counts = countTileTypes(handTileIds || []);
-  const countKey = ALL_TILE_TYPES.map((tileType) => counts[tileType] || 0).join(",");
-  const extraKey = [...(extraVisibleTileTypes || [])].map(getTileType).sort().join(",");
+  const countKey = buildTileCountKey(handTileIds);
+  const extraKey = buildExtraVisibleKey(extraVisibleTileTypes);
   const scoringProfileId = getScoringProfileId(profile);
   const visibleCounts = buildVisibleCounts(game, playerSeat, handTileIds, extraVisibleTileTypes, analysisCache);
-  const visibleKey = ALL_TILE_TYPES.map((tileType) => visibleCounts[tileType] || 0).join(",");
+  const visibleKey = buildCountVectorKey(visibleCounts);
   const meldKey = getPlayerMelds(game, playerSeat)
     .map((meld) => `${meld.type}:${meld.tileType || ""}:${meld.concealed ? 1 : 0}`)
     .join("|");
@@ -255,9 +254,10 @@ function evaluateDiscardRisk(game, playerSeat, tileId, battleProfile, analysisCa
   const perSeatRisks = opponentProfiles.map((opponent) =>
     evaluateOpponentDiscardRisk(opponent, tileType, visibleCount, battleProfile),
   );
-  const highestRisk = perSeatRisks.length ? Math.max(...perSeatRisks) : 0;
-  const supportRisk = perSeatRisks
-    .filter((seatRisk) => seatRisk !== highestRisk)
+  const sortedRisks = [...perSeatRisks].sort((left, right) => right - left);
+  const highestRisk = sortedRisks.length ? sortedRisks[0] : 0;
+  const supportRisk = sortedRisks
+    .slice(1)
     .reduce((sum, seatRisk) => sum + seatRisk * 0.2, 0);
   const risk = Math.max(0, highestRisk + supportRisk);
   analysisCache.riskCache.set(cacheKey, risk);
@@ -465,7 +465,7 @@ function evaluateFutureDrawPotential(
 function buildAvailabilityMap(game, playerSeat, handTileIds, extraVisibleTileTypes = [], analysisCache = null) {
   const ruleset = getRuleset((game && game.rulesetId) || undefined);
   const visibleCounts = buildVisibleCounts(game, playerSeat, handTileIds, extraVisibleTileTypes, analysisCache);
-  const visibleKey = ALL_TILE_TYPES.map((tileType) => visibleCounts[tileType] || 0).join(",");
+  const visibleKey = buildCountVectorKey(visibleCounts);
   const cacheKey = `${playerSeat}|${visibleKey}`;
   if (analysisCache && analysisCache.availabilityCache.has(cacheKey)) {
     return analysisCache.availabilityCache.get(cacheKey);
@@ -481,11 +481,10 @@ function buildAvailabilityMap(game, playerSeat, handTileIds, extraVisibleTileTyp
 }
 
 function buildVisibleCounts(game, playerSeat, handTileIds = [], extraVisibleTileTypes = [], analysisCache = null) {
-  const handCounts = countTileTypes(handTileIds || []);
-  const handKey = ALL_TILE_TYPES.map((tileType) => handCounts[tileType] || 0).join(",");
-  const extraKey = [...(extraVisibleTileTypes || [])].map(getTileType).sort().join(",");
-  const round = game && typeof game.roundNumber === "number" ? game.roundNumber : 0;
-  const latestDiscardId = game && game.latestDiscard ? game.latestDiscard.id : 0;
+  const handKey = buildTileCountKey(handTileIds);
+  const extraKey = buildExtraVisibleKey(extraVisibleTileTypes);
+  const round = getRoundNumber(game);
+  const latestDiscardId = getLatestDiscardId(game);
   const cacheKey = `${round}|${latestDiscardId}|${playerSeat}|${handKey}|${extraKey}`;
   if (analysisCache && analysisCache.visibleCountsCache.has(cacheKey)) {
     return analysisCache.visibleCountsCache.get(cacheKey);
@@ -530,22 +529,44 @@ function incrementTileTypeCount(counts, tileType) {
   counts[tileType] = (counts[tileType] || 0) + 1;
 }
 
+function buildCountVectorKey(counts) {
+  return ALL_TILE_TYPES.map((tileType) => counts[tileType] || 0).join(",");
+}
+
+function buildTileCountKey(tileIds) {
+  return buildCountVectorKey(countTileTypes(tileIds || []));
+}
+
+function buildExtraVisibleKey(extraVisibleTileTypes) {
+  return [...(extraVisibleTileTypes || [])].map(getTileType).sort().join(",");
+}
+
+function getRoundNumber(game) {
+  return game && typeof game.roundNumber === "number" ? game.roundNumber : 0;
+}
+
+function getLatestDiscardId(game) {
+  return game && game.latestDiscard ? game.latestDiscard.id : 0;
+}
+
+function buildScoringKey(game, profile) {
+  return isScoringStrategyEnabled(game, profile) ? getScoringProfileId(profile) : "plain";
+}
+
 function createAdvancedHandCacheKey(game, playerSeat, handTileIds, lockedMelds, extraVisibleTileTypes, profile) {
-  const counts = countTileTypes(handTileIds || []);
-  const countKey = ALL_TILE_TYPES.map((tileType) => counts[tileType] || 0).join(",");
-  const extraKey = [...(extraVisibleTileTypes || [])].map(getTileType).sort().join(",");
-  const round = game && typeof game.roundNumber === "number" ? game.roundNumber : 0;
-  const latestDiscardId = game && game.latestDiscard ? game.latestDiscard.id : 0;
-  const scoringKey = isScoringStrategyEnabled(game, profile) ? getScoringProfileId(profile) : "plain";
+  const countKey = buildTileCountKey(handTileIds);
+  const extraKey = buildExtraVisibleKey(extraVisibleTileTypes);
+  const round = getRoundNumber(game);
+  const latestDiscardId = getLatestDiscardId(game);
+  const scoringKey = buildScoringKey(game, profile);
   return `${round}|${latestDiscardId}|${playerSeat}|${lockedMelds}|${countKey}|${extraKey}|${scoringKey}`;
 }
 
 function createLookaheadCacheKey(game, playerSeat, handTileIds, lockedMelds, profile) {
-  const counts = countTileTypes(handTileIds || []);
-  const countKey = ALL_TILE_TYPES.map((tileType) => counts[tileType] || 0).join(",");
-  const round = game && typeof game.roundNumber === "number" ? game.roundNumber : 0;
-  const latestDiscardId = game && game.latestDiscard ? game.latestDiscard.id : 0;
-  const scoringKey = isScoringStrategyEnabled(game, profile) ? getScoringProfileId(profile) : "plain";
+  const countKey = buildTileCountKey(handTileIds);
+  const round = getRoundNumber(game);
+  const latestDiscardId = getLatestDiscardId(game);
+  const scoringKey = buildScoringKey(game, profile);
   return `${round}|${latestDiscardId}|${playerSeat}|${lockedMelds}|${countKey}|${scoringKey}`;
 }
 

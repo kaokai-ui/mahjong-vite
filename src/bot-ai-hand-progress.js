@@ -17,12 +17,12 @@ function evaluateHandProgress(handTileIds, lockedMelds = 0, cache = null) {
   }
   const vector = ALL_TILE_TYPES.map((tileType) => counts[tileType] || 0);
   const memo = new Map();
-  const structure = searchBestStructure(vector, Boolean(false), lockedMelds, memo);
+  const structure = searchBestStructure(vector, false, lockedMelds, memo);
   const melds = Math.min(4, lockedMelds + structure.melds);
   const usefulTaatsu = Math.min(structure.taatsu, Math.max(0, 4 - melds));
   const pair = structure.pair ? 1 : 0;
   const shanten = Math.max(0, 8 - melds * 2 - usefulTaatsu - pair);
-  const floating = Math.max(0, (handTileIds || []).length - melds * 3 - usefulTaatsu * 2 - pair * 2);
+  const floating = Math.max(0, (handTileIds || []).length - structure.melds * 3 - usefulTaatsu * 2 - pair * 2);
   const connectionBonus = scoreConnections(counts);
   const score =
     melds * 120 +

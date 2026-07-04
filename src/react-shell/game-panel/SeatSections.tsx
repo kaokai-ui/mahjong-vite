@@ -58,6 +58,26 @@ export function TopSeatSection({
   );
 }
 
+function SeatSideMelds({ melds }: { melds: BridgeOpponentSectionSnapshot["melds"] }) {
+  if (!melds.length) {
+    return null;
+  }
+
+  return (
+    <div className="seat-side-melds">
+      {melds.map((meld, meldIndex) => (
+        <div key={`${meld.label}-${meldIndex}`} className="seat-side-meld-group">
+          <div className="seat-side-meld-tiles">
+            {meld.tiles.map((tile) => (
+              <TileFaceButton key={tile.tileId} tile={tile} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function EdgeSeatSection({
   positionLabel,
   section,
@@ -81,19 +101,7 @@ export function EdgeSeatSection({
         {subtitleParts.secondary ? <span className="seat-side-role seat-side-detail">{subtitleParts.secondary}</span> : null}
       </div>
       <div className="seat-side-rack">
-        {direction === "right" && section.melds.length ? (
-          <div className="seat-side-melds">
-            {section.melds.map((meld, meldIndex) => (
-              <div key={`${meld.label}-${meldIndex}`} className="seat-side-meld-group">
-                <div className="seat-side-meld-tiles">
-                  {meld.tiles.map((tile) => (
-                    <TileFaceButton key={tile.tileId} tile={tile} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
+        {direction === "right" ? <SeatSideMelds melds={section.melds} /> : null}
         {section.revealHand ? (
           <div className="visible-hand visible-hand-inline seat-side-visible-hand">
             {section.handTiles.map((tile) => (
@@ -103,19 +111,7 @@ export function EdgeSeatSection({
         ) : (
           <HiddenTileRail count={section.hiddenTileCount} orientation="vertical" />
         )}
-        {direction === "left" && section.melds.length ? (
-          <div className="seat-side-melds">
-            {section.melds.map((meld, meldIndex) => (
-              <div key={`${meld.label}-${meldIndex}`} className="seat-side-meld-group">
-                <div className="seat-side-meld-tiles">
-                  {meld.tiles.map((tile) => (
-                    <TileFaceButton key={tile.tileId} tile={tile} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
+        {direction === "left" ? <SeatSideMelds melds={section.melds} /> : null}
       </div>
     </section>
   );

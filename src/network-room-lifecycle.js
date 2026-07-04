@@ -25,6 +25,7 @@ import {
   isParticipant,
   isRoomExpired,
   normalizeRoom,
+  normalizeRoomMeta,
   seatExists,
 } from "./network-room-helpers.js";
 import {
@@ -33,13 +34,25 @@ import {
   setWithContext,
   writeInitialRoomRecord,
 } from "./network-room-repository.js";
+import { ref, runTransaction } from "firebase/database";
+import { getFirebaseDatabaseInstance } from "./network-firebase-runtime.js";
 import { DEFAULT_RULESET } from "./rules.js";
+
+async function runRoomMetaTransaction(roomId, updater) {
+  const metaRef = ref(getFirebaseDatabaseInstance(), `roomMeta/${roomId}`);
+  const result = await runTransaction(metaRef, (current) => updater(current));
+  return {
+    committed: Boolean(result.committed),
+    meta: result.snapshot ? result.snapshot.val() : null,
+  };
+}
 
 const defaultRoomLifecycleDependencies = {
   getRoomMeta,
   getRoomRecord,
   setWithContext,
   writeInitialRoomRecord,
+  runRoomMetaTransaction,
 };
 
 export async function createNetworkRoom(
@@ -127,7 +140,20 @@ export async function createNetworkRoom(
       commands: {},
     };
 
-    await dependencies.writeInitialRoomRecord(normalizedRoomId, roomData);
+    try {
+      await dependencies.writeInitialRoomRecord(normalizedRoomId, roomData);
+    } catch (roomWriteError) {
+      // The room record write failed after roomMeta was already persisted.
+      // Roll back the orphaned roomMeta so this room id is not left permanently
+      // blocked (isRoomExpired would keep rejecting new create attempts).
+      try {
+        await dependencies.setWithContext(`roomMeta/${normalizedRoomId}`, null);
+      } catch (cleanupError) {
+        // Best-effort cleanup only; surface the original write failure below.
+        void cleanupError;
+      }
+      throw roomWriteError;
+    }
     controller.subscribeToRoom(normalizedRoomId);
   } catch (error) {
     throw new Error(formatFirebaseClientError(error));
@@ -173,30 +199,14 @@ export async function joinNetworkRoom(controller, { roomId, playerName }, depend
     }
 
     if (!isParticipant(meta, identity.playerId)) {
-      if (!meta.open || seatExists(meta, 1)) {
+      const claim = await claimSecondSeat(dependencies, normalizedRoomId, identity);
+      if (!claim.committed) {
+        if (!claim.meta) {
+          throw new Error("找不到這個房間。");
+        }
         throw new Error("這個房間目前無法加入。");
       }
-
-      const now = Date.now();
-      meta = {
-        ...meta,
-        updatedAt: now,
-        playerCount: 2,
-        open: false,
-        participants: {
-          ...meta.participants,
-          [identity.playerId]: true,
-        },
-        seats: {
-          ...meta.seats,
-          1: identity.playerId,
-        },
-        seatBrowserIds: {
-          ...meta.seatBrowserIds,
-          1: identity.browserId,
-        },
-      };
-      await dependencies.setWithContext(`roomMeta/${normalizedRoomId}`, meta);
+      meta = normalizeRoomMeta(claim.meta) || meta;
     }
 
     const seatSlot = getSeatForPlayer(meta, identity.playerId);
@@ -204,26 +214,95 @@ export async function joinNetworkRoom(controller, { roomId, playerName }, depend
       throw new Error("找不到你在房間中的座位。");
     }
 
-    const actualSeat = getOnlineHumanSeatForSlot(meta.gameMode || GAME_MODE_ONLINE_2P, seatSlot);
-    const roomSnapshot = await dependencies.getRoomRecord(normalizedRoomId);
-    const roomData = normalizeRoom(roomSnapshot.val(), meta);
-    if (!roomData) {
-      throw new Error("房間資料讀取失敗，請重新加入。");
-    }
-
-    const existingPlayer = roomData.players ? roomData.players[identity.playerId] : null;
-    const joinedAt =
-      existingPlayer && typeof existingPlayer.joinedAt === "number" ? existingPlayer.joinedAt : Date.now();
-
-    await dependencies.setWithContext(`rooms/${normalizedRoomId}/players/${identity.playerId}`, {
-      ...createHumanPlayerRecord(identity.playerId, trimmedName, actualSeat, joinedAt),
+    await finalizeSeatMembership(controller, normalizedRoomId, meta, seatSlot, trimmedName, identity, {
+      lookupPlayerId: identity.playerId,
+      now: Date.now(),
+      dependencies,
     });
-    await dependencies.setWithContext(`rooms/${normalizedRoomId}/updatedAt`, Date.now());
-
-    controller.subscribeToRoom(normalizedRoomId);
   } catch (error) {
     throw new Error(formatFirebaseClientError(error));
   }
+}
+
+// Atomically claim the second seat of a 2-human room. Uses a client-side
+// Firebase transaction (via dependencies.runRoomMetaTransaction) so that two
+// players joining at the same time cannot both write seat 1 and clobber each
+// other. Falls back to a read-then-set when no transaction runner is injected
+// (e.g. in unit tests) which preserves the previous single-client behavior.
+async function claimSecondSeat(dependencies, roomId, identity) {
+  const now = Date.now();
+  const applyClaim = (rawMeta) => {
+    const current = normalizeRoomMeta(rawMeta);
+    if (!current) {
+      // Room disappeared between the initial read and this transaction.
+      return undefined;
+    }
+    if (isParticipant(current, identity.playerId)) {
+      // Already joined (e.g. duplicate submit); keep the existing meta.
+      return current;
+    }
+    if (!current.open || seatExists(current, 1)) {
+      // Room is closed or the seat was taken by someone else -> abort.
+      return undefined;
+    }
+    return {
+      ...current,
+      updatedAt: now,
+      playerCount: 2,
+      open: false,
+      participants: {
+        ...current.participants,
+        [identity.playerId]: true,
+      },
+      seats: {
+        ...current.seats,
+        1: identity.playerId,
+      },
+      seatBrowserIds: {
+        ...current.seatBrowserIds,
+        1: identity.browserId,
+      },
+    };
+  };
+
+  if (typeof dependencies.runRoomMetaTransaction === "function") {
+    return dependencies.runRoomMetaTransaction(roomId, applyClaim);
+  }
+
+  const rawMeta = await dependencies.getRoomMeta(roomId);
+  const nextMeta = applyClaim(rawMeta);
+  if (nextMeta === undefined) {
+    return { committed: false, meta: rawMeta || null };
+  }
+  await dependencies.setWithContext(`roomMeta/${roomId}`, nextMeta);
+  return { committed: true, meta: nextMeta };
+}
+
+async function finalizeSeatMembership(
+  controller,
+  roomId,
+  meta,
+  seatSlot,
+  playerName,
+  identity,
+  { lookupPlayerId, now, dependencies },
+) {
+  const actualSeat = getOnlineHumanSeatForSlot(meta.gameMode || GAME_MODE_ONLINE_2P, seatSlot);
+  const roomSnapshot = await dependencies.getRoomRecord(roomId);
+  const roomData = normalizeRoom(roomSnapshot.val(), meta);
+  if (!roomData) {
+    throw new Error("房間資料讀取失敗，請重新加入。");
+  }
+
+  const existingPlayer = lookupPlayerId && roomData.players ? roomData.players[lookupPlayerId] : null;
+  const joinedAt =
+    existingPlayer && typeof existingPlayer.joinedAt === "number" ? existingPlayer.joinedAt : now;
+
+  await dependencies.setWithContext(`rooms/${roomId}/players/${identity.playerId}`, {
+    ...createHumanPlayerRecord(identity.playerId, playerName, actualSeat, joinedAt),
+  });
+  await dependencies.setWithContext(`rooms/${roomId}/updatedAt`, now);
+  controller.subscribeToRoom(roomId);
 }
 
 export async function reclaimNetworkSeat(
@@ -271,23 +350,11 @@ export async function reclaimNetworkSeat(
     await dependencies.setWithContext(`rooms/${roomId}/hostPlayerId`, identity.playerId);
   }
 
-  const actualSeat = getOnlineHumanSeatForSlot(nextMeta.gameMode || GAME_MODE_ONLINE_2P, seatSlot);
-  const roomSnapshot = await dependencies.getRoomRecord(roomId);
-  const roomData = normalizeRoom(roomSnapshot.val(), nextMeta);
-  if (!roomData) {
-    throw new Error("房間資料讀取失敗，請重新加入。");
-  }
-
-  const previousPlayer =
-    previousPlayerId && roomData.players ? roomData.players[previousPlayerId] : null;
-  const joinedAt =
-    previousPlayer && typeof previousPlayer.joinedAt === "number" ? previousPlayer.joinedAt : now;
-
-  await dependencies.setWithContext(`rooms/${roomId}/players/${identity.playerId}`, {
-    ...createHumanPlayerRecord(identity.playerId, playerName, actualSeat, joinedAt),
+  await finalizeSeatMembership(controller, roomId, nextMeta, seatSlot, playerName, identity, {
+    lookupPlayerId: previousPlayerId,
+    now,
+    dependencies,
   });
-  await dependencies.setWithContext(`rooms/${roomId}/updatedAt`, now);
-  controller.subscribeToRoom(roomId);
 }
 
 function createHumanPlayerRecord(playerId, playerName, seat, joinedAt) {

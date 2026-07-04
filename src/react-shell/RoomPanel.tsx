@@ -82,8 +82,8 @@ export function RoomPanel({ ready, roomPanel, actions }: RoomPanelProps) {
                 <span>{seat.subtitle}</span>
                 {seat.badges.length ? (
                   <div className="pill-row">
-                    {seat.badges.map((badge) => (
-                      <span key={`${seat.seat}-${badge}`} className="pill">
+                    {seat.badges.map((badge, badgeIndex) => (
+                      <span key={`${seat.seat}-${badge}-${badgeIndex}`} className="pill">
                         {badge}
                       </span>
                     ))}
@@ -97,8 +97,8 @@ export function RoomPanel({ ready, roomPanel, actions }: RoomPanelProps) {
           <h3>對局資訊</h3>
           <p className="phase-copy">{roomPanel.phaseCopy}</p>
           <div className="pill-row">
-            {roomPanel.pills.map((pill) => (
-              <span key={pill} className="pill">
+            {roomPanel.pills.map((pill, pillIndex) => (
+              <span key={`${pill}-${pillIndex}`} className="pill">
                 {pill}
               </span>
             ))}
