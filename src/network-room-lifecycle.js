@@ -199,7 +199,7 @@ export async function joinNetworkRoom(controller, { roomId, playerName }, depend
     }
 
     if (!isParticipant(meta, identity.playerId)) {
-      const claim = await claimSecondSeat(dependencies, normalizedRoomId, identity);
+      const claim = await claimSecondSeat(dependencies, normalizedRoomId, identity, meta);
       if (!claim.committed) {
         if (!claim.meta) {
           throw new Error("找不到這個房間。");
@@ -229,7 +229,7 @@ export async function joinNetworkRoom(controller, { roomId, playerName }, depend
 // players joining at the same time cannot both write seat 1 and clobber each
 // other. Falls back to a read-then-set when no transaction runner is injected
 // (e.g. in unit tests) which preserves the previous single-client behavior.
-async function claimSecondSeat(dependencies, roomId, identity) {
+async function claimSecondSeat(dependencies, roomId, identity, lastKnownMeta) {
   const now = Date.now();
   const applyClaim = (rawMeta) => {
     const current = normalizeRoomMeta(rawMeta);
@@ -266,7 +266,16 @@ async function claimSecondSeat(dependencies, roomId, identity) {
   };
 
   if (typeof dependencies.runRoomMetaTransaction === "function") {
-    return dependencies.runRoomMetaTransaction(roomId, applyClaim);
+    // runTransaction first invokes the updater with the client's LOCAL cache,
+    // which is null here because nothing subscribes to roomMeta before the
+    // join completes. Returning undefined for that null would abort the whole
+    // transaction without ever contacting the server (every join would fail
+    // with "找不到這個房間"). Substitute the meta we just read from the server;
+    // if it is stale, the conditional write is rejected and the updater is
+    // re-run with fresh server data, so the race protection stays intact.
+    return dependencies.runRoomMetaTransaction(roomId, (rawMeta) =>
+      applyClaim(rawMeta == null ? lastKnownMeta : rawMeta),
+    );
   }
 
   const rawMeta = await dependencies.getRoomMeta(roomId);

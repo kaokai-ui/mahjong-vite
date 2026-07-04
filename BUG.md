@@ -13,6 +13,12 @@
 - `src/firebase-rules-contract.js` payload schema 三處合併（輸出被安全規則鏡像測試逐字比對，不可冒險）。
 - 兩份 `sw.js` 以 `importScripts` 抽共用核心；三份 manifest / 兩份 entry HTML 內嵌腳本去重。
 
+## ⚠️ 回歸事故（2026-07-04，PR #3 引入，已修復待部署）
+
+PR #3 的「座位競態改 `runTransaction`」修法本身帶入一個**全面性回歸：所有玩家加入任何房間都得到「找不到這個房間」**。原因：RTDB `runTransaction` 第一次執行 updater 拿到的是**本地快取值**（加入者從未訂閱 `roomMeta`，必為 `null`），`applyClaim` 對 `null` 回傳 `undefined` → 交易在聯絡伺服器前即中止 → `claim.meta === null` → 誤判為房間不存在。單元測試沒抓到，正因下方既有註記：mock 無交易能力會退回 read-then-set 路徑，交易路徑從未被執行。
+
+修法：把 join 流程開頭已讀到的 meta 傳入 `claimSecondSeat`，updater 遇本地 `null` 時以它為基底；若過期，條件式寫入會被伺服器拒絕並以真實資料重跑 updater，競態保護不變。已用真實 Firebase 雙客戶端 live smoke（`npm run test:network-live`）驗證：修復前必現「找不到這個房間」，修復後建房→加入→開局→打牌同步全通過（順帶更新了該腳本兩個 React 遷移前的過時 selector：`.latest-discard`、`.action-grid`）。
+
 **尚需其他環境確認的事項：**
 - 連線座位競態：正式修法為用戶端 `runTransaction`；單元測試 mock 無交易能力會退回等價的 read-then-set，故**交易競態本身需用真實 Firebase 做雙客戶端同時 join 驗證**。伺服端 `.write` 規則不在本 repo，仍建議另行核對線上規則。
 - ~~`npm run verify:migration` 為**既有損壞**（腳本讀取不存在的 `src/app-bridge-defaults.ts`）~~ → **已修復**：該腳本原為 React 遷移期的原始碼字串快照，已普遍鏽蝕（47 個引用檔中 11 個已被合併移除、契約字串大量漂移）。遷移既已完成，故精簡為一鍵整合驗證（production build + typecheck + 單元測試 + smoke + solo-offline build），移除逐字比對原始碼結構的斷言。
