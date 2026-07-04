@@ -132,6 +132,13 @@ function chooseAdvancedDiscardDecision(game, playerSeat, player, profile) {
     analysisCache,
   });
   const bestCandidate = candidates[0];
+  if (!bestCandidate) {
+    const fallbackTileId = tileIds[0] || "";
+    return {
+      tileId: fallbackTileId,
+      debugSummary: `${SOLO_DIFFICULTY_LABELS[profile.id]}模式：無可評估候選，安全回退丟出 ${getTileLabel(fallbackTileId)}。`,
+    };
+  }
 
   return {
     tileId: bestCandidate.tileId,

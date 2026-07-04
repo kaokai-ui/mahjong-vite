@@ -11,6 +11,16 @@ import {
 } from "./game-mode.js";
 
 const ROOM_EXPIRATION_MS = 8 * 24 * 60 * 60 * 1000;
+const SEAT_SLOTS = [0, 1];
+
+function readSeatKey(map, seat) {
+  if (!map) {
+    return undefined;
+  }
+
+  const value = map[seat];
+  return value !== undefined ? value : map[String(seat)];
+}
 
 function normalizeRoom(room, meta = null) {
   if (!room) {
@@ -95,7 +105,7 @@ function buildActivePlayers(players, meta) {
   }
 
   const playersById = new Map(activePlayers.map((player) => [player.id, player]));
-  for (const slot of [0, 1]) {
+  for (const slot of SEAT_SLOTS) {
     const playerId = getSeatValue(meta, slot);
     if (!playerId || playersById.has(playerId)) {
       continue;
@@ -162,10 +172,10 @@ function getSeatForPlayer(meta, playerId) {
     return null;
   }
 
-  if (meta.seats[0] === playerId || meta.seats["0"] === playerId) {
+  if (readSeatKey(meta.seats, 0) === playerId) {
     return 0;
   }
-  if (meta.seats[1] === playerId || meta.seats["1"] === playerId) {
+  if (readSeatKey(meta.seats, 1) === playerId) {
     return 1;
   }
   return null;
@@ -176,10 +186,10 @@ function getSeatForBrowser(meta, browserId) {
     return null;
   }
 
-  if (meta.seatBrowserIds[0] === browserId || meta.seatBrowserIds["0"] === browserId) {
+  if (readSeatKey(meta.seatBrowserIds, 0) === browserId) {
     return 0;
   }
-  if (meta.seatBrowserIds[1] === browserId || meta.seatBrowserIds["1"] === browserId) {
+  if (readSeatKey(meta.seatBrowserIds, 1) === browserId) {
     return 1;
   }
   return null;
@@ -194,11 +204,11 @@ function getSeatValue(meta, seat) {
     return "";
   }
 
-  return meta.seats[seat] || meta.seats[String(seat)] || "";
+  return readSeatKey(meta.seats, seat) || "";
 }
 
 function countOccupiedSeats(seats) {
-  return [0, 1].reduce((count, seat) => count + (seats && (seats[seat] || seats[String(seat)]) ? 1 : 0), 0);
+  return SEAT_SLOTS.reduce((count, seat) => count + (readSeatKey(seats, seat) ? 1 : 0), 0);
 }
 
 function isRoomExpired(meta, now = Date.now()) {

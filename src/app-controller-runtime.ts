@@ -62,13 +62,23 @@ export async function initializeControllerRuntime(
     runtime.controller.leaveRoom();
   }
 
-  runtime.controller = await buildController(mode, {
+  const controller = await buildController(mode, {
     appState,
     soloModeValue,
     syncRoomPanelRulesetState,
     normalizeRulesetId,
     render,
   });
+
+  // A newer initialization may have started while we awaited buildController.
+  // If so, discard the controller we just built and bail out, mirroring the
+  // stale-token checks used after init() below.
+  if (token !== runtime.initToken) {
+    controller.leaveRoom();
+    return;
+  }
+
+  runtime.controller = controller;
   appState.room = null;
   appState.message = "";
   appState.error = "";

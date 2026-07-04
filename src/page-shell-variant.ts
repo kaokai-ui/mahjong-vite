@@ -1,17 +1,16 @@
-const SOLO_GAME_MODE = "solo-bot";
-const SOLO_FOUR_PLAYER_MINIMAL_VARIANT = "solo-4p-minimal";
-const DEFAULT_RULESET_ID = "full136";
-const DEFAULT_DRAW_REVEAL_SECONDS = 6;
-const DEFAULT_SOLO_DIFFICULTY = "hard";
-const DEFAULT_SOLO_PLAYER_COUNT = 4;
-const DEFAULT_SCORING_ENABLED = true;
+import { GAME_MODE_SOLO } from "./game-mode.js";
+import { DEFAULT_RULESET } from "./rules.js";
+import { DEFAULT_SCORING_ENABLED } from "./scoring.js";
+import { DEFAULT_SOLO_DIFFICULTY } from "./bot-ai-profile.js";
+import { SOLO_STORAGE_KEYS } from "./solo-storage-keys.js";
 
-const STORAGE_KEYS = {
-  gameMode: "mahjong-game-mode",
-  soloDifficulty: "mahjong-solo-difficulty",
-  soloPlayerCount: "mahjong-solo-player-count",
-  scoringEnabled: "mahjong-scoring-enabled",
-} as const;
+const SOLO_FOUR_PLAYER_MINIMAL_VARIANT = "solo-4p-minimal";
+
+// Preset-specific values for the solo-4p-minimal entry. These intentionally
+// differ from the app-wide defaults (drawReveal default is 3s and the default
+// solo player count is 2), so they are defined locally rather than imported.
+const PRESET_DRAW_REVEAL_SECONDS = 6;
+const PRESET_SOLO_PLAYER_COUNT = 4;
 
 export type AppShellVariant = "default" | typeof SOLO_FOUR_PLAYER_MINIMAL_VARIANT;
 
@@ -25,11 +24,11 @@ export type AppShellVariantPreset = {
 };
 
 const SOLO_FOUR_PLAYER_MINIMAL_PRESET: AppShellVariantPreset = Object.freeze({
-  mode: SOLO_GAME_MODE,
-  rulesetId: DEFAULT_RULESET_ID,
-  drawRevealSeconds: DEFAULT_DRAW_REVEAL_SECONDS,
+  mode: GAME_MODE_SOLO,
+  rulesetId: DEFAULT_RULESET,
+  drawRevealSeconds: PRESET_DRAW_REVEAL_SECONDS,
   soloDifficulty: DEFAULT_SOLO_DIFFICULTY,
-  soloPlayerCount: DEFAULT_SOLO_PLAYER_COUNT,
+  soloPlayerCount: PRESET_SOLO_PLAYER_COUNT,
   scoringEnabled: DEFAULT_SCORING_ENABLED,
 });
 
@@ -64,8 +63,8 @@ export function applySoloFourPlayerMinimalEntryPreset() {
     document.documentElement.dataset.appShellVariant = SOLO_FOUR_PLAYER_MINIMAL_VARIANT;
   }
 
-  safeWriteLocalSetting(STORAGE_KEYS.gameMode, SOLO_FOUR_PLAYER_MINIMAL_PRESET.mode);
-  safeWriteLocalSetting(STORAGE_KEYS.soloDifficulty, SOLO_FOUR_PLAYER_MINIMAL_PRESET.soloDifficulty);
-  safeWriteLocalSetting(STORAGE_KEYS.soloPlayerCount, String(SOLO_FOUR_PLAYER_MINIMAL_PRESET.soloPlayerCount));
-  safeWriteLocalSetting(STORAGE_KEYS.scoringEnabled, String(SOLO_FOUR_PLAYER_MINIMAL_PRESET.scoringEnabled));
+  safeWriteLocalSetting(SOLO_STORAGE_KEYS.gameMode, SOLO_FOUR_PLAYER_MINIMAL_PRESET.mode);
+  safeWriteLocalSetting(SOLO_STORAGE_KEYS.soloDifficulty, SOLO_FOUR_PLAYER_MINIMAL_PRESET.soloDifficulty);
+  safeWriteLocalSetting(SOLO_STORAGE_KEYS.soloPlayerCount, String(SOLO_FOUR_PLAYER_MINIMAL_PRESET.soloPlayerCount));
+  safeWriteLocalSetting(SOLO_STORAGE_KEYS.scoringEnabled, String(SOLO_FOUR_PLAYER_MINIMAL_PRESET.scoringEnabled));
 }

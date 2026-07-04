@@ -35,6 +35,7 @@ let firebaseDatabase = null;
 let firebaseAppCheck = null;
 let firebaseInitPromise = null;
 let authObserverStarted = false;
+let authUnsubscribe = null;
 let anonymousSignInInFlight = null;
 let authReadyPromise = null;
 let resolveAuthReady = null;
@@ -201,7 +202,7 @@ async function waitForAnonymousAuth(reportError) {
 
   if (!authObserverStarted) {
     authObserverStarted = true;
-    onAuthStateChanged(
+    authUnsubscribe = onAuthStateChanged(
       firebaseAuth,
       async (user) => {
         if (user) {
@@ -210,11 +211,7 @@ async function waitForAnonymousAuth(reportError) {
             uid: user.uid,
             error: "",
           });
-          if (resolveAuthReady) {
-            resolveAuthReady(user.uid);
-            resolveAuthReady = null;
-            rejectAuthReady = null;
-          }
+          resolveAuthReadyOnce(user.uid);
           return;
         }
 
@@ -226,40 +223,53 @@ async function waitForAnonymousAuth(reportError) {
         try {
           await ensureAnonymousSignIn();
         } catch (error) {
-          const message = formatFirebaseClientError(error);
-          setFirebaseSetupState({
-            ready: false,
-            error: message,
-          });
-          if (rejectAuthReady) {
-            rejectAuthReady(error);
-            resolveAuthReady = null;
-            rejectAuthReady = null;
-          }
-          if (typeof reportError === "function") {
-            reportError(message);
-          }
+          handleAuthFailure(error, reportError);
         }
       },
       (error) => {
-        const message = formatFirebaseClientError(error);
-        setFirebaseSetupState({
-          ready: false,
-          error: message,
-        });
-        if (rejectAuthReady) {
-          rejectAuthReady(error);
-          resolveAuthReady = null;
-          rejectAuthReady = null;
-        }
-        if (typeof reportError === "function") {
-          reportError(message);
-        }
+        handleAuthFailure(error, reportError);
       },
     );
   }
 
   return authReadyPromise;
+}
+
+function resolveAuthReadyOnce(uid) {
+  if (resolveAuthReady) {
+    resolveAuthReady(uid);
+  }
+  resolveAuthReady = null;
+  rejectAuthReady = null;
+}
+
+function handleAuthFailure(error, reportError) {
+  const message = formatFirebaseClientError(error);
+  setFirebaseSetupState({
+    ready: false,
+    error: message,
+  });
+  if (rejectAuthReady) {
+    rejectAuthReady(error);
+  }
+  // Reset the auth-ready gate and tear down the observer so a later
+  // ensureFirebaseReady()/waitForAnonymousAuth() call can rebuild the promise
+  // and retry anonymous sign-in instead of returning the stale rejected promise.
+  resetAuthReadyState();
+  if (typeof reportError === "function") {
+    reportError(message);
+  }
+}
+
+function resetAuthReadyState() {
+  if (typeof authUnsubscribe === "function") {
+    authUnsubscribe();
+  }
+  authUnsubscribe = null;
+  authObserverStarted = false;
+  authReadyPromise = null;
+  resolveAuthReady = null;
+  rejectAuthReady = null;
 }
 
 async function ensureAnonymousSignIn() {

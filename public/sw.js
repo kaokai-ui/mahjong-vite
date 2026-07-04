@@ -6,18 +6,18 @@ const shellCacheName = `${cachePrefix}-shell-${appVersion}`;
 const assetCacheName = `${cachePrefix}-asset-${appVersion}`;
 const shellPrecacheUrls = [
   "./",
-  "./sologame.html",
-  "./pwa/sologame-icon-192.png",
-  "./pwa/sologame-icon-512.png",
-  "./pwa/sologame-icon-maskable-192.png",
-  "./pwa/sologame-icon-maskable-512.png",
-  "./pwa/sologame-apple-touch-icon-180.png",
   "./pwa/icon-192.png",
   "./pwa/icon-512.png",
   "./pwa/icon-maskable-192.png",
   "./pwa/icon-maskable-512.png",
   "./pwa/apple-touch-icon-180.png",
 ];
+
+// The root worker's scope also covers the nested "/solo/" PWA. It must NOT serve
+// the two-player shell for those navigations; the solo worker (and the network)
+// own them. Resolved against the registration scope so it also works under a
+// deployment base path (e.g. "/mahjong-vite/solo/").
+const soloScopeUrl = new URL("solo/", scopeUrl);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -61,6 +61,11 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
+    // Let the nested solo PWA (or the network) own "/solo/" navigations instead
+    // of falling back to the two-player shell.
+    if (isSoloNavigation(requestUrl)) {
+      return;
+    }
     event.respondWith(handleNavigationRequest(request));
     return;
   }
@@ -69,6 +74,15 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(handleAssetRequest(request));
   }
 });
+
+function isSoloNavigation(requestUrl) {
+  const soloPath = soloScopeUrl.pathname;
+  const soloPathNoSlash = soloPath.replace(/\/$/, "");
+  return (
+    requestUrl.pathname === soloPathNoSlash ||
+    requestUrl.pathname.startsWith(soloPath)
+  );
+}
 
 async function handleNavigationRequest(request) {
   const cache = await caches.open(shellCacheName);
@@ -90,15 +104,20 @@ async function handleNavigationRequest(request) {
 }
 
 async function handleAssetRequest(request) {
-  const cache = await caches.open(assetCacheName);
-  const cached = await cache.match(request, { ignoreSearch: false });
+  const assetCache = await caches.open(assetCacheName);
+  // Icons are precached (into the shell cache) without a query string, but the
+  // HTML requests them versioned with "?appVersion=". Use ignoreSearch and also
+  // consult the shell cache so those precached icons actually match offline.
+  const cached =
+    (await assetCache.match(request, { ignoreSearch: true })) ||
+    (await (await caches.open(shellCacheName)).match(request, { ignoreSearch: true }));
   if (cached) {
     return cached;
   }
 
   const response = await fetch(request);
   if (response && response.ok) {
-    await cache.put(request, response.clone());
+    await assetCache.put(request, response.clone());
   }
   return response;
 }

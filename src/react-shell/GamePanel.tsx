@@ -11,41 +11,6 @@ type GamePanelProps = {
   noticeBanner: LobbyBridgeSnapshot["lobby"]["noticeBanner"];
 };
 
-/*
-Migration contract reference strings:
-gamePanel.tableStage.latestDiscard
-gamePanel.tableStage.latestDiscardPlaceholder
-table-center-middle ${isFourSeatTable ? "is-four-seat" : ""}
-showFloatingActions={isFourSeatTable}
-label={topDiscardRow?.label || gamePanel.tableStage.opponentSection.title || "對家"}
-label={bottomDiscardRow?.label || gamePanel.tableStage.selfSection.title || "你"}
- label={leftDiscardRow?.label || "西家"}
- label={rightDiscardRow?.label || "東家"}
-tiles={topDiscardRow?.tiles || []}
-tiles={bottomDiscardRow?.tiles || []}
-tiles={leftDiscardRow?.tiles || []}
-tiles={rightDiscardRow?.tiles || []}
- positionLabel="西家" section={gamePanel.tableStage.leftSection}
- positionLabel="東家" section={gamePanel.tableStage.rightSection}
-table-shell table-shell-four
-table-center table-center-four
-gamePanel.tableStage.actions.buttons.length
-gamePanel.tableStage.actions.placeholderText
-gamePanel.tableStage.opponentSection
-gamePanel.tableStage.selfSection
-const [topDiscardRow, bottomDiscardRow, leftDiscardRow, rightDiscardRow] = gamePanel.tableStage.discardRows;
-const isFourSeatTable = seatCount >= 4;
-HiddenTileRail
-TopSeatSection
-EdgeSeatSection
-DiscardLane
-seat-side-name
-self-action-dock
-dangerouslySetInnerHTML
-actions.runGameCommand(
-actions.leaveRoom()
-*/
-
 export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscreenActive, fullscreenSupported, noticeBanner }: GamePanelProps) {
   const tableStageClassName = gamePanel.tableStage.hasResult ? "table-stage has-result" : "table-stage";
   const fullscreenLabel = fullscreenActive ? "離開全螢幕" : "全螢幕顯示";
@@ -90,8 +55,8 @@ export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscree
         {gamePanel.showFocusControls ? (
           <div className="game-head-actions">
             <div className="pill-row">
-              {gamePanel.pills.map((pill) => (
-                <span key={pill} className="pill">
+              {gamePanel.pills.map((pill, pillIndex) => (
+                <span key={`${pill}-${pillIndex}`} className="pill">
                   {pill}
                 </span>
               ))}

@@ -54,10 +54,6 @@ export function isNextSeat(fromSeat, candidateSeat, gameOrCount) {
   return getNextSeat(fromSeat, gameOrCount) === candidateSeat;
 }
 
-export function getOpponentSeat(seat) {
-  return getNextSeat(seat, 2);
-}
-
 export function removeExactTile(tileIds, tileId) {
   const index = tileIds.indexOf(tileId);
   if (index >= 0) {

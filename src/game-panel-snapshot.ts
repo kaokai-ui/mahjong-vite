@@ -191,17 +191,18 @@ export function buildGameTableStageSnapshot(context: GamePanelContextLike | null
     latestDiscardPlaceholder: "目前沒有",
     discardRows: [discardRows.top, discardRows.bottom, discardRows.left, discardRows.right],
     actions: getActionButtonsSnapshot(clientState),
-    opponentSection: getOpponentSectionSnapshot({
-      ...context,
+    opponentSection: getSeatSectionSnapshot({
+      player: topPlayer,
       game,
-      opponent: topPlayer,
-      opponentRoundState: topRoundState,
+      room: context.room,
+      roundState: topRoundState,
+      emptySubtitle: "等待對手加入",
+      reveal: Boolean(context.showOpponentHand),
     }),
     leftSection: getSeatSectionSnapshot({
       player: leftPlayer,
       game,
       room: context.room,
-      players,
       roundState: leftRoundState,
       emptySubtitle: "等待牌列",
     }),
@@ -209,7 +210,6 @@ export function buildGameTableStageSnapshot(context: GamePanelContextLike | null
       player: rightPlayer,
       game,
       room: context.room,
-      players,
       roundState: rightRoundState,
       emptySubtitle: "等待牌列",
     }),
@@ -371,9 +371,6 @@ function getResultPatternText(result: ResultLike | null | undefined): string {
   if (taiBreakdown.length === 1 && taiBreakdown[0]?.key === "baseWin") {
     return "基本胡";
   }
-  if (taiBreakdown.length > 0) {
-    return "標準胡牌";
-  }
 
   return "標準胡牌";
 }
@@ -478,50 +475,31 @@ function getOnlineFourPlayerActivityText(
   return activityLines.filter(Boolean).join("\n");
 }
 
-function getOpponentSectionSnapshot(context: GamePanelContextLike): BridgeOpponentSectionSnapshot {
-  const opponent = context.opponent || null;
-  const game = context.game || null;
-  const room = context.room || null;
-  const showOpponentHand = Boolean(context.showOpponentHand);
-  const opponentRoundState = context.opponentRoundState || EMPTY_ROUND_STATE;
-  const opponentHand = opponentRoundState.hand || [];
-  const difficultyLabel = getBotDifficultyLabel(room, opponent);
-
-  return {
-    title: opponent?.name || "等待中",
-    scoreBadge: opponent ? getSeatScoreSummary(game, opponent.seat) : "",
-    subtitle: opponent ? [difficultyLabel, `手牌 ${opponentHand.length} 張`].filter(Boolean).join(" ・ ") : "等待對手加入",
-    hiddenTileCount: opponent ? opponentHand.length : 0,
-    revealHand: Boolean(opponent && showOpponentHand),
-    handTiles: showOpponentHand && opponent ? opponentHand.map((tileId) => createTileSnapshot(tileId)).filter(isDefined) : [],
-    melds: createMeldSnapshots(opponentRoundState.melds),
-  };
-}
-
 function getSeatSectionSnapshot({
   player,
   game,
   room,
-  players,
   roundState,
   emptySubtitle,
+  reveal = false,
 }: {
   player: PlayerLike | null;
   game: GameLike | null;
   room: GamePanelContextLike["room"] | null;
-  players?: PlayerLike[] | null;
   roundState: RoundStateLike;
   emptySubtitle: string;
+  reveal?: boolean;
 }): BridgeOpponentSectionSnapshot {
   const hand = roundState.hand || [];
   const difficultyLabel = getBotDifficultyLabel(room, player);
+  const revealHand = Boolean(player && reveal);
   return {
     title: player?.name || "等待中",
     scoreBadge: player ? getSeatScoreSummary(game, player.seat) : "",
     subtitle: player ? [difficultyLabel, `手牌 ${hand.length} 張`].filter(Boolean).join(" ・ ") : emptySubtitle,
     hiddenTileCount: player ? hand.length : 0,
-    revealHand: false,
-    handTiles: [],
+    revealHand,
+    handTiles: revealHand ? hand.map((tileId) => createTileSnapshot(tileId)).filter(isDefined) : [],
     melds: createMeldSnapshots(roundState.melds),
   };
 }
@@ -698,9 +676,6 @@ function getFourPlayerSeatCount(
 
 function formatElapsedDebugTime(elapsedMs: number) {
   const normalizedMs = Math.max(0, Number(elapsedMs) || 0);
-  if (normalizedMs < 1000) {
-    return `${(normalizedMs / 1000).toFixed(1)}秒`;
-  }
   if (normalizedMs < 10000) {
     return `${(normalizedMs / 1000).toFixed(1)}秒`;
   }
