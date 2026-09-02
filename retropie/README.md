@@ -137,8 +137,6 @@ launcher 不帶固定玩家數；進入後首頁預設選取「單人 4P」，�
 
 - `D:\Game\VideoPoker\RETROPIE_PI_MIGRATION.md`
 - `D:\Game\VideoPoker\python\video_poker`
-- `D:\bcan\retropie`
-- `D:\bcan\python\gamblord`
 
 程式使用舊版 Pygame 相容寫法：圓角矩形有 fallback、中文字型優先使用隨附的
 `NotoSansCJKtc-Regular.otf`，再回退到保留的 `NotoSansCJKtc-Medium.otf`、
