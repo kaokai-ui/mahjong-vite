@@ -564,7 +564,7 @@ body.app-game-focus .table-opponent .opponent-rack {
   justify-content: flex-start;
   gap: 8px;
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: hidden;
   padding-bottom: 4px;
 }
 

@@ -514,7 +514,6 @@ function getSelfSectionSnapshot(context: GamePanelContextLike): BridgeSelfSectio
   const clientState = context.clientState || {};
   const drawReveal = context.drawReveal || null;
   const onlineFourPlayerActivityText = getOnlineFourPlayerActivityText(room, game, players);
-  const onlineFourPlayerSyncStatus = getOnlineFourPlayerSyncStatus(room, currentPlayer, game);
 
   if (!currentPlayer) {
     return getEmptyGameTableStageSnapshot().selfSection;
@@ -557,8 +556,8 @@ function getSelfSectionSnapshot(context: GamePanelContextLike): BridgeSelfSectio
   return {
     title: currentPlayer.name || "你",
     scoreBadge: getSeatScoreSummary(game, currentPlayer.seat),
-    statusText: onlineFourPlayerSyncStatus.text || getSelfStatusText(clientState, game, seat, room),
-    statusTone: onlineFourPlayerSyncStatus.tone,
+    statusText: getSelfStatusText(clientState, game, seat, room),
+    statusTone: "normal",
     activityText: onlineFourPlayerActivityText,
     drawNoticeText: getOnlineFourPlayerDrawNoticeText(room, currentPlayer, game, drawReveal),
     handTiles,
@@ -597,55 +596,6 @@ function getOnlineFourPlayerDrawNoticeText(
   return `你剛剛摸到 ${getTileDisplayName(getTileType(noticeTileId))}`;
 }
 
-function getOnlineFourPlayerSyncStatus(
-  room: GamePanelContextLike["room"] | null,
-  currentPlayer: PlayerLike | null | undefined,
-  game: GameLike | null,
-): { text: string; tone: BridgeSelfSectionSnapshot["statusTone"] } {
-  if (!room || !isOnlineFourPlayerRoom(room) || !currentPlayer || !game || game.status !== "playing") {
-    return {
-      text: "",
-      tone: "normal",
-    };
-  }
-
-  const localDebug = room.localDebug || null;
-  const isHostClient = room.hostPlayerId === currentPlayer.id;
-  if (!isHostClient) {
-    return {
-      text: "",
-      tone: "normal",
-    };
-  }
-
-  const lastCombinedSnapshotAt = Number(localDebug?.lastCombinedSnapshotAt) || 0;
-  if (!lastCombinedSnapshotAt) {
-    return {
-      text: "同步：等待第一個房間快照\n4P debug：初始化中",
-      tone: "warn",
-    };
-  }
-
-  const now = Date.now();
-  const combinedAgeMs = Math.max(0, now - lastCombinedSnapshotAt);
-  const roomAgeMs = Math.max(0, now - (Number(localDebug?.lastRoomSnapshotAt) || lastCombinedSnapshotAt));
-  const metaAgeMs = Math.max(0, now - (Number(localDebug?.lastRoomMetaSnapshotAt) || lastCombinedSnapshotAt));
-  const pendingCommandCount = Math.max(0, Number(localDebug?.pendingCommandCount) || 0);
-
-  let headline = `同步：正常（${formatElapsedDebugTime(combinedAgeMs)}前）`;
-  if (combinedAgeMs >= 4000) {
-    headline = `同步延遲：${formatElapsedDebugTime(combinedAgeMs)}未更新`;
-  }
-
-  return {
-    text: [
-      headline,
-      `4P debug：${isHostClient ? "屋主端" : "客方端"} / room ${formatElapsedDebugTime(roomAgeMs)} / meta ${formatElapsedDebugTime(metaAgeMs)} / queue ${pendingCommandCount}`,
-    ].join("\n"),
-    tone: combinedAgeMs >= 4000 ? "warn" : "normal",
-  };
-}
-
 function shouldShowFourPlayerHandMessages(
   room: GamePanelContextLike["room"] | null,
   game: GameLike | null,
@@ -672,14 +622,6 @@ function getFourPlayerSeatCount(
     Number(room?.meta?.soloPlayerCount || room?.meta?.playerCount || 0),
     Array.isArray(game?.players) ? game.players.length : 0,
   );
-}
-
-function formatElapsedDebugTime(elapsedMs: number) {
-  const normalizedMs = Math.max(0, Number(elapsedMs) || 0);
-  if (normalizedMs < 10000) {
-    return `${(normalizedMs / 1000).toFixed(1)}秒`;
-  }
-  return `${Math.round(normalizedMs / 1000)}秒`;
 }
 
 function buildResultHandSnapshot(
