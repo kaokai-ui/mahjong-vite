@@ -1,4 +1,5 @@
 export const GAME_FOCUS_WIDTH_REFRESH_THRESHOLD = 80;
+export const GAME_FOCUS_HEIGHT_REFRESH_THRESHOLD = 48;
 
 export function readFullscreenSupport() {
   if (typeof document === "undefined") {
@@ -81,5 +82,6 @@ export function shouldLockGameFocusHeight() {
 
 export function clearGameFocusHeightLock(root: HTMLElement) {
   delete root.dataset.gameFocusViewportWidth;
+  delete root.dataset.gameFocusViewportHeight;
   root.style.removeProperty("--app-game-focus-height");
 }

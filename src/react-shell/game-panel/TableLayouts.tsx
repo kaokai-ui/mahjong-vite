@@ -13,11 +13,13 @@ function DiscardLane({
   tiles,
   placeholderText,
   direction,
+  className,
 }: {
   label: string;
   tiles: DiscardRowSnapshot["tiles"];
   placeholderText: string;
-  direction: "top" | "bottom" | "left" | "right";
+  direction: "top" | "bottom" | "left" | "right" | "center";
+  className?: string;
 }) {
   const isVertical = direction === "left" || direction === "right";
   const verticalColumns = isVertical
@@ -31,7 +33,7 @@ function DiscardLane({
     : [];
 
   return (
-    <div className={`discard-lane discard-lane-${direction}`}>
+    <div className={`discard-lane discard-lane-${direction} ${className || ""}`.trim()}>
       <span className="discard-lane-label">{label}</span>
       {isVertical ? (
         <div className={`discard-line discard-line-vertical discard-line-vertical-${direction}`}>
@@ -144,35 +146,53 @@ function TwoSeatCenterMiddle() {
   return <div className="table-center-core table-center-core-two" aria-hidden="true" />;
 }
 
-function FourSeatCenterMiddle({
+function FourSeatDiscardStack({
+  topDiscardRow,
   leftDiscardRow,
   rightDiscardRow,
+  bottomDiscardRow,
+  topDiscardLabel,
   leftDiscardLabel,
   rightDiscardLabel,
+  bottomDiscardLabel,
 }: {
+  topDiscardRow: DiscardRowSnapshot;
   leftDiscardRow: DiscardRowSnapshot;
   rightDiscardRow: DiscardRowSnapshot;
+  bottomDiscardRow: DiscardRowSnapshot;
+  topDiscardLabel: string;
   leftDiscardLabel: string;
   rightDiscardLabel: string;
+  bottomDiscardLabel: string;
 }) {
+  const rows = [
+    { key: "top", row: topDiscardRow, label: topDiscardLabel },
+    { key: "left", row: leftDiscardRow, label: leftDiscardLabel },
+    { key: "right", row: rightDiscardRow, label: rightDiscardLabel },
+    { key: "bottom", row: bottomDiscardRow, label: bottomDiscardLabel },
+  ];
+
   return (
-    <>
-      <DiscardLane
-        label={leftDiscardLabel}
-        tiles={leftDiscardRow?.tiles || []}
-        placeholderText={leftDiscardRow?.placeholderText || ""}
-        direction="left"
-      />
-      <div className="table-center-core" aria-hidden="true">
-        <div className="table-center-core-mark" />
+    <div className="four-seat-discard-scroll-viewport">
+      <div className="four-seat-discard-stack">
+        {rows.map(({ key, row, label }) => {
+          // The shared snapshot keeps the newest discard first for the legacy
+          // 2P presentation; RetroPie 4P rows read chronologically left-to-right.
+          const tiles = [...(row?.tiles || [])].reverse();
+
+          return (
+            <DiscardLane
+              key={`four-seat-discard-${key}`}
+              label={label}
+              tiles={tiles}
+              placeholderText={row?.placeholderText || ""}
+              direction="center"
+              className={`four-seat-discard-row four-seat-discard-row-${key}`}
+            />
+          );
+        })}
       </div>
-      <DiscardLane
-        label={rightDiscardLabel}
-        tiles={rightDiscardRow?.tiles || []}
-        placeholderText={rightDiscardRow?.placeholderText || ""}
-        direction="right"
-      />
-    </>
+    </div>
   );
 }
 
@@ -203,31 +223,37 @@ function TableCenterBoard({
 }) {
   return (
     <section className={tableCenterClassName}>
-      <div className="table-center-board">
-        <DiscardLane
-          label={topDiscardLabel}
-          tiles={topDiscardRow?.tiles || []}
-          placeholderText={topDiscardRow?.placeholderText || emptyDiscardPlaceholder}
-          direction="top"
-        />
-        <div className={`table-center-middle ${isFourSeatTable ? "is-four-seat" : "is-two-seat"}`.trim()}>
-          {isFourSeatTable ? (
-            <FourSeatCenterMiddle
-              leftDiscardRow={leftDiscardRow}
-              rightDiscardRow={rightDiscardRow}
-              leftDiscardLabel={leftDiscardLabel}
-              rightDiscardLabel={rightDiscardLabel}
+      <div className={`table-center-board ${isFourSeatTable ? "table-center-board-four" : ""}`.trim()}>
+        {isFourSeatTable ? (
+          <FourSeatDiscardStack
+            topDiscardRow={topDiscardRow}
+            leftDiscardRow={leftDiscardRow}
+            rightDiscardRow={rightDiscardRow}
+            bottomDiscardRow={bottomDiscardRow}
+            topDiscardLabel={topDiscardLabel}
+            leftDiscardLabel={leftDiscardLabel}
+            rightDiscardLabel={rightDiscardLabel}
+            bottomDiscardLabel={bottomDiscardLabel}
+          />
+        ) : (
+          <>
+            <DiscardLane
+              label={topDiscardLabel}
+              tiles={topDiscardRow?.tiles || []}
+              placeholderText={topDiscardRow?.placeholderText || emptyDiscardPlaceholder}
+              direction="top"
             />
-          ) : (
-            <TwoSeatCenterMiddle />
-          )}
-        </div>
-        <DiscardLane
-          label={bottomDiscardLabel}
-          tiles={bottomDiscardRow?.tiles || []}
-          placeholderText={bottomDiscardRow?.placeholderText || emptyDiscardPlaceholder}
-          direction="bottom"
-        />
+            <div className="table-center-middle is-two-seat">
+              <TwoSeatCenterMiddle />
+            </div>
+            <DiscardLane
+              label={bottomDiscardLabel}
+              tiles={bottomDiscardRow?.tiles || []}
+              placeholderText={bottomDiscardRow?.placeholderText || emptyDiscardPlaceholder}
+              direction="bottom"
+            />
+          </>
+        )}
       </div>
     </section>
   );

@@ -94,7 +94,7 @@ body.app-game-focus .table-shell-four {
   grid-template-columns: minmax(140px, 0.9fr) minmax(0, 1.7fr) minmax(140px, 0.9fr);
   grid-template-rows: 156px minmax(0, 1fr) 276px;
   grid-template-areas:
-    ". top ."
+    "top top top"
     "left center right"
     "self self self";
   gap: 18px;

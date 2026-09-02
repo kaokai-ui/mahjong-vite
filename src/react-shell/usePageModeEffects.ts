@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  GAME_FOCUS_HEIGHT_REFRESH_THRESHOLD,
   GAME_FOCUS_WIDTH_REFRESH_THRESHOLD,
   clearGameFocusHeightLock,
   readFullscreenState,
@@ -60,7 +61,7 @@ function useBodyModeClasses({
   }, [fullscreenActive, isSoloMode, gameFocusActive]);
 }
 
-function useGameFocusHeightLock(gameFocusActive: boolean) {
+function useGameFocusHeightLock(gameFocusActive: boolean, fullscreenActive: boolean) {
   useEffect(() => {
     const root = document.documentElement;
     if (!root) {
@@ -79,14 +80,20 @@ function useGameFocusHeightLock(gameFocusActive: boolean) {
       }
 
       const previousWidth = Number(root.dataset.gameFocusViewportWidth || 0);
+      const previousHeight = Number(root.dataset.gameFocusViewportHeight || 0);
       const shouldRefresh =
-        force || !previousWidth || Math.abs(metrics.width - previousWidth) >= GAME_FOCUS_WIDTH_REFRESH_THRESHOLD;
+        force ||
+        !previousWidth ||
+        !previousHeight ||
+        Math.abs(metrics.width - previousWidth) >= GAME_FOCUS_WIDTH_REFRESH_THRESHOLD ||
+        Math.abs(metrics.height - previousHeight) >= GAME_FOCUS_HEIGHT_REFRESH_THRESHOLD;
 
       if (!shouldRefresh) {
         return;
       }
 
       root.dataset.gameFocusViewportWidth = String(metrics.width);
+      root.dataset.gameFocusViewportHeight = String(metrics.height);
       root.style.setProperty("--app-game-focus-height", `${metrics.height}px`);
     };
 
@@ -99,14 +106,18 @@ function useGameFocusHeightLock(gameFocusActive: boolean) {
     window.addEventListener("resize", handleResize);
     window.visualViewport?.addEventListener("resize", handleResize);
     window.addEventListener("orientationchange", handleResize);
+    document.addEventListener("fullscreenchange", handleResize);
+    document.addEventListener("webkitfullscreenchange", handleResize);
 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.visualViewport?.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", handleResize);
+      document.removeEventListener("fullscreenchange", handleResize);
+      document.removeEventListener("webkitfullscreenchange", handleResize);
       clearGameFocusHeightLock(root);
     };
-  }, [gameFocusActive]);
+  }, [fullscreenActive, gameFocusActive]);
 }
 
 function usePageModeCleanup() {
@@ -128,7 +139,7 @@ export function usePageModeEffects(snapshot: LobbyBridgeSnapshot) {
     snapshot,
     fullscreenActive,
   });
-  useGameFocusHeightLock(snapshot.page.gameFocusActive);
+  useGameFocusHeightLock(snapshot.page.gameFocusActive, fullscreenActive);
   usePageModeCleanup();
 
   return {

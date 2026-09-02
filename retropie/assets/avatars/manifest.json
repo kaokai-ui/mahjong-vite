@@ -1,0 +1,103 @@
+{
+  "asset_version": "v2",
+  "format": "PNG RGBA",
+  "source": "v1 ImageGen exports, alpha-bounds crop only; no resampling",
+  "avatars": {
+    "player": {
+      "source": "player-v1.png",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "alpha_bbox": [
+        0,
+        14,
+        1240,
+        1254
+      ],
+      "crop_box": [
+        0,
+        2,
+        1252,
+        1254
+      ],
+      "size": [
+        1252,
+        1252
+      ],
+      "padding": 12
+    },
+    "opponent": {
+      "source": "opponent-v1.png",
+      "source_size": [
+        1296,
+        1214
+      ],
+      "alpha_bbox": [
+        0,
+        6,
+        1216,
+        1214
+      ],
+      "crop_box": [
+        0,
+        0,
+        1228,
+        1214
+      ],
+      "size": [
+        1228,
+        1214
+      ],
+      "padding": 12
+    },
+    "opponent-scarlet": {
+      "source": "opponent-scarlet-v1.png",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "alpha_bbox": [
+        126,
+        27,
+        1158,
+        1231
+      ],
+      "crop_box": [
+        114,
+        15,
+        1170,
+        1243
+      ],
+      "size": [
+        1056,
+        1228
+      ],
+      "padding": 12
+    },
+    "opponent-jade": {
+      "source": "opponent-jade-v1.png",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "alpha_bbox": [
+        138,
+        25,
+        1133,
+        1234
+      ],
+      "crop_box": [
+        126,
+        13,
+        1145,
+        1246
+      ],
+      "size": [
+        1019,
+        1233
+      ],
+      "padding": 12
+    }
+  }
+}

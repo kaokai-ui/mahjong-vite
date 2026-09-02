@@ -156,7 +156,8 @@
   }
 
   body.app-native-fullscreen.app-game-focus .table-shell-four .seat-top-panel-compact {
-    width: min(100%, 960px);
+    width: 100%;
+    max-width: none;
     padding: 6px 14px 12px;
   }
 

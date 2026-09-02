@@ -172,15 +172,15 @@ export function buildGameTableStageSnapshot(context: GamePanelContextLike | null
   const topSeatDistance = playerCount >= 4 ? 2 : 1;
   const topPlayer = getPlayerAtRelativeDistance(players, currentSeat, topSeatDistance, playerCount) || opponent;
   const topRoundState = getRoundState(game, topPlayer?.seat);
-  const leftPlayer = playerCount >= 4 ? getPlayerAtRelativeDistance(players, currentSeat, 1, playerCount) : null;
-  const rightPlayer = playerCount >= 4 ? getPlayerAtRelativeDistance(players, currentSeat, playerCount - 1, playerCount) : null;
+  const leftPlayer = playerCount >= 4 ? getPlayerAtRelativeDistance(players, currentSeat, playerCount - 1, playerCount) : null;
+  const rightPlayer = playerCount >= 4 ? getPlayerAtRelativeDistance(players, currentSeat, 1, playerCount) : null;
   const leftRoundState = getRoundState(game, leftPlayer?.seat);
   const rightRoundState = getRoundState(game, rightPlayer?.seat);
   const discardRows = {
     top: getDiscardRowSnapshot(topPlayer ? "對家" : "", topRoundState.discards, topPlayer ? "尚未打牌" : ""),
     bottom: getDiscardRowSnapshot(currentPlayer.name ? "你" : "", selfRoundState.discards, "尚未打牌"),
-    left: getDiscardRowSnapshot(leftPlayer ? "西家" : "", leftRoundState.discards, ""),
-    right: getDiscardRowSnapshot(rightPlayer ? "東家" : "", rightRoundState.discards, ""),
+    left: getDiscardRowSnapshot(leftPlayer ? "上家" : "", leftRoundState.discards, ""),
+    right: getDiscardRowSnapshot(rightPlayer ? "下家" : "", rightRoundState.discards, ""),
   };
 
   return {

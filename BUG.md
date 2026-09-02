@@ -13,7 +13,7 @@
 - `src/firebase-rules-contract.js` payload schema 三處合併（輸出被安全規則鏡像測試逐字比對，不可冒險）。
 - 兩份 `sw.js` 以 `importScripts` 抽共用核心；三份 manifest / 兩份 entry HTML 內嵌腳本去重。
 
-## ⚠️ 回歸事故（2026-07-04，PR #3 引入，已修復待部署）
+## ⚠️ 回歸事故（2026-07-04，PR #3 引入，已修復待部署） 修正：已佈署
 
 PR #3 的「座位競態改 `runTransaction`」修法本身帶入一個**全面性回歸：所有玩家加入任何房間都得到「找不到這個房間」**。原因：RTDB `runTransaction` 第一次執行 updater 拿到的是**本地快取值**（加入者從未訂閱 `roomMeta`，必為 `null`），`applyClaim` 對 `null` 回傳 `undefined` → 交易在聯絡伺服器前即中止 → `claim.meta === null` → 誤判為房間不存在。單元測試沒抓到，正因下方既有註記：mock 無交易能力會退回 read-then-set 路徑，交易路徑從未被執行。
 

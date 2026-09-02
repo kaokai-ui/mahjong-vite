@@ -632,3 +632,153 @@ body.app-game-focus .latest-discard .tile-faceup {
 body.app-game-focus .table-center-core-mark {
   display: none;
 }
+
+/* Every 4P table follows the RetroPie table: all four discard rows share the
+   center board while the side seats keep their hand and meld racks. */
+.table-center-board-four {
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+}
+
+.four-seat-discard-scroll-viewport {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.four-seat-discard-stack {
+  display: grid;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: clamp(3px, 0.5vh, 8px);
+  height: 100%;
+  min-height: 0;
+  width: max-content;
+  min-width: 100%;
+}
+
+.four-seat-discard-scroll-viewport .four-seat-discard-stack .discard-lane-center {
+  width: max-content;
+  min-width: 100%;
+}
+
+.four-seat-discard-scroll-viewport .four-seat-discard-stack .discard-line-horizontal {
+  width: max-content;
+  min-width: 100%;
+  overflow: visible;
+}
+
+.discard-lane-center {
+  display: grid;
+  grid-template-columns: clamp(38px, 4.8vw, 62px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(6px, 0.8vw, 10px);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(3px, 0.5vh, 8px) clamp(4px, 1vw, 14px);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 12px;
+  background: rgba(5, 18, 15, 0.18);
+}
+
+.discard-lane-center .discard-lane-label {
+  align-self: center;
+  justify-self: start;
+  color: rgba(244, 238, 225, 0.82);
+  font-size: clamp(0.78rem, 1vw, 0.94rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.discard-lane-center .discard-line-horizontal {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  flex-wrap: nowrap;
+  gap: clamp(3px, 0.35vw, 6px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.discard-lane-center .tile-faceup,
+.discard-lane-center .tile-back {
+  width: var(--four-seat-discard-center-tile-width, 38px);
+  height: auto;
+  aspect-ratio: 27 / 35;
+}
+
+body.app-game-focus .table-center-four .table-center-board-four {
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+body.app-game-focus .table-center-four .four-seat-discard-stack {
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: clamp(3px, 0.55vh, 8px);
+  height: 100%;
+  min-height: 0;
+  width: max-content;
+  min-width: 100%;
+}
+
+body.app-game-focus .table-center-four .four-seat-discard-scroll-viewport {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+body.app-game-focus .table-center-four .four-seat-discard-scroll-viewport .discard-lane-center {
+  width: max-content;
+  min-width: 100%;
+}
+
+body.app-game-focus .table-center-four .four-seat-discard-scroll-viewport .discard-line-horizontal {
+  width: max-content;
+  min-width: 100%;
+  overflow: visible;
+}
+
+body.app-game-focus .table-center-four .four-seat-discard-scroll-viewport .discard-lane-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  padding-inline: 4px 8px;
+  background: rgba(5, 18, 15, 0.92);
+}
+
+body.app-game-focus .table-center-four .discard-lane-center {
+  grid-template-columns: clamp(42px, 4.8vw, 66px) minmax(0, 1fr);
+  gap: clamp(6px, 0.8vw, 10px);
+  min-height: 0;
+  padding-block: clamp(2px, 0.45vh, 7px);
+}
+
+body.app-game-focus .table-center-four .discard-lane-center .discard-line-horizontal {
+  justify-content: flex-start;
+  min-height: 0;
+  height: 100%;
+  overflow: visible;
+}
+
+body.app-game-focus .table-center-four .discard-lane-center .tile-faceup,
+body.app-game-focus .table-center-four .discard-lane-center .tile-back {
+  width: var(--four-seat-discard-center-tile-width, 38px);
+}

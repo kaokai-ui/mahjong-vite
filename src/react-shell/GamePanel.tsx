@@ -16,7 +16,10 @@ export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscree
   const fullscreenLabel = fullscreenActive ? "離開全螢幕" : "全螢幕顯示";
   const focusNote = fullscreenSupported ? gamePanel.focusNote : "這個瀏覽器目前不支援全螢幕。";
   const [topDiscardRow, bottomDiscardRow, leftDiscardRow, rightDiscardRow] = gamePanel.tableStage.discardRows;
-  const isFourSeatTable = seatCount >= 4;
+  // The live table snapshot is authoritative for online 4P; keep the prop as
+  // a fallback for the minimal solo shell before its first snapshot arrives.
+  const resolvedSeatCount = Number(gamePanel.tableStage.seatCount) || seatCount;
+  const isFourSeatTable = resolvedSeatCount >= 4;
   const isTwoSeatSolo = isSoloMode && !isFourSeatTable;
   const tableShellClassName = [
     "table-shell",
@@ -35,11 +38,11 @@ export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscree
   const actionState = gamePanel.tableStage.actions;
   const topDiscardLabel = topDiscardRow?.label || gamePanel.tableStage.opponentSection.title || "對家";
   const bottomDiscardLabel = bottomDiscardRow?.label || gamePanel.tableStage.selfSection.title || "你";
-  const leftDiscardLabel = leftDiscardRow?.label || "西家";
-  const rightDiscardLabel = rightDiscardRow?.label || "東家";
+  const leftDiscardLabel = leftDiscardRow?.label || "上家";
+  const rightDiscardLabel = rightDiscardRow?.label || "下家";
   const emptyDiscardPlaceholder = "尚未打牌";
-  const sideSeatLeftLabel = "西家";
-  const sideSeatRightLabel = "東家";
+  const sideSeatLeftLabel = "上家";
+  const sideSeatRightLabel = "下家";
 
   return (
     <section id="game-panel" className="panel">

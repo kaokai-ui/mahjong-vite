@@ -3,6 +3,7 @@
 這個專案是可部署到 GitHub Pages 的麻將 Web UI，目前支援：
 
 - 雙人連線對局
+- 雙人遊戲 4P 連線對局（2 名真人 + 2 名電腦）
 - 單機 2 人對電腦
 - 單機 4 人對電腦（1 名玩家 + 3 名電腦）
 - Firebase Realtime Database 同步
@@ -16,6 +17,7 @@
 - `game.js`、`bot-ai.js`、`network.js` 第一階段核心重構完成
 - 單人模式已支援 `2 人局 / 4 人局` 切換
 - 四人單機模式已接上本機房間資料、3 名 bot 排程、四方位牌桌與結果畫面
+- 雙人遊戲 4P 連線模式已與單人 4P 共用四方位牌桌與響應式版面
 - 主要回歸測試已就位，包含：
   - `npm run test:game-engine`
   - `npm run test:bot-ai`
@@ -45,6 +47,15 @@
 - 更長局數與更多吃碰槓情境的回歸驗證
 - iPad / Android 實機與離線包裝 QA
 - 四人單機 UI 的持續微調與晚盤版面觀察
+
+## 四方牌桌版面
+
+單人 4P 與雙人遊戲 4P 連線對局共用同一套四方牌桌版面：
+
+- 上方是對家，左側是上家，右側是下家，下方是本家。
+- 四家的棄牌列集中在中央區域，沿用目前的排列與單一共用水平捲動控制。
+- 牌桌 grid 使用可收縮的中心欄與等高側邊 card；一般視窗、全螢幕與 iPad 類型 viewport 都走同一套 4P 尺寸約束，避免側邊 card 或棄牌牌面被擠壓。
+- 連線 4P 仍保留原本的吃、碰、槓與出牌流程，只調整牌桌呈現。
 
 ## 本機開發
 
@@ -136,6 +147,8 @@ npm run test:network-helpers
 npm run test:network-controller
 npm run test:network-live:appcheck   # 需真實 Firebase 憑證
 node local-admin/scripts/four-player-solo-regression.mjs
+node local-admin/scripts/network-live-dual-client-smoke.mjs --game-mode=online-4p --scenario=layout --viewport=1440x900 --app-check-mode=off
+node local-admin/scripts/network-live-dual-client-smoke.mjs --game-mode=online-4p --scenario=layout --viewport=1024x768 --touch --app-check-mode=off
 ```
 
 平板版面回歸需先啟動 dev server，再指向該網址執行：
@@ -153,3 +166,19 @@ $env:FOUR_PLAYER_TABLET_URL="http://127.0.0.1:4173/"; npm run test:layout:4p-tab
 - `src/`：正式站前端、遊戲引擎、AI、多人同步
 - `local-admin/`：本機驗證腳本、開發筆記、四人單機回歸輸出
 - `android-solo-offline/`：單機離線 Android 專案
+- `retropie/`：RetroPie 原生 Pygame 移植；目前支援單人 2P／4P
+
+## RetroPie Mahjong
+
+`retropie/` 是獨立於 Web 版本的麻將鍵盤入口。進入該目錄後可跑
+headless 與輸入 smoke；需要畫面時在 RetroPie 既有的 Pygame 環境執行：
+
+```bash
+cd retropie
+python3 -m python.mahjong --headless --seed 20260901
+python3 -m python.mahjong.input_smoke
+```
+
+實體鍵盤操作、launcher 與 2P／4P 說明請看
+`retropie/README.md`；RetroPie 部署紀錄與排錯方式請看
+`D:\\Game\\VideoPoker\\RETROPIE_PI_MIGRATION.md`。
