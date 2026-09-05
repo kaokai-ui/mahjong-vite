@@ -15,6 +15,7 @@ import struct
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 from .engine import (
+    DEFAULT_AI_DIFFICULTY,
     DEFAULT_SEED,
     create_game_state,
     current_drawn_tile,
@@ -24,9 +25,10 @@ from .engine import (
     human_hand_tiles,
     step_bot,
 )
+from .ai import AI_DIFFICULTIES, MIXED_AI_DIFFICULTY
 from .evaluator import evaluate_winning_hand
 from .persistence import default_save_path, load_state, save_state
-from .tiles import get_tile_type, tile_label
+from .tiles import get_tile_type, sort_tile_ids, tile_label
 
 
 LOGICAL_SIZE = (1280, 720)
@@ -66,6 +68,81 @@ FOUR_PLAYER_AVATARS = {
     2: "opponent",
     3: "opponent-scarlet",
 }
+
+
+def result_pattern_text(result: Optional[Dict[str, object]]) -> str:
+    """Format the winning hand patterns like the Web result overlay."""
+
+    if isinstance(result, dict):
+        patterns = result.get("patterns")
+        if isinstance(patterns, (list, tuple)):
+            labels = [item for item in patterns if isinstance(item, str) and item]
+            if labels:
+                return "、".join(labels)
+        breakdown = result.get("breakdown")
+        if (
+            isinstance(breakdown, (list, tuple))
+            and len(breakdown) == 1
+            and isinstance(breakdown[0], dict)
+            and breakdown[0].get("key") == "baseWin"
+        ):
+            return "基本胡"
+    return "標準胡牌"
+
+
+def result_source_text(state: Dict[str, object], result: Optional[Dict[str, object]]) -> str:
+    """Return the Web-style source label for discard wins or rob-kongs."""
+
+    if not isinstance(result, dict):
+        return ""
+    win_kind = result.get("win_kind")
+    if win_kind not in ("discardWin", "robKong"):
+        return ""
+    loser_seat = result.get("loser_seat")
+    if isinstance(loser_seat, (list, tuple)):
+        loser_seat = loser_seat[0] if loser_seat else None
+    try:
+        loser_index = int(loser_seat)
+    except (TypeError, ValueError):
+        return ""
+    players = state.get("players") or []
+    if not 0 <= loser_index < len(players):
+        return ""
+    player = players[loser_index] if isinstance(players[loser_index], dict) else {}
+    name = player.get("name") or "玩家 {}".format(loser_index + 1)
+    if win_kind == "robKong":
+        return "被搶槓：{}".format(name)
+    return "放炮：{}".format(name)
+
+
+def result_hand_tiles(state: Dict[str, object], result: Optional[Dict[str, object]]) -> List[str]:
+    """Return the complete winning hand, including a claimed winning tile."""
+
+    if not isinstance(result, dict):
+        return []
+    stored_hand = result.get("winning_hand")
+    if isinstance(stored_hand, (list, tuple)) and stored_hand:
+        return sort_tile_ids(tile_id for tile_id in stored_hand if isinstance(tile_id, str) and tile_id)
+
+    winner_seat = result.get("winner_seat")
+    try:
+        winner_index = int(winner_seat)
+    except (TypeError, ValueError):
+        return []
+    players = state.get("players") or []
+    if not 0 <= winner_index < len(players) or not isinstance(players[winner_index], dict):
+        return []
+    winner = players[winner_index]
+    tiles = [tile_id for tile_id in winner.get("hand", []) if isinstance(tile_id, str) and tile_id]
+    winning_tile_id = result.get("winning_tile_id")
+    if isinstance(winning_tile_id, str) and winning_tile_id and winning_tile_id not in tiles:
+        tiles.append(winning_tile_id)
+    for meld in winner.get("melds", []):
+        if isinstance(meld, dict):
+            tiles.extend(tile_id for tile_id in meld.get("tiles", []) if isinstance(tile_id, str) and tile_id)
+    return sort_tile_ids(tiles)
+
+
 VOICE_ASSET_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "voices"))
 FONT_ASSET_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "fonts"))
 FONT_ASSET_PATH = os.path.join(FONT_ASSET_DIR, "NotoSansCJKtc-Regular.otf")
@@ -79,7 +156,16 @@ VOICE_FILES = {
 }
 DRAW_KEYS = ("K_n",)
 HU_KEYS = ("K_z",)
-MODE_KEYS = HU_KEYS
+MODE_SELECT_KEYS = ("K_a", "K_b")
+DIFFICULTY_SELECT_KEYS = ("K_c", "K_d", "K_e", "K_f", "K_g")
+DIFFICULTY_VALUES = ("easy", "normal", "hard", "god", MIXED_AI_DIFFICULTY)
+DIFFICULTY_LABELS = {
+    "easy": "簡單",
+    "normal": "普通",
+    "hard": "困難",
+    "god": "賭神",
+    MIXED_AI_DIFFICULTY: "混合",
+}
 PUNG_KEYS = ("K_LALT",)
 CHOW_KEYS = ("K_SPACE",)
 KONG_KEYS = ("K_LCTRL",)
@@ -286,6 +372,7 @@ class MahjongPygame:
         fps: int = 30,
         input_profile: str = "mahjong",
         render_mode: Optional[str] = None,
+        ai_difficulty: str = DEFAULT_AI_DIFFICULTY,
     ):
         self.pygame = pygame
         self.seed = seed
@@ -298,6 +385,7 @@ class MahjongPygame:
         self.logical_size = NATIVE_1080P_SIZE if self.render_mode == "native-1080p" else LOGICAL_SIZE
         self.fps = max(1, fps)
         self.input_profile = input_profile
+        self.ai_difficulty = ai_difficulty if ai_difficulty in AI_DIFFICULTIES else DEFAULT_AI_DIFFICULTY
         flags = pygame.FULLSCREEN if fullscreen else pygame.RESIZABLE
         if os.environ.get("SDL_VIDEODRIVER") == "dummy":
             flags = 0
@@ -317,6 +405,7 @@ class MahjongPygame:
         self.sound = SoundBus(pygame)
         self.screen_name = "menu"
         self.selected_mode = DEFAULT_MENU_MODE
+        self.selected_difficulty = self.default_difficulty_for_mode(self.selected_mode)
         self.mode_notice = ""
         self.state = None
         self.next_bot_at = 0
@@ -334,6 +423,11 @@ class MahjongPygame:
                 self.state = restored
                 self.screen_name = "game"
                 self.selected_mode = 1 if restored.get("player_count") == 4 else 0
+                restored_difficulty = restored.get("ai_difficulty")
+                if restored_difficulty in DIFFICULTY_VALUES:
+                    self.selected_difficulty = restored_difficulty
+                else:
+                    self.selected_difficulty = self.default_difficulty_for_mode(self.selected_mode)
                 pygame.display.set_caption(
                     "麻將 RetroPie · 單人 {}P".format(restored.get("player_count", 2))
                 )
@@ -361,8 +455,24 @@ class MahjongPygame:
     def is_key(self, key: int, *names: str) -> bool:
         return any(key == getattr(self.pygame, name, None) for name in names)
 
+    def default_difficulty_for_mode(self, mode_index: int) -> str:
+        """Keep 4P on the production mixed setup and 2P on the CLI/default profile."""
+
+        return MIXED_AI_DIFFICULTY if int(mode_index) == 1 else self.ai_difficulty
+
     def key_name(self, key: int) -> Optional[str]:
-        for name in EXIT_KEYS + MODE_KEYS + DRAW_KEYS + PUNG_KEYS + CHOW_KEYS + KONG_KEYS + PASS_KEYS + HAND_KEY_NAMES:
+        for name in (
+            EXIT_KEYS
+            + MODE_SELECT_KEYS
+            + DIFFICULTY_SELECT_KEYS
+            + HU_KEYS
+            + DRAW_KEYS
+            + PUNG_KEYS
+            + CHOW_KEYS
+            + KONG_KEYS
+            + PASS_KEYS
+            + HAND_KEY_NAMES
+        ):
             if self.is_key(key, name):
                 return name
         return None
@@ -376,9 +486,25 @@ class MahjongPygame:
             return False
 
         if self.screen_name == "menu":
-            if self.is_key(key, *MODE_KEYS):
-                self.selected_mode = (self.selected_mode + 1) % 2
+            if self.is_key(key, *MODE_SELECT_KEYS):
+                selected_mode = 0 if self.is_key(key, "K_a") else 1
+                if selected_mode != self.selected_mode:
+                    self.selected_mode = selected_mode
+                    self.selected_difficulty = self.default_difficulty_for_mode(selected_mode)
                 self.mode_notice = ""
+                self.sound.event("select")
+            elif self.is_key(key, *DIFFICULTY_SELECT_KEYS):
+                difficulty_index = next(
+                    index
+                    for index, key_name in enumerate(DIFFICULTY_SELECT_KEYS)
+                    if self.is_key(key, key_name)
+                )
+                selected_difficulty = DIFFICULTY_VALUES[difficulty_index]
+                if selected_difficulty == MIXED_AI_DIFFICULTY and self.selected_mode == 0:
+                    self.mode_notice = "混合難度只適用單人 4P。"
+                else:
+                    self.selected_difficulty = selected_difficulty
+                    self.mode_notice = ""
                 self.sound.event("select")
             elif self.is_key(key, *DRAW_KEYS):
                 self.confirm_mode()
@@ -431,7 +557,17 @@ class MahjongPygame:
         if previous:
             player_count = int(previous.get("player_count", player_count))
             self.selected_mode = 1 if player_count == 4 else 0
-        self.state = create_game_state(seed=next_seed, previous_state=previous, player_count=player_count)
+        round_difficulty = self.selected_difficulty
+        if player_count == 2 and round_difficulty == MIXED_AI_DIFFICULTY:
+            round_difficulty = self.ai_difficulty
+        elif player_count == 4 and round_difficulty not in DIFFICULTY_VALUES:
+            round_difficulty = MIXED_AI_DIFFICULTY
+        self.state = create_game_state(
+            seed=next_seed,
+            previous_state=previous,
+            player_count=player_count,
+            ai_difficulty=round_difficulty,
+        )
         self.screen_name = "game"
         self.mode_notice = ""
         self.pygame.display.set_caption("麻將 RetroPie · 單人 {}P".format(player_count))
@@ -707,25 +843,56 @@ class MahjongPygame:
         self.pygame.draw.rect(self.canvas, COLORS["table"], menu_rect)
         self.pygame.draw.rect(self.canvas, COLORS["table_edge"], menu_rect, self.ui_size(3))
         self.text("麻將 RetroPie", self.title_font, COLORS["gold"], center=(640, 120))
-        self.text("單人模式", self.heading_font, COLORS["cyan"], center=(640, 170))
+        self.text("選擇模式與 AI 難度", self.heading_font, COLORS["cyan"], center=(640, 164))
         labels = [
-            ("單人 2P", "兩人局 · 你對電腦", True),
-            ("單人 4P", "四人局 · 你對三位電腦", True),
+            ("A　單人 2P", "兩人局 · 你對一位電腦", "可選簡單／普通／困難／賭神"),
+            ("B　單人 4P", "四人局 · 你對三位電腦", "可選單一難度或混合"),
         ]
-        for index, (title, subtitle, available) in enumerate(labels):
-            x = 190 + index * 470
-            rect = self.pygame.Rect(x, 250, 430, 190)
+        for index, (title, subtitle, detail) in enumerate(labels):
+            x = 160 + index * 530
+            rect = self.pygame.Rect(x, 205, 430, 170)
             selected = index == self.selected_mode
             fill = COLORS["panel_alt"] if selected else COLORS["panel"]
             border = COLORS["gold"] if selected else COLORS["muted"]
             self.panel(rect, fill, border, 16, 4 if selected else 2)
-            self.text(title, self.heading_font, COLORS["gold"] if selected else COLORS["cream"], center=(rect.centerx, 305))
-            self.text(subtitle, self.body_font, COLORS["cyan"] if available else COLORS["muted"], center=(rect.centerx, 350))
-            self.text("目前可玩" if available else "尚未開放", self.small_font, COLORS["cream"] if available else COLORS["muted"], center=(rect.centerx, 392))
+            self.text(title, self.heading_font, COLORS["gold"] if selected else COLORS["cream"], center=(rect.centerx, 255))
+            self.text(subtitle, self.body_font, COLORS["cyan"], center=(rect.centerx, 302))
+            self.text(detail, self.small_font, COLORS["cream"], center=(rect.centerx, 344))
+
+        self.text("AI 難度", self.body_font, COLORS["cyan"], center=(640, 400))
+        difficulty_keys = "CDEFG"
+        card_width = 190
+        card_gap = 14
+        first_x = int((LOGICAL_SIZE[0] - (card_width * len(DIFFICULTY_VALUES) + card_gap * (len(DIFFICULTY_VALUES) - 1))) / 2)
+        for index, difficulty in enumerate(DIFFICULTY_VALUES):
+            x = first_x + index * (card_width + card_gap)
+            rect = self.pygame.Rect(x, 420, card_width, 92)
+            selected = difficulty == self.selected_difficulty
+            unavailable = difficulty == MIXED_AI_DIFFICULTY and self.selected_mode == 0
+            fill = COLORS["panel_alt"] if selected and not unavailable else COLORS["panel"]
+            border = COLORS["gold"] if selected and not unavailable else COLORS["muted"]
+            if unavailable:
+                border = COLORS["red"] if self.mode_notice else COLORS["muted"]
+            self.panel(rect, fill, border, 12, 3 if selected and not unavailable else 2)
+            self.text(difficulty_keys[index], self.small_font, COLORS["gold"], center=(rect.centerx, 441))
+            self.text(
+                DIFFICULTY_LABELS[difficulty],
+                self.body_font,
+                COLORS["gold"] if selected and not unavailable else COLORS["cream"],
+                center=(rect.centerx, 474),
+            )
+            if unavailable:
+                self.text("限 4P", self.small_font, COLORS["muted"], center=(rect.centerx, 499))
+
+        if self.selected_difficulty == MIXED_AI_DIFFICULTY:
+            difficulty_detail = "目前：混合（下家賭神／對家普通／上家困難）"
+        else:
+            difficulty_detail = "目前難度：{}".format(DIFFICULTY_LABELS.get(self.selected_difficulty, "困難"))
+        self.text(difficulty_detail, self.small_font, COLORS["cream"], center=(640, 536))
         if self.mode_notice:
-            self.text(self.mode_notice, self.body_font, COLORS["red"], center=(640, 500))
-        self.text("胡：選擇模式　摸牌：確認　得分：離開", self.body_font, COLORS["cream"], center=(640, 605))
-        self.text("只使用麻將鍵盤", self.small_font, COLORS["cream"], center=(640, 650))
+            self.text(self.mode_notice, self.small_font, COLORS["red"], center=(640, 562))
+        self.text("A／B：選擇 2P／4P　C–G：選擇難度　摸牌：確認　得分：離開", self.small_font, COLORS["cream"], center=(640, 625))
+        self.text("只使用麻將鍵盤", self.small_font, COLORS["cream"], center=(640, 662))
 
     def draw_table(self) -> None:
         state = self.state
@@ -1014,30 +1181,81 @@ class MahjongPygame:
         shade = self.pygame.Surface(self.logical_size, self.pygame.SRCALPHA)
         shade.fill((2, 8, 10, 175))
         self.canvas.blit(shade, (0, 0))
-        self.panel((270, 140, 740, 420), COLORS["panel"], COLORS["gold"], 18, 3)
+        self.panel((140, 46, 1000, 612), COLORS["panel"], COLORS["gold"], 18, 3)
         result = state.get("result") or {}
-        if result.get("win_kind") == "draw":
+        win_kind = result.get("win_kind")
+        if win_kind == "draw":
             title = "流局"
-        elif result.get("win_kind") == "selfDraw":
-            title = "{} · 自摸".format(state["players"][result.get("winner_seat", 0)]["name"])
         else:
-            title = "{} · 胡牌".format(state["players"][result.get("winner_seat", 0)]["name"])
-        self.text(title, self.title_font, COLORS["gold"], center=(640, 220))
-        patterns = "、".join(result.get("patterns") or []) or "沒有額外台型"
-        self.text(patterns, self.body_font, COLORS["cyan"], center=(640, 292))
-        if result.get("win_kind") == "draw":
+            winner_seat = result.get("winner_seat", 0)
+            try:
+                winner_index = int(winner_seat)
+            except (TypeError, ValueError):
+                winner_index = 0
+            players = state.get("players") or []
+            winner = players[winner_index] if 0 <= winner_index < len(players) else {}
+            winner_name = winner.get("name") or "玩家"
+            kind_label = "自摸" if win_kind == "selfDraw" else "搶槓" if win_kind == "robKong" else "胡牌"
+            title = "{} · {}".format(winner_name, kind_label)
+        self.text(title, self.title_font, COLORS["gold"], center=(640, 94))
+
+        if win_kind == "draw":
+            self.text(state.get("message") or "本局流局。", self.body_font, COLORS["cyan"], center=(640, 218))
+        else:
+            source_text = result_source_text(state, result)
+            if source_text:
+                self.text(source_text, self.body_font, COLORS["red"], center=(640, 134))
+            self.text(
+                "牌型：{}".format(result_pattern_text(result)),
+                self.body_font,
+                COLORS["cyan"],
+                center=(640, 168 if source_text else 144),
+            )
+            winning_tiles = result_hand_tiles(state, result)
+            self.text("完整牌面", self.body_font, COLORS["gold"], center=(640, 204))
+            if winning_tiles:
+                tile_w, tile_h, tile_gap = 48, 64, 3
+                max_width = 900
+                if len(winning_tiles) > 1:
+                    tile_w = min(tile_w, max(28, int((max_width - (len(winning_tiles) - 1) * tile_gap) / len(winning_tiles))))
+                    tile_h = max(38, int(tile_w * 4 / 3))
+                row_width = len(winning_tiles) * tile_w + max(0, len(winning_tiles) - 1) * tile_gap
+                start_x = int(640 - row_width / 2)
+                winning_tile_id = result.get("winning_tile_id")
+                winning_marked = False
+                for index, tile_id in enumerate(winning_tiles):
+                    highlighted = tile_id == winning_tile_id and not winning_marked
+                    if highlighted:
+                        winning_marked = True
+                    self.draw_tile(
+                        tile_id,
+                        (start_x + index * (tile_w + tile_gap), 222, tile_w, tile_h),
+                        highlighted=highlighted,
+                    )
+            else:
+                self.text("完整牌面資料不足", self.body_font, COLORS["muted"], center=(640, 250))
+            winning_tile_id = result.get("winning_tile_id")
+            if isinstance(winning_tile_id, str) and winning_tile_id:
+                self.text(
+                    "胡牌：{}".format(tile_label(winning_tile_id)),
+                    self.body_font,
+                    COLORS["gold"],
+                    center=(520, 324),
+                )
+                self.draw_tile(winning_tile_id, (610, 292, 48, 64), highlighted=True)
+        if win_kind == "draw":
             score_text = "本局沒有分數變化"
         else:
             score_text = "{} 台　{} 點".format(result.get("total_tai", 0), result.get("round_score", 0))
-        self.text(score_text, self.heading_font, COLORS["cream"], center=(640, 356))
+        self.text(score_text, self.heading_font, COLORS["cream"], center=(640, 402))
         score_delta = result.get("score_delta") or []
         if len(state.get("players", [])) == 4 and len(score_delta) == 4:
             score_line = "　".join(
                 "{} {:+}".format(player.get("name", ""), int(score_delta[index]))
                 for index, player in enumerate(state["players"])
             )
-            self.text(score_line, self.small_font, COLORS["cyan"], center=(640, 412))
-        self.text("摸牌：再開一局　得分：離開", self.body_font, COLORS["gold"], center=(640, 466))
+            self.text(score_line, self.small_font, COLORS["cyan"], center=(640, 448))
+        self.text("摸牌：再開一局　得分：離開", self.body_font, COLORS["gold"], center=(640, 516))
 
     def draw(self) -> None:
         if self.screen_name == "menu":
@@ -1084,6 +1302,12 @@ def main(argv=None):
     parser.add_argument("--headless", action="store_true", help="run a deterministic engine smoke round")
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--player-count", type=int, choices=(2, 4), default=2, help="headless QA player count")
+    parser.add_argument(
+        "--ai-difficulty",
+        choices=AI_DIFFICULTIES + (MIXED_AI_DIFFICULTY,),
+        default=DEFAULT_AI_DIFFICULTY,
+        help="headless/diagnostic AI profile; use mixed for the 4P seat mix",
+    )
     parser.add_argument("--save", type=str, default=None, help="optional path for an atomic session save")
     parser.add_argument("--smoke-frames", type=int, default=0)
     parser.add_argument("--fullscreen", action="store_true")
@@ -1102,7 +1326,7 @@ def main(argv=None):
     if args.headless:
         from .engine import run_headless
 
-        print(run_headless(args.seed, player_count=args.player_count))
+        print(run_headless(args.seed, player_count=args.player_count, ai_difficulty=args.ai_difficulty))
         return
     try:
         import pygame
@@ -1120,6 +1344,7 @@ def main(argv=None):
         fps=args.fps,
         input_profile=args.input_profile,
         render_mode=args.render_mode,
+        ai_difficulty=args.ai_difficulty,
     )
     app.run(args.smoke_frames)
 

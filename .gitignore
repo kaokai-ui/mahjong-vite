@@ -3,3 +3,5 @@ gcm-diagnose.log
 AGENTS.md
 dist/
 node_modules/
+__pycache__/
+*.pyc

@@ -7,9 +7,9 @@
 ## RetroPie 目前範圍
 
 - 首頁不輸入玩家名稱，只選擇「單人 2P」或「單人 4P」。
-- `胡`（紅色 `Z`）切換模式；鍵盤上的綠色「聽」本版不使用。
-- `摸牌`（紅色 `N`）確認；再次按下會丟出摸進牌。
-- 單人 2P 為你對一位電腦；單人 4P 為你對三位電腦，兩種模式都可直接開始。
+- 首頁用 `A` 選單人 2P、`B` 選單人 4P；用 `C`／`D`／`E`／`F`／`G` 選「簡單」／「普通」／「困難」／「賭神」／「混合」，再按 `摸牌`（紅色 `N`）確認。
+- 2P 預設使用「困難」AI；可選簡單、普通、困難或賭神。4P 預設使用目前的「下家賭神／對家普通／上家困難」混合配置，也可選擇讓三位 AI 全部使用同一難度。
+- 遊戲中 `胡`（紅色 `Z`）只負責宣告胡牌／自摸；鍵盤上的綠色「聽」本版不使用。
 - 136 張完整牌組；4P 初始為一位玩家加三位 AI，牌牆留下 83 張。
 - 兩種模式都支援胡牌／流局、碰／吃／槓／過；4P 依下家、對家、上家順序輪流摸打。
 - 摸進來的牌獨立顯示在手牌右側，不倒數、不自動消失。
@@ -17,6 +17,7 @@
 - 再按紅色 `摸牌` 會打出右側那張摸進來的牌；可暗槓或對家出牌可槓時按綠色 `槓`
   （`Left Ctrl`）。白鍵 `K` 仍是第 11 張手牌，不是槓牌鍵。
 - 可胡牌／可自摸時，狀態列會以紅框提示應按 `胡`。
+- 結算視窗會顯示「牌型：」與實際牌型，並列出勝者的完整牌面；胡進的牌會加金框，另顯示「胡牌：<牌名>」。放炮胡會另外顯示「放炮：」及放炮者，自摸則標示「自摸」。
 - 玩家與電腦的吃牌／碰牌牌組會固定顯示在各自手牌旁，但不再顯示「副露」或「吃牌／碰牌」文字。
 - 按下有效的吃／自摸／槓／胡／碰動作會立即播放台灣中文語音。
 - 2P 玩家與電腦各有一張 Q 版透明大頭圖；4P 三位 AI 都顯示不同的 Q 版頭像，玩家
@@ -37,6 +38,8 @@ cd retropie
 python3 -m python.mahjong --windowed --input-profile mahjong
 python3 -m python.mahjong --headless --seed 20260901
 python3 -m python.mahjong --headless --seed 20260901 --player-count 4
+python3 -m python.mahjong --headless --seed 20260901 --ai-difficulty easy
+python3 -m python.mahjong --headless --seed 20260901 --player-count 4 --ai-difficulty mixed
 python3 -m python.mahjong.input_smoke
 python3 -m unittest python.mahjong.test_engine
 ```
@@ -106,8 +109,16 @@ python retropie/tools/prepare_avatar_assets.py
 python3 -m python.mahjong --fullscreen --render-mode native-1080p --fps 30 --input-profile mahjong
 ```
 
-launcher 不帶固定玩家數；進入後首頁預設選取「單人 4P」，可用 `胡` 在 2P／4P
-間切換，再按 `摸牌` 確認。`--player-count 4` 僅供 headless 測試，不會繞過街機首頁。
+launcher 不帶固定玩家數；進入後首頁預設選取「單人 4P」與「混合」難度。按 `A`／`B`
+選 2P／4P，按 `C`～`G` 選難度，再按 `摸牌` 確認。2P 的「混合」不可選；`--player-count 4`
+僅供 headless 測試，不會繞過街機首頁。
+
+AI 四段策略與 4P 混合配置、Pi Zero 2 W 實測數據與效能限制記錄在
+`D:\Game\Retropie\RETROPIE_PI_MIGRATION.md`。可用下面指令重跑 headless benchmark：
+
+```bash
+python3 -m python.mahjong.performance_benchmark --rounds 5 --decision-samples 300
+```
 
 可使用 `retropie/mahjong-arcade-install.sh` 協助登錄 launcher 與
 `gamelist.xml`；安裝腳本會把「KK麻將(2P/4P)」排在第一個、Video Poker
@@ -117,9 +128,11 @@ launcher 不帶固定玩家數；進入後首頁預設選取「單人 4P」，�
 
 | 麻將鍵 | HID / Pygame key | 第一版用途 |
 |---|---|---|
+| 首頁模式選擇 | `A`／`B` | `A` 選單人 2P；`B` 選單人 4P |
+| 首頁難度選擇 | `C`～`G` | `C` 簡單、`D` 普通、`E` 困難、`F` 賭神、`G` 混合（僅 4P） |
 | 白鍵 `A–M` | `A`–`M` | 直接打出對應手牌（2P／4P 相同） |
-| 紅色「胡」 | `Z` | 首頁切換模式；可胡時宣告胡牌 |
-| 紅色「摸牌」 | `N` | 首頁確認；摸牌後再按則丟出摸進牌 |
+| 紅色「胡」 | `Z` | 遊戲中宣告胡牌／自摸 |
+| 紅色「摸牌」 | `N` | 首頁確認；遊戲中摸牌，摸牌後再按則丟出摸進牌 |
 | 綠色「槓」 | `Left Ctrl` | 暗槓／明槓，之後進入摸補牌 |
 | 綠色「碰」 | `Left Alt` | 碰 |
 | 綠色「吃」 | `Space` | 吃第一個可用順子 |

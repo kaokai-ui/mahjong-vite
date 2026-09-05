@@ -8,6 +8,8 @@ from .app import (
     CHOW_KEYS,
     DEFAULT_MENU_MODE,
     DEFAULT_RENDER_MODE,
+    DIFFICULTY_SELECT_KEYS,
+    DIFFICULTY_VALUES,
     DISCARD_LAYOUTS,
     DISCARD_MAX_VISIBLE,
     DRAW_KEYS,
@@ -18,7 +20,7 @@ from .app import (
     HAND_KEY_NAMES,
     HU_KEYS,
     KONG_KEYS,
-    MODE_KEYS,
+    MODE_SELECT_KEYS,
     PASS_KEYS,
     PUNG_KEYS,
     RENDER_MODES,
@@ -26,6 +28,9 @@ from .app import (
     VOICE_FILES,
     MahjongPygame,
     discard_row_width,
+    result_hand_tiles,
+    result_pattern_text,
+    result_source_text,
 )
 from .engine import create_game_state, current_drawn_tile
 
@@ -47,7 +52,13 @@ class _FakePygame:
     K_ESCAPE = 8
     K_F7 = 9
     K_RCTRL = 10
-    K_k = 11
+    K_a = 11
+    K_b = 12
+    K_c = 13
+    K_d = 14
+    K_e = 15
+    K_f = 16
+    K_g = 17
     time = _FakeTime()
 
 
@@ -65,7 +76,9 @@ class _FakeSound:
 
 
 def run() -> None:
-    assert MODE_KEYS == HU_KEYS
+    assert MODE_SELECT_KEYS == ("K_a", "K_b")
+    assert DIFFICULTY_SELECT_KEYS == ("K_c", "K_d", "K_e", "K_f", "K_g")
+    assert DIFFICULTY_VALUES == ("easy", "normal", "hard", "god", "mixed")
     assert HU_KEYS == ("K_z",)
     assert DRAW_KEYS == ("K_n",)
     assert PUNG_KEYS == ("K_LALT",)
@@ -104,36 +117,68 @@ def run() -> None:
         "hu": "hu.wav",
         "pung": "pung.wav",
     }
+    assert result_pattern_text({"patterns": ["門清", "對對胡"]}) == "門清、對對胡"
+    assert result_pattern_text({"patterns": [], "breakdown": [{"key": "baseWin"}]}) == "基本胡"
+    assert result_pattern_text({"patterns": []}) == "標準胡牌"
+    result_players = [{"name": "你"}, {"name": "電腦"}]
+    assert result_source_text({"players": result_players}, {"win_kind": "discardWin", "loser_seat": 1}) == "放炮：電腦"
+    assert result_source_text({"players": result_players}, {"win_kind": "selfDraw", "loser_seat": None}) == ""
+    result_state = {
+        "players": [
+            {
+                "hand": ["m2-1", "m1-1"],
+                "melds": [{"tiles": ["E-1", "E-2", "E-3"]}],
+            }
+        ]
+    }
+    result_tiles = result_hand_tiles(
+        result_state,
+        {"winner_seat": 0, "winning_tile_id": "m3-1"},
+    )
+    assert len(result_tiles) == 6
+    assert set(result_tiles) == {"m1-1", "m2-1", "m3-1", "E-1", "E-2", "E-3"}
+    assert result_hand_tiles(
+        result_state,
+        {"winner_seat": 0, "winning_hand": ["m3-1", "m1-1", "m2-1", "E-1", "E-2", "E-3"]},
+    ) == result_tiles
     assert HAND_KEY_NAMES == tuple("K_{}".format(letter.lower()) for letter in "ABCDEFGHIJKLM")
     # The white hand labels stop at M; N is reserved for the red 摸牌 control.
     assert HAND_KEY_NAMES[-1] == "K_m"
     assert "K_n" not in HAND_KEY_NAMES
 
     # Exercise the real scene key router without importing or initializing
-    # Pygame.  This catches the two user-critical behaviors: Hu cycles the
-    # home selection, and a second 摸牌 key discards the exposed drawn tile.
+    # Pygame.  This catches the user-critical menu behavior and the second
+    # 摸牌 key that discards the exposed drawn tile.
     app = object.__new__(MahjongPygame)
     app.pygame = _FakePygame
     app.sound = _FakeSound()
     app.screen_name = "menu"
     app.selected_mode = DEFAULT_MENU_MODE
+    app.ai_difficulty = "hard"
+    app.selected_difficulty = "mixed"
     app.mode_notice = ""
     app.state = None
     app.save_path = None
     started = []
-    app.start_round = lambda: started.append(True)
-    app.key(_FakeEvent(_FakePygame.K_z))
+    app.start_round = lambda: started.append((app.selected_mode, app.selected_difficulty))
+    app.key(_FakeEvent(_FakePygame.K_a))
     assert app.selected_mode == 0
-    app.key(_FakeEvent(_FakePygame.K_z))
+    assert app.selected_difficulty == "hard"
+    app.key(_FakeEvent(_FakePygame.K_g))
+    assert app.selected_difficulty == "hard"
+    assert app.mode_notice
+    app.key(_FakeEvent(_FakePygame.K_e))
+    assert app.selected_difficulty == "hard"
+    assert app.mode_notice == ""
+    app.key(_FakeEvent(_FakePygame.K_f))
+    assert app.selected_difficulty == "god"
+    app.key(_FakeEvent(_FakePygame.K_b))
     assert app.selected_mode == 1
+    assert app.selected_difficulty == "mixed"
     app.key(_FakeEvent(_FakePygame.K_LSHIFT))
     assert app.selected_mode == 1
     app.key(_FakeEvent(_FakePygame.K_n))
-    assert started == [True]
-    app.key(_FakeEvent(_FakePygame.K_z))
-    assert app.selected_mode == 0
-    app.key(_FakeEvent(_FakePygame.K_n))
-    assert started == [True, True]
+    assert started == [(1, "mixed")]
 
     app.screen_name = "game"
     app.state = create_game_state(seed=7)

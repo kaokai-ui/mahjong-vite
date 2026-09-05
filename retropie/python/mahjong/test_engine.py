@@ -8,15 +8,18 @@ import json
 import unittest
 
 from .engine import (
+    choose_ai_discard,
     create_game_state,
     current_drawn_tile,
     dispatch_round,
+    finish_win,
     get_human_kong_types,
     human_hand_tiles,
     run_headless,
     serialize_state,
     step_bot,
 )
+from .ai import get_ai_difficulty
 from .evaluator import evaluate_winning_hand
 from .tiles import TILE_TYPES, build_deck, get_tile_type, sort_tile_ids
 
@@ -48,6 +51,26 @@ class MahjongEngineTests(unittest.TestCase):
         self.assertEqual([len(player["hand"]) for player in state["players"]], [14, 13, 13, 13])
         self.assertEqual(len(state["wall"]), 83)
         self.assertEqual(current_drawn_tile(state, 0), state["last_draw"]["tile_id"])
+
+    def test_ai_profiles_default_and_four_player_mapping(self):
+        two_player = create_game_state(seed=12)
+        self.assertEqual(two_player["ai_difficulty"], "hard")
+        self.assertEqual(get_ai_difficulty(two_player, 1), "hard")
+
+        four_player = create_game_state(seed=12, player_count=4)
+        self.assertEqual(four_player["ai_difficulty"], "mixed")
+        self.assertEqual([get_ai_difficulty(four_player, seat) for seat in (1, 2, 3)], ["god", "normal", "hard"])
+
+        forced = create_game_state(seed=12, player_count=4, ai_difficulty="god")
+        self.assertEqual([get_ai_difficulty(forced, seat) for seat in (1, 2, 3)], ["god", "god", "god"])
+
+    def test_each_ai_profile_returns_a_legal_discard_in_both_modes(self):
+        for player_count in (2, 4):
+            for difficulty in ("easy", "normal", "hard", "god"):
+                state = create_game_state(seed=13, player_count=player_count, ai_difficulty=difficulty)
+                for seat in range(1, player_count):
+                    tile_id = choose_ai_discard(state, seat)
+                    self.assertIn(tile_id, state["players"][seat]["hand"])
 
     def test_four_player_ai_can_pass_three_seats_and_return_to_human(self):
         state = create_game_state(seed=19, player_count=4)
@@ -142,6 +165,28 @@ class MahjongEngineTests(unittest.TestCase):
             "p6-1", "p6-2", "s8-1", "s8-2", "B-1", "B-2",
         ]
         self.assertTrue(evaluate_winning_hand(seven_pairs)["can_win"])
+
+    def test_win_result_keeps_complete_hand_and_winning_tile(self):
+        state = create_game_state(seed=43)
+        winning_tile = "R-2"
+        state["players"][0]["hand"] = [
+            "m1-1", "m2-1", "m3-1", "m4-1", "m5-1", "m6-1", "m7-1", "m8-1", "m9-1",
+            "E-1", "E-2", "E-3", "R-1",
+        ]
+        state["players"][0]["melds"] = []
+        state["last_draw"] = None
+        evaluation = evaluate_winning_hand(
+            state["players"][0]["hand"], [], additional_tile_id=winning_tile
+        )
+        self.assertTrue(evaluation["can_win"])
+
+        finish_win(state, 0, 1, "discardWin", winning_tile, evaluation)
+
+        result = state["result"]
+        self.assertEqual(result["winning_tile_id"], winning_tile)
+        self.assertEqual(len(result["winning_hand"]), 14)
+        self.assertIn(winning_tile, result["winning_hand"])
+        self.assertEqual(result["loser_seat"], 1)
 
     def test_state_serializes_without_losing_drawn_tile(self):
         state = create_game_state(seed=23)

@@ -18,12 +18,20 @@ import random
 import secrets
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
+from .ai import (
+    DEFAULT_AI_DIFFICULTY,
+    MIXED_AI_DIFFICULTY,
+    choose_ai_claim as choose_profile_claim,
+    choose_ai_concealed_kong as choose_profile_concealed_kong,
+    choose_ai_discard as choose_profile_discard,
+    get_ai_difficulty,
+    normalize_ai_difficulty,
+)
 from .evaluator import evaluate_winning_hand
 from .scoring import build_score_delta, evaluate_score
 from .tiles import (
     can_claim_kong,
     can_claim_pung,
-    count_tile_types,
     get_concealed_kong_types,
     get_chow_combos,
     get_tile_type,
@@ -61,6 +69,7 @@ def create_game_state(
     seed: Optional[int] = None,
     previous_state: Optional[Dict[str, object]] = None,
     player_count: int = DEFAULT_PLAYER_COUNT,
+    ai_difficulty: Optional[str] = None,
 ) -> Dict[str, object]:
     """Deal a fresh 2P or 4P round.
 
@@ -75,6 +84,11 @@ def create_game_state(
         seed = secrets.randbelow(0x7FFFFFFF) + 1
     rng = random.Random(int(seed))
     deck = _build_deck(rng)
+    previous = previous_state or {}
+    configured_difficulty = ai_difficulty if ai_difficulty is not None else previous.get("ai_difficulty")
+    if configured_difficulty is None:
+        configured_difficulty = MIXED_AI_DIFFICULTY if count == 4 else DEFAULT_AI_DIFFICULTY
+    configured_difficulty = normalize_ai_difficulty(configured_difficulty, count)
     names = _player_names(count)
     players = [create_player(seat, names[seat]) for seat in range(count)]
 
@@ -82,7 +96,6 @@ def create_game_state(
         for player in players:
             player["hand"].append(deck.pop())
 
-    previous = previous_state or {}
     previous_winner = previous.get("winner_seat")
     previous_dealer = previous.get("dealer_seat", 0)
     dealer_source = previous_winner if previous_winner is not None else previous_dealer
@@ -108,6 +121,7 @@ def create_game_state(
         "status": "playing",
         "phase": initial_phase,
         "player_count": count,
+        "ai_difficulty": configured_difficulty,
         "players": players,
         "wall": deck,
         "dealer_seat": dealer_seat,
@@ -130,9 +144,11 @@ def create_game_state(
 
 
 def create_initial_state(
-    seed: Optional[int] = None, player_count: int = DEFAULT_PLAYER_COUNT
+    seed: Optional[int] = None,
+    player_count: int = DEFAULT_PLAYER_COUNT,
+    ai_difficulty: Optional[str] = None,
 ) -> Dict[str, object]:
-    return create_game_state(seed=seed, player_count=player_count)
+    return create_game_state(seed=seed, player_count=player_count, ai_difficulty=ai_difficulty)
 
 
 def dispatch_round(state: Dict[str, object], command: Dict[str, object]) -> Dict[str, object]:
@@ -267,6 +283,10 @@ def step_bot(state: Dict[str, object]) -> str:
             if evaluation["can_win"]:
                 finish_win(state, seat, None, "selfDraw", (state.get("last_draw") or {}).get("tile_id"), evaluation)
                 return "finished"
+            concealed_kong_type = choose_profile_concealed_kong(state, seat)
+            if concealed_kong_type:
+                _apply_bot_concealed_kong(state, seat, concealed_kong_type)
+                return "bot-kong"
         state["phase"] = "bot_discard"
         state["turn_seat"] = seat
         state["message"] = "{}正在整理手牌。".format(player["name"])
@@ -279,6 +299,10 @@ def step_bot(state: Dict[str, object]) -> str:
         if evaluation["can_win"]:
             finish_win(state, seat, None, "selfDraw", (state.get("last_draw") or {}).get("tile_id"), evaluation)
             return "finished"
+        concealed_kong_type = choose_profile_concealed_kong(state, seat)
+        if concealed_kong_type:
+            _apply_bot_concealed_kong(state, seat, concealed_kong_type)
+            return "bot-kong"
     tile_id = choose_ai_discard(state, seat)
     if not tile_id:
         finish_draw(state, "{}無法出牌，流局。".format(player["name"]))
@@ -301,44 +325,7 @@ def advance_automatic(state: Dict[str, object], max_steps: int = 12) -> str:
 
 
 def choose_ai_discard(state: Dict[str, object], seat: int = 1) -> Optional[str]:
-    players = state.get("players") or []
-    try:
-        seat_index = int(seat)
-    except (TypeError, ValueError):
-        return None
-    if not 0 <= seat_index < len(players):
-        return None
-    player = players[seat_index]
-    hand = list(player.get("hand", []))
-    if not hand:
-        return None
-    counts = count_tile_types(hand)
-    best_tile = hand[-1]
-    best_value = float("inf")
-    for tile_id in hand:
-        tile_type = get_tile_type(tile_id)
-        count = counts.get(tile_type, 0)
-        value = 0.0
-        if count == 1:
-            value += 5.0 if not tile_type[:1] in ("m", "p", "s") else 3.0
-        elif count == 2:
-            value += 1.0
-        elif count >= 3:
-            value -= 5.0
-        if tile_type[:1] in ("m", "p", "s"):
-            rank = int(tile_type[1])
-            suit = tile_type[0]
-            if counts.get("{}{}".format(suit, rank - 1), 0):
-                value -= 1.2
-            if counts.get("{}{}".format(suit, rank + 1), 0):
-                value -= 1.2
-            if rank in (1, 9):
-                value += 0.6
-        if tile_id == (state.get("last_draw") or {}).get("tile_id"):
-            value += 0.15
-        if value < best_value:
-            best_tile, best_value = tile_id, value
-    return best_tile
+    return choose_profile_discard(state, seat)
 
 
 def finish_win(
@@ -378,11 +365,19 @@ def finish_win(
     state["scores"] = _fit_counters(state.get("scores"), count)
     state["win_counts"][winner_seat] += 1
     state["scores"] = [state["scores"][seat] + score_delta[seat] for seat in range(count)]
+    winning_hand = list(winner.get("hand", []))
+    if winning_tile_id and winning_tile_id not in winning_hand:
+        winning_hand.append(winning_tile_id)
+    for meld in winner.get("melds", []):
+        if not isinstance(meld, dict):
+            continue
+        winning_hand.extend(tile_id for tile_id in meld.get("tiles", []) if isinstance(tile_id, str))
     state["result"] = {
         "winner_seat": winner_seat,
         "loser_seat": loser_seat,
         "win_kind": win_kind,
         "winning_tile_id": winning_tile_id,
+        "winning_hand": sort_tile_ids(winning_hand),
         "patterns": list(score_result.get("patterns") or evaluation.get("patterns") or []),
         "breakdown": list(score_result.get("breakdown") or []),
         "total_tai": int(score_result.get("total_tai", 0)),
@@ -405,6 +400,7 @@ def finish_draw(state: Dict[str, object], message: str) -> None:
         "loser_seat": None,
         "win_kind": "draw",
         "winning_tile_id": None,
+        "winning_hand": [],
         "patterns": [],
         "breakdown": [],
         "total_tai": 0,
@@ -429,10 +425,14 @@ def deserialize_state(payload: str, fallback: Optional[Dict[str, object]] = None
     return value
 
 
-def run_headless(seed: int = DEFAULT_SEED, player_count: int = DEFAULT_PLAYER_COUNT) -> Dict[str, object]:
+def run_headless(
+    seed: int = DEFAULT_SEED,
+    player_count: int = DEFAULT_PLAYER_COUNT,
+    ai_difficulty: Optional[str] = None,
+) -> Dict[str, object]:
     """Run a deterministic human/AI simulation until win or draw."""
 
-    state = create_game_state(seed=seed, player_count=player_count)
+    state = create_game_state(seed=seed, player_count=player_count, ai_difficulty=ai_difficulty)
     for _ in range(MAX_ROUNDS):
         if state["status"] != "playing":
             break
@@ -526,7 +526,10 @@ def _resolve_after_discard(state: Dict[str, object], discarder: int) -> None:
             if target_seat == 0:
                 _open_human_claim(state, claim)
             else:
-                _apply_bot_claim(state, target_seat, claim, option)
+                selected_claim = choose_profile_claim(state, target_seat, claim, option)
+                if selected_claim is None:
+                    continue
+                _apply_bot_claim(state, target_seat, selected_claim, option)
             return
 
     _advance_after_discard(state, discarder)
@@ -565,6 +568,37 @@ def _apply_bot_claim(state: Dict[str, object], seat: int, claim: Dict[str, objec
         state["turn_seat"] = seat
         state["needs_draw"] = False
         state["message"] = "{}{}，準備出牌。".format(player["name"], "碰牌" if meld_type == "pung" else "吃牌")
+
+
+def _apply_bot_concealed_kong(state: Dict[str, object], seat: int, tile_type: str) -> None:
+    """Apply a profile-approved concealed kong and wait for its replacement tile."""
+
+    player = state["players"][seat]
+    used_ids = tiles_by_type(player.get("hand", []), tile_type, 4)
+    if len(used_ids) != 4:
+        return
+    for used_id in used_ids:
+        player["hand"].remove(used_id)
+    player["hand"] = sort_tile_ids(player["hand"])
+    player["melds"].append(
+        {
+            "id": state["next_meld_id"],
+            "type": "kong",
+            "concealed": True,
+            "tile_type": tile_type,
+            "tiles": used_ids,
+            "from_seat": None,
+        }
+    )
+    state["next_meld_id"] += 1
+    state["latest_discard"] = None
+    state["last_draw"] = None
+    state["pending_claim"] = None
+    state["needs_draw"] = True
+    state["turn_seat"] = seat
+    state["phase"] = "bot"
+    state["message"] = "{}暗槓了 {}，準備摸補牌。".format(player["name"], tile_label(tile_type))
+    _log(state, state["message"])
 
 
 def _advance_after_discard(state: Dict[str, object], discarder: int) -> None:
