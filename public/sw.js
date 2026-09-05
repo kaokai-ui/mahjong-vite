@@ -104,6 +104,13 @@ async function handleNavigationRequest(request) {
 }
 
 async function handleAssetRequest(request) {
+  // Media elements ask for byte ranges, the server answers 206, and Cache.put()
+  // rejects partial responses - which would fail the whole request. Leave range
+  // requests to the network.
+  if (request.headers.has("range")) {
+    return fetch(request);
+  }
+
   const assetCache = await caches.open(assetCacheName);
   // Icons are precached (into the shell cache) without a query string, but the
   // HTML requests them versioned with "?appVersion=". Use ignoreSearch and also
@@ -116,7 +123,7 @@ async function handleAssetRequest(request) {
   }
 
   const response = await fetch(request);
-  if (response && response.ok) {
+  if (response && response.status === 200) {
     await assetCache.put(request, response.clone());
   }
   return response;

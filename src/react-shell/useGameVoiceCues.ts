@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { meldTypeToVoiceKind, playVoice } from "../game-sound";
+import { meldTypeToVoiceKind, playVoice, primeVoicePlayback } from "../game-sound";
 import type { LobbyBridgeSnapshot } from "./useAppBridge";
 
 type TableStageSnapshot = LobbyBridgeSnapshot["gamePanel"]["tableStage"];
@@ -18,6 +18,10 @@ function createTrackerState(): VoiceCueTrackerState {
 // for every seat, in both solo (vs. bots) and online multiplayer tables.
 export function useGameVoiceCues(tableStage: TableStageSnapshot): void {
   const trackerRef = useRef<VoiceCueTrackerState>(createTrackerState());
+
+  useEffect(() => {
+    primeVoicePlayback();
+  }, []);
 
   useEffect(() => {
     if (!tableStage.visible) {
