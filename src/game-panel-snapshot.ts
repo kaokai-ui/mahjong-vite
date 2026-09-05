@@ -36,6 +36,7 @@ type DiscardLike = {
 };
 
 type MeldLike = {
+  id?: number;
   type?: string;
   tiles?: string[];
 };
@@ -104,6 +105,7 @@ const EMPTY_ROUND_STATE: RoundStateLike = {
 export function getEmptyGameTableStageSnapshot(): GameTableStageSnapshot {
   return {
     seatCount: 0,
+    roundNumber: 0,
     visible: false,
     hasResult: false,
     latestDiscard: null,
@@ -185,6 +187,7 @@ export function buildGameTableStageSnapshot(context: GamePanelContextLike | null
 
   return {
     seatCount: playerCount,
+    roundNumber: Number(game && game.roundNumber) || 0,
     visible: true,
     hasResult: Boolean(game && game.result),
     latestDiscard: getLatestDiscardSnapshot(game),
@@ -348,6 +351,7 @@ function buildResultOverlaySnapshot(
     eyebrow: isDraw ? "對局結果" : "胡牌結果",
     title: isDraw ? "流局" : winnerName,
     kindLabel: isDraw ? "" : winKindLabel,
+    winKind: game.result.winKind || "",
     sourceLabel,
     detail,
     winningTile: !isDraw ? createTileSnapshot(game.result.winningTileId) : null,
@@ -381,6 +385,7 @@ function getEmptyResultOverlaySnapshot(): GameResultOverlaySnapshot {
     eyebrow: "",
     title: "",
     kindLabel: "",
+    winKind: "",
     sourceLabel: "",
     detail: "",
     winningTile: null,
@@ -433,6 +438,8 @@ function createMeldSnapshot(meld: MeldLike | null | undefined): BridgeMeldSnapsh
   }
 
   return {
+    id: Number(meld.id) || 0,
+    type: meld.type || "",
     label: getMeldLabel(meld.type),
     tiles: meld.tiles.map((tileId) => createTileSnapshot(tileId)).filter(isDefined),
   };

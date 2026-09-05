@@ -1,5 +1,6 @@
 import { FourSeatTableLayout, ResultOverlay, TwoSeatTableLayout } from "./game-panel/TableLayouts";
 import type { LobbyBridgeActions, LobbyBridgeSnapshot } from "./useAppBridge";
+import { useGameVoiceCues } from "./useGameVoiceCues";
 
 type GamePanelProps = {
   gamePanel: LobbyBridgeSnapshot["gamePanel"];
@@ -12,6 +13,7 @@ type GamePanelProps = {
 };
 
 export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscreenActive, fullscreenSupported, noticeBanner }: GamePanelProps) {
+  useGameVoiceCues(gamePanel.tableStage);
   const tableStageClassName = gamePanel.tableStage.hasResult ? "table-stage has-result" : "table-stage";
   const fullscreenLabel = fullscreenActive ? "離開全螢幕" : "全螢幕顯示";
   const focusNote = fullscreenSupported ? gamePanel.focusNote : "這個瀏覽器目前不支援全螢幕。";

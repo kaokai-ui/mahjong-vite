@@ -57,6 +57,7 @@ const initialSnapshot = {
     showFocusControls: false,
     tableStage: {
       seatCount: 0,
+      roundNumber: 0,
       visible: false,
       hasResult: false,
       latestDiscard: null,
@@ -109,6 +110,7 @@ const initialSnapshot = {
         eyebrow: "",
         title: "",
         kindLabel: "",
+        winKind: "",
         sourceLabel: "",
         detail: "",
         winningTile: null,

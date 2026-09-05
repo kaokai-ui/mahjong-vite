@@ -51,6 +51,8 @@ export type BridgeTileActionSnapshot = {
 };
 
 export type BridgeMeldSnapshot = {
+  id: number;
+  type: string;
   label: string;
   tiles: BridgeTileSnapshot[];
 };
@@ -86,6 +88,7 @@ export type GameResultOverlaySnapshot = {
   eyebrow: string;
   title: string;
   kindLabel: string;
+  winKind: string;
   sourceLabel: string;
   detail: string;
   winningTile: BridgeTileSnapshot | null;
@@ -158,6 +161,7 @@ export type LobbyBridgeSnapshot = {
     showFocusControls: boolean;
     tableStage: {
       seatCount: number;
+      roundNumber: number;
       visible: boolean;
       hasResult: boolean;
       latestDiscard: BridgeTileSnapshot | null;
