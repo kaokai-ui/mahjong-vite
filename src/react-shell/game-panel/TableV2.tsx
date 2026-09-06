@@ -2,6 +2,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { DoubleSide, SRGBColorSpace } from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { getTileSvgMarkup } from "../../tile-art.js";
 import type {
   BridgeGameActionSnapshot,
@@ -54,10 +55,76 @@ type TileMotion = {
 
 const TABLE_WIDTH = 18.8;
 const TABLE_HEIGHT = 9.9;
-const TILE_BACK_COLOR = "#2e8754";
-const TILE_BACK_EDGE_COLOR = "#d9e8d0";
-const TILE_EDGE_COLOR = "#d8e8cf";
-const TILE_FACE_COLOR = "#fffdf4";
+const TABLE_Y_SCALE = 1.1;
+const TABLE_Y_OFFSET = (TABLE_HEIGHT * (TABLE_Y_SCALE - 1)) / 2;
+const TILE_BACK_COLOR = "#2e7452";
+const TILE_BACK_DARK_COLOR = "#1f4f38";
+const TILE_BACK_EDGE_COLOR = "#f7f2e2";
+const TILE_EDGE_COLOR = "#f2ead6";
+const TILE_FACE_COLOR = "#f7f2e2";
+const TILE_CLEARCOAT = 0.3;
+const TILE_CLEARCOAT_ROUGHNESS = 0.3;
+const TILE_ROUGHNESS = 0.44;
+
+const WALL_TILE_WIDTH = 0.58;
+const WALL_TILE_HEIGHT = 0.4;
+const WALL_TILE_DEPTH = 0.24;
+const WALL_TILE_GEOMETRY = new RoundedBoxGeometry(WALL_TILE_WIDTH, WALL_TILE_HEIGHT, WALL_TILE_DEPTH, 3, 0.045);
+
+function createFeltTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) {
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  const size = canvas.width;
+  context.fillStyle = "#164a32";
+  context.fillRect(0, 0, size, size);
+
+  const centerPool = context.createRadialGradient(size * 0.5, size * 0.45, 0, size * 0.5, size * 0.45, size * 0.62);
+  centerPool.addColorStop(0, "#228556");
+  centerPool.addColorStop(0.5, "#1a5c3c");
+  centerPool.addColorStop(1, "rgba(22, 74, 50, 0)");
+  context.fillStyle = centerPool;
+  context.fillRect(0, 0, size, size);
+
+  const lowerGlow = context.createRadialGradient(size * 0.18, size * 0.78, 0, size * 0.18, size * 0.78, size * 0.42);
+  lowerGlow.addColorStop(0, "rgba(50, 110, 72, 0.28)");
+  lowerGlow.addColorStop(1, "rgba(50, 110, 72, 0)");
+  context.fillStyle = lowerGlow;
+  context.fillRect(0, 0, size, size);
+
+  const upperGlow = context.createRadialGradient(size * 0.85, size * 0.2, 0, size * 0.85, size * 0.2, size * 0.4);
+  upperGlow.addColorStop(0, "rgba(40, 95, 62, 0.22)");
+  upperGlow.addColorStop(1, "rgba(40, 95, 62, 0)");
+  context.fillStyle = upperGlow;
+  context.fillRect(0, 0, size, size);
+
+  const pixels = context.getImageData(0, 0, size, size);
+  let seed = 0x6d2b79f5;
+  for (let index = 0; index < pixels.data.length; index += 4) {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const noise = ((seed >>> 16) / 65535 - 0.5) * 10;
+    pixels.data[index] = Math.max(0, Math.min(255, pixels.data[index] + noise));
+    pixels.data[index + 1] = Math.max(0, Math.min(255, pixels.data[index + 1] + noise));
+    pixels.data[index + 2] = Math.max(0, Math.min(255, pixels.data[index + 2] + noise * 0.85));
+  }
+  context.putImageData(pixels, 0, 0);
+
+  const vignette = context.createRadialGradient(size * 0.5, size * 0.5, size * 0.42, size * 0.5, size * 0.5, size * 0.78);
+  vignette.addColorStop(0, "rgba(8, 24, 16, 0)");
+  vignette.addColorStop(1, "rgba(8, 24, 16, 0.28)");
+  context.fillStyle = vignette;
+  context.fillRect(0, 0, size, size);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
 
 function tileTextureUrl(tileType: string): string {
   const svg = getTileSvgMarkup(tileType);
@@ -106,8 +173,8 @@ function addOpponentRack(specs: TileSpec[], seat: "top" | "left" | "right", sect
       specs.push({
         key: `top-rack-${visibleTiles[index]?.tileId || index}`,
         tile: visibleTiles[index] || hiddenTile(`top-hidden-${index}`),
-        position: [x, 3.5, 1.25],
-        entryPosition: [x, 4.95, 0.2],
+        position: [x, 3.02, 1.25],
+        entryPosition: [x, 4.5, 0.2],
         width: 0.58,
         height: 0.84,
         faceUp: Boolean(visibleTiles[index]),
@@ -119,12 +186,12 @@ function addOpponentRack(specs: TileSpec[], seat: "top" | "left" | "right", sect
 
   const positions = centeredPositions(tileCount, 7.65, 0.74);
   positions.forEach((y, index) => {
-    const x = seat === "left" ? -8.35 : 8.35;
+    const x = seat === "left" ? -5.4 : 5.4;
     specs.push({
       key: `${seat}-rack-${visibleTiles[index]?.tileId || index}`,
       tile: visibleTiles[index] || hiddenTile(`${seat}-hidden-${index}`),
       position: [x, y, 1.25],
-      entryPosition: [seat === "left" ? -9.15 : 9.15, y, 0.2],
+      entryPosition: [seat === "left" ? -6.05 : 6.05, y, 0.2],
       rotationZ: seat === "left" ? Math.PI / 2 : -Math.PI / 2,
       width: 0.72,
       height: 0.52,
@@ -143,8 +210,8 @@ function addSelfRack(specs: TileSpec[], section: BridgeSelfSectionSnapshot, acti
     specs.push({
       key: `self-hand-${button.tile.tileId}`,
       tile: button.tile,
-      position: [positions[index] || 0, -3.68, 1.45],
-      entryPosition: [positions[index] || 0, -4.62, 0.2],
+      position: [positions[index] || 0, -4.32, 1.45],
+      entryPosition: [positions[index] || 0, -5.08, 0.2],
       width: 0.78,
       height: 1.08,
       faceUp: true,
@@ -162,8 +229,8 @@ function addSelfRack(specs: TileSpec[], section: BridgeSelfSectionSnapshot, acti
     specs.push({
       key: `self-drawn-${drawnButton.tile.tileId}`,
       tile: drawnButton.tile,
-      position: [(positions[drawnIndex] || 0) + 0.24, -3.68, 1.58],
-      entryPosition: [(positions[drawnIndex] || 0) + 0.24, -4.62, 0.2],
+      position: [(positions[drawnIndex] || 0) + 0.24, -4.32, 1.58],
+      entryPosition: [(positions[drawnIndex] || 0) + 0.24, -5.08, 0.2],
       width: 0.78,
       height: 1.08,
       faceUp: true,
@@ -187,14 +254,14 @@ function addMelds(specs: TileSpec[], seat: SeatKey, melds: BridgeMeldSnapshot[])
 
   if (seat === "self" || seat === "top") {
     const positions = centeredPositions(flattened.length, 10.5, 0.47);
-    const y = seat === "self" ? -2.9 : 2.9;
+    const y = seat === "self" ? -3.35 : 2.9;
     flattened.forEach(({ tile, meldIndex, tileIndex }) => {
       const x = positions[flattened.findIndex((item) => item.tile.tileId === tile.tileId && item.meldIndex === meldIndex && item.tileIndex === tileIndex)] || 0;
       specs.push({
         key: `${seat}-meld-${meldIndex}-${tileIndex}-${tile.tileId}`,
         tile,
         position: [x, y, 1.15],
-        entryPosition: [x, seat === "self" ? -3.5 : 3.5, 0.2],
+        entryPosition: [x, seat === "self" ? -3.95 : 3.5, 0.2],
         width: 0.39,
         height: 0.56,
         faceUp: true,
@@ -204,14 +271,14 @@ function addMelds(specs: TileSpec[], seat: SeatKey, melds: BridgeMeldSnapshot[])
     return;
   }
 
-  const x = seat === "left" ? -6.75 : 6.75;
+  const x = seat === "left" ? -5.45 : 5.45;
   const positions = centeredPositions(flattened.length, 3.35, 0.52);
   flattened.forEach(({ tile, meldIndex, tileIndex }, index) => {
     specs.push({
       key: `${seat}-meld-${meldIndex}-${tileIndex}-${tile.tileId}`,
       tile,
       position: [x, positions[index] || 0, 1.15],
-      entryPosition: [seat === "left" ? -7.4 : 7.4, positions[index] || 0, 0.2],
+      entryPosition: [seat === "left" ? -6.1 : 6.1, positions[index] || 0, 0.2],
       rotationZ: seat === "left" ? Math.PI / 2 : -Math.PI / 2,
       width: 0.5,
       height: 0.35,
@@ -296,7 +363,7 @@ function useTableCamera() {
       const distance = Math.max(verticalDistance, horizontalDistance);
 
       camera.fov = fov;
-      camera.position.set(0, -distance * 0.14, distance);
+      camera.position.set(0, -distance * 0.36, distance);
       camera.lookAt(0, 0, 0);
       camera.updateProjectionMatrix();
       return;
@@ -368,46 +435,62 @@ function FaceTile({ tile, width, height, depth, muted, disabled }: { tile: Bridg
 }
 
 function BackTile({ width, height, depth, muted, disabled }: { width: number; height: number; depth: number; muted: boolean; disabled: boolean }) {
+  const opacity = disabled ? 0.58 : muted ? 0.68 : 1;
+
   return (
-    <mesh position={[0, 0, depth / 2 + 0.008]}>
-      <planeGeometry args={[width * 0.8, height * 0.8]} />
-      <meshBasicMaterial
-        color={TILE_BACK_COLOR}
-        transparent
-        opacity={disabled ? 0.58 : muted ? 0.68 : 1}
-        side={DoubleSide}
-      />
-      <mesh position={[0, 0, 0.006]}>
-        <planeGeometry args={[width * 0.61, height * 0.62]} />
-        <meshBasicMaterial
-          color="#78bd73"
+    <group position={[0, 0, depth / 2 + 0.008]}>
+      <mesh>
+        <planeGeometry args={[width * 0.86, height * 0.86]} />
+        <meshPhysicalMaterial
+          color={TILE_BACK_COLOR}
           transparent
-          opacity={disabled ? 0.38 : muted ? 0.55 : 0.82}
+          opacity={opacity}
+          roughness={TILE_ROUGHNESS}
+          clearcoat={0.4}
+          clearcoatRoughness={0.32}
           side={DoubleSide}
         />
       </mesh>
-    </mesh>
+      <mesh position={[0, 0, 0.006]}>
+        <planeGeometry args={[width * 0.68, height * 0.68]} />
+        <meshPhysicalMaterial
+          color={TILE_BACK_DARK_COLOR}
+          transparent
+          opacity={opacity * 0.18}
+          roughness={0.55}
+          clearcoat={0.25}
+          clearcoatRoughness={0.4}
+          side={DoubleSide}
+        />
+      </mesh>
+    </group>
   );
 }
 
 function WallTile({ position, rotationZ = 0 }: { position: Position; rotationZ?: number }) {
-  const width = 0.5;
-  const height = 0.34;
-  const depth = 0.26;
+  const width = WALL_TILE_WIDTH;
+  const height = WALL_TILE_HEIGHT;
+  const depth = WALL_TILE_DEPTH;
 
   return (
     <group position={position} rotation={[0, 0, rotationZ]}>
-      <mesh receiveShadow>
-        <boxGeometry args={[width, height, depth]} />
-        <meshStandardMaterial color={TILE_BACK_EDGE_COLOR} roughness={0.58} />
+      <mesh geometry={WALL_TILE_GEOMETRY}>
+        <meshPhysicalMaterial
+          color={TILE_BACK_EDGE_COLOR}
+          roughness={0.5}
+          clearcoat={0.25}
+          clearcoatRoughness={0.4}
+        />
       </mesh>
       <mesh position={[0, 0, depth / 2 + 0.008]}>
-        <planeGeometry args={[width * 0.78, height * 0.7]} />
-        <meshBasicMaterial color={TILE_BACK_COLOR} transparent opacity={0.96} side={DoubleSide} />
-      </mesh>
-      <mesh position={[0, 0, depth / 2 + 0.014]}>
-        <planeGeometry args={[width * 0.58, height * 0.48]} />
-        <meshBasicMaterial color="#79c276" transparent opacity={0.76} side={DoubleSide} />
+        <planeGeometry args={[width * 0.84, height * 0.78]} />
+        <meshPhysicalMaterial
+          color={TILE_BACK_COLOR}
+          roughness={TILE_ROUGHNESS}
+          clearcoat={0.4}
+          clearcoatRoughness={0.32}
+          side={DoubleSide}
+        />
       </mesh>
     </group>
   );
@@ -427,10 +510,10 @@ function TableWall() {
 
   edgePositions.forEach((y, index) => {
     const offset = index % 2 === 0 ? 0.09 : -0.09;
-    positions.push({ position: [-8.78 - offset, y, 0.22], rotationZ: Math.PI / 2 });
-    positions.push({ position: [-8.48 - offset, y, 0.18], rotationZ: Math.PI / 2 });
-    positions.push({ position: [8.78 + offset, y, 0.22], rotationZ: -Math.PI / 2 });
-    positions.push({ position: [8.48 + offset, y, 0.18], rotationZ: -Math.PI / 2 });
+    positions.push({ position: [-5.95 - offset, y, 0.22], rotationZ: Math.PI / 2 });
+    positions.push({ position: [-5.65 - offset, y, 0.18], rotationZ: Math.PI / 2 });
+    positions.push({ position: [5.95 + offset, y, 0.22], rotationZ: -Math.PI / 2 });
+    positions.push({ position: [5.65 + offset, y, 0.18], rotationZ: -Math.PI / 2 });
   });
 
   return (
@@ -447,6 +530,10 @@ function AnimatedTile({ spec }: { spec: TileSpec }) {
   const [hovered, setHovered] = useState(false);
   const rotationZ = spec.rotationZ || 0;
   const depth = spec.depth || 0.14;
+  const bodyGeometry = useMemo(
+    () => new RoundedBoxGeometry(spec.width, spec.height, depth, 3, Math.min(0.055, spec.width / 4, spec.height / 4, depth / 2.5)),
+    [depth, spec.height, spec.width],
+  );
   const motionKey = `${spec.position.join(",")}|${rotationZ}|${spec.faceUp}|${spec.width}|${spec.height}`;
   const motionRef = useRef<TileMotion>({
     from: spec.entryPosition || spec.position,
@@ -467,6 +554,8 @@ function AnimatedTile({ spec }: { spec: TileSpec }) {
       initialized: Boolean(group),
     };
   }, [motionKey, spec.animateDuration, spec.entryPosition, spec.position]);
+
+  useEffect(() => () => bodyGeometry.dispose(), [bodyGeometry]);
 
   useFrame((_state, delta) => {
     const group = groupRef.current;
@@ -518,14 +607,15 @@ function AnimatedTile({ spec }: { spec: TileSpec }) {
       }}
       onPointerOut={() => setHovered(false)}
     >
-      <mesh receiveShadow>
-        <boxGeometry args={[spec.width, spec.height, depth]} />
-        <meshStandardMaterial
+      <mesh geometry={bodyGeometry}>
+        <meshPhysicalMaterial
           color={spec.faceUp ? TILE_EDGE_COLOR : TILE_BACK_EDGE_COLOR}
           transparent
           opacity={spec.disabled ? 0.72 : spec.muted ? 0.82 : 1}
-          roughness={0.64}
+          roughness={spec.faceUp ? 0.5 : TILE_ROUGHNESS}
           metalness={0.02}
+          clearcoat={TILE_CLEARCOAT}
+          clearcoatRoughness={TILE_CLEARCOAT_ROUGHNESS}
         />
       </mesh>
       {spec.faceUp ? (
@@ -545,52 +635,41 @@ function AnimatedTile({ spec }: { spec: TileSpec }) {
 
 function TableScene({ specs }: { specs: TileSpec[] }) {
   useTableCamera();
+  const feltTexture = useMemo(() => createFeltTexture(), []);
+
+  useEffect(() => () => feltTexture.dispose(), [feltTexture]);
 
   return (
     <>
       <color attach="background" args={["#062f26"]} />
-      <ambientLight intensity={0.92} />
+      <ambientLight intensity={1.05} />
       <directionalLight
         castShadow
         position={[-5, -7, 14]}
-        intensity={2.65}
+        intensity={1.65}
         color="#fff6df"
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
       />
-      <directionalLight position={[7, 4, 10]} intensity={1.05} color="#9ed7c2" />
-      <mesh position={[0, 0, -1.8]} receiveShadow>
-        <boxGeometry args={[TABLE_WIDTH + 0.36, TABLE_HEIGHT + 0.34, 0.24]} />
-        <meshStandardMaterial color="#4b2b1d" roughness={0.82} />
-      </mesh>
-      <mesh position={[0, 0, -1.62]} receiveShadow>
-        <boxGeometry args={[TABLE_WIDTH, TABLE_HEIGHT, 0.22]} />
-        <meshStandardMaterial color="#082f26" roughness={0.72} />
-      </mesh>
-      <mesh position={[0, 0, -1.46]} receiveShadow>
-        <boxGeometry args={[TABLE_WIDTH - 0.25, TABLE_HEIGHT - 0.25, 0.16]} />
-        <meshStandardMaterial color="#0a6245" roughness={0.82} />
-      </mesh>
-      <mesh position={[0, 0, -1.28]}>
-        <circleGeometry args={[2.15, 64]} />
-        <meshStandardMaterial color="#07543d" transparent opacity={0.9} roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 0, -1.22]}>
-        <ringGeometry args={[1.9, 1.94, 64]} />
-        <meshBasicMaterial color="#b8913e" transparent opacity={0.45} side={DoubleSide} />
-      </mesh>
-      <mesh position={[0, 0, -1.2]}>
-        <boxGeometry args={[0.035, 3.6, 0.03]} />
-        <meshBasicMaterial color="#b8913e" transparent opacity={0.22} />
-      </mesh>
-      <mesh position={[0, 0, -1.19]} rotation={[0, 0, Math.PI / 2]}>
-        <boxGeometry args={[0.035, 3.6, 0.03]} />
-        <meshBasicMaterial color="#b8913e" transparent opacity={0.22} />
-      </mesh>
-      <TableWall />
-      {specs.map((spec) => (
-        <AnimatedTile key={spec.key} spec={spec} />
-      ))}
+      <directionalLight position={[7, 4, 10]} intensity={0.62} color="#9ed7c2" />
+      <group position={[0, TABLE_Y_OFFSET, 0]} scale={[1, TABLE_Y_SCALE, 1]}>
+        <mesh position={[0, 0, -1.82]} receiveShadow>
+          <boxGeometry args={[TABLE_WIDTH + 0.5, TABLE_HEIGHT + 0.48, 0.28]} />
+          <meshPhysicalMaterial color="#5c3e25" roughness={0.68} clearcoat={0.12} clearcoatRoughness={0.6} />
+        </mesh>
+        <mesh position={[0, 0, -1.62]} receiveShadow>
+          <boxGeometry args={[TABLE_WIDTH + 0.12, TABLE_HEIGHT + 0.1, 0.24]} />
+          <meshStandardMaterial color="#082f26" roughness={0.72} />
+        </mesh>
+        <mesh position={[0, 0, -1.46]} receiveShadow>
+          <boxGeometry args={[TABLE_WIDTH - 0.12, TABLE_HEIGHT - 0.1, 0.18]} />
+          <meshStandardMaterial map={feltTexture} roughness={0.92} metalness={0} />
+        </mesh>
+        <TableWall />
+        {specs.map((spec) => (
+          <AnimatedTile key={spec.key} spec={spec} />
+        ))}
+      </group>
     </>
   );
 }
