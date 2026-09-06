@@ -173,8 +173,8 @@ function addOpponentRack(specs: TileSpec[], seat: "top" | "left" | "right", sect
       specs.push({
         key: `top-rack-${visibleTiles[index]?.tileId || index}`,
         tile: visibleTiles[index] || hiddenTile(`top-hidden-${index}`),
-        position: [x, 4.32, 1.25],
-        entryPosition: [x, 5.02, 0.2],
+        position: [x, 4.62, 1.3],
+        entryPosition: [x, 5.28, 0.2],
         width: 0.58,
         height: 0.84,
         faceUp: Boolean(visibleTiles[index]),
@@ -184,16 +184,19 @@ function addOpponentRack(specs: TileSpec[], seat: "top" | "left" | "right", sect
     return;
   }
 
-  const positions = centeredPositions(tileCount, 7.65, 0.74);
+  // Side hands sit outside the side wall, just as the top and bottom hands
+  // sit outside their horizontal wall. Keep the full hand in one clean lane
+  // so concealed tiles cannot blend into or stack on top of the wall.
+  const positions = centeredPositions(tileCount, 9, 0.72);
   positions.forEach((y, index) => {
-    const x = seat === "left" ? -5.4 : 5.4;
+    const x = seat === "left" ? -6.65 : 6.65;
     specs.push({
       key: `${seat}-rack-${visibleTiles[index]?.tileId || index}`,
       tile: visibleTiles[index] || hiddenTile(`${seat}-hidden-${index}`),
-      position: [x, y, 1.25],
-      entryPosition: [seat === "left" ? -6.05 : 6.05, y, 0.2],
+      position: [x, y, 1.42],
+      entryPosition: [seat === "left" ? -7.05 : 7.05, y, 0.2],
       rotationZ: seat === "left" ? Math.PI / 2 : -Math.PI / 2,
-      width: 0.72,
+      width: 0.68,
       height: 0.52,
       faceUp: Boolean(visibleTiles[index]),
       animateDuration: 480,
@@ -271,14 +274,16 @@ function addMelds(specs: TileSpec[], seat: SeatKey, melds: BridgeMeldSnapshot[])
     return;
   }
 
-  const x = seat === "left" ? -5.45 : 5.45;
+  // Claimed tiles belong between the side discard lane and the wall. They
+  // must not share the wall/hand x coordinates or become an unreadable pile.
+  const x = seat === "left" ? -4.72 : 4.72;
   const positions = centeredPositions(flattened.length, 3.35, 0.52);
   flattened.forEach(({ tile, meldIndex, tileIndex }, index) => {
     specs.push({
       key: `${seat}-meld-${meldIndex}-${tileIndex}-${tile.tileId}`,
       tile,
       position: [x, positions[index] || 0, 1.15],
-      entryPosition: [seat === "left" ? -6.1 : 6.1, positions[index] || 0, 0.2],
+      entryPosition: [seat === "left" ? -5.35 : 5.35, positions[index] || 0, 0.2],
       rotationZ: seat === "left" ? Math.PI / 2 : -Math.PI / 2,
       width: 0.5,
       height: 0.35,
@@ -500,20 +505,18 @@ function TableWall() {
   const positions: Array<{ position: Position; rotationZ?: number }> = [];
   const edgePositions = centeredPositions(17, 7.95, 0.5);
 
-  edgePositions.forEach((x, index) => {
-    const offset = index % 2 === 0 ? 0.09 : -0.09;
-    positions.push({ position: [x, 3.82 + offset, 0.22] });
-    positions.push({ position: [x, 3.52 + offset, 0.18] });
-    positions.push({ position: [x, -3.65 - offset, 0.22] });
-    positions.push({ position: [x, -3.35 - offset, 0.18] });
+  edgePositions.forEach((x) => {
+    positions.push({ position: [x, 3.82, 0.22] });
+    positions.push({ position: [x, 3.52, 0.18] });
+    positions.push({ position: [x, -3.65, 0.22] });
+    positions.push({ position: [x, -3.35, 0.18] });
   });
 
-  edgePositions.forEach((y, index) => {
-    const offset = index % 2 === 0 ? 0.09 : -0.09;
-    positions.push({ position: [-5.95 - offset, y, 0.22], rotationZ: Math.PI / 2 });
-    positions.push({ position: [-5.65 - offset, y, 0.18], rotationZ: Math.PI / 2 });
-    positions.push({ position: [5.95 + offset, y, 0.22], rotationZ: -Math.PI / 2 });
-    positions.push({ position: [5.65 + offset, y, 0.18], rotationZ: -Math.PI / 2 });
+  edgePositions.forEach((y) => {
+    positions.push({ position: [-5.95, y, 0.22], rotationZ: Math.PI / 2 });
+    positions.push({ position: [-5.65, y, 0.18], rotationZ: Math.PI / 2 });
+    positions.push({ position: [5.95, y, 0.22], rotationZ: -Math.PI / 2 });
+    positions.push({ position: [5.65, y, 0.18], rotationZ: -Math.PI / 2 });
   });
 
   return (
