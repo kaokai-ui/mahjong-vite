@@ -1,6 +1,10 @@
+import { lazy, Suspense } from "react";
 import { FourSeatTableLayout, ResultOverlay, TwoSeatTableLayout } from "./game-panel/TableLayouts";
+import { isTableV2Enabled, getTableV1Href } from "../table-version";
 import type { LobbyBridgeActions, LobbyBridgeSnapshot } from "./useAppBridge";
 import { useGameVoiceCues } from "./useGameVoiceCues";
+
+const TableV2 = lazy(() => import("./game-panel/TableV2").then((module) => ({ default: module.TableV2 })));
 
 type GamePanelProps = {
   gamePanel: LobbyBridgeSnapshot["gamePanel"];
@@ -14,7 +18,14 @@ type GamePanelProps = {
 
 export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscreenActive, fullscreenSupported, noticeBanner }: GamePanelProps) {
   useGameVoiceCues(gamePanel.tableStage);
-  const tableStageClassName = gamePanel.tableStage.hasResult ? "table-stage has-result" : "table-stage";
+  const tableV2Enabled = isTableV2Enabled();
+  const tableStageClassName = [
+    "table-stage",
+    gamePanel.tableStage.hasResult ? "has-result" : "",
+    tableV2Enabled ? "table-stage-v2-host" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const fullscreenLabel = fullscreenActive ? "離開全螢幕" : "全螢幕顯示";
   const focusNote = fullscreenSupported ? gamePanel.focusNote : "這個瀏覽器目前不支援全螢幕。";
   const [topDiscardRow, bottomDiscardRow, leftDiscardRow, rightDiscardRow] = gamePanel.tableStage.discardRows;
@@ -67,6 +78,11 @@ export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscree
               ))}
             </div>
             <div className="game-head-button-row">
+              {tableV2Enabled ? (
+                <a className="ghost-button v2-switch-button" href={getTableV1Href()}>
+                  回到1代牌桌
+                </a>
+              ) : null}
               <button className="ghost-button focus-home" type="button" onClick={() => void actions.leaveRoom()}>
                 回主畫面
               </button>
@@ -80,7 +96,11 @@ export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscree
         ) : null}
       </div>
       <div className={tableStageClassName} hidden={!gamePanel.tableStage.visible}>
-        {isFourSeatTable ? (
+        {tableV2Enabled ? (
+          <Suspense fallback={<div className="table-v2-loading">正在準備 2 代牌桌…</div>}>
+            <TableV2 tableStage={gamePanel.tableStage} seatCount={resolvedSeatCount} isSoloMode={isSoloMode} actions={actions} />
+          </Suspense>
+        ) : isFourSeatTable ? (
           <FourSeatTableLayout
             tableShellClassName={tableShellClassName}
             tableCenterClassName={tableCenterClassName}

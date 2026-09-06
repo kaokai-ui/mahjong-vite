@@ -1,5 +1,6 @@
 import { GamePanel } from "./GamePanel";
 import { isSoloFourPlayerMinimalShell } from "../page-shell-variant";
+import { getTableV2Href, isTableV2Enabled } from "../table-version";
 import { RoomPanel } from "./RoomPanel";
 import {
   AVAILABLE_GAME_MODE_OPTIONS,
@@ -45,6 +46,21 @@ function FormFeedback({
   return (
     <div id={id} className="form-feedback" aria-live="polite">
       {feedback ? <div className={`form-feedback-box form-feedback-${feedback.tone}`}>{feedback.message}</div> : null}
+    </div>
+  );
+}
+
+function TableV2LaunchLink() {
+  if (isTableV2Enabled()) {
+    return null;
+  }
+
+  return (
+    <div className="table-v2-launch-link">
+      <span>想試試新的牌桌體驗？</span>
+      <a className="ghost-button" href={getTableV2Href()}>
+        試玩麻將 2 代
+      </a>
     </div>
   );
 }
@@ -122,6 +138,7 @@ export function AppShell() {
                   >
                     開始遊戲
                   </button>
+                  <TableV2LaunchLink />
                   <FormFeedback id="create-room-feedback" feedback={lobby.createFeedback} />
                 </form>
               </section>
@@ -338,6 +355,7 @@ export function AppShell() {
                 >
                   {createRoomSubmitLabel}
                 </button>
+                <TableV2LaunchLink />
                 <FormFeedback id="create-room-feedback" feedback={lobby.createFeedback} />
               </form>
 
