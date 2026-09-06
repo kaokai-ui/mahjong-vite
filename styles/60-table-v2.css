@@ -409,6 +409,30 @@
   }
 }
 
+@media (min-width: 901px) and (max-width: 1280px) {
+  .table-v2-seat-self {
+    left: 0;
+    width: 132px;
+  }
+
+  .table-v2-seat-self .table-v2-seat-caption {
+    padding-inline: 8px;
+  }
+
+  .table-v2-seat-self .table-v2-seat-name-row {
+    gap: 4px;
+  }
+
+  .table-v2-seat-self .table-v2-seat-name-row strong {
+    font-size: 0.76rem;
+  }
+
+  .table-v2-seat-self .table-v2-seat-name-row span,
+  .table-v2-seat-self .table-v2-seat-caption small {
+    font-size: 0.6rem;
+  }
+}
+
 @media (max-width: 620px) {
   .table-v2-launch-link {
     align-items: flex-start;

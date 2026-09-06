@@ -173,8 +173,8 @@ function addOpponentRack(specs: TileSpec[], seat: "top" | "left" | "right", sect
       specs.push({
         key: `top-rack-${visibleTiles[index]?.tileId || index}`,
         tile: visibleTiles[index] || hiddenTile(`top-hidden-${index}`),
-        position: [x, 3.02, 1.25],
-        entryPosition: [x, 4.5, 0.2],
+        position: [x, 4.32, 1.25],
+        entryPosition: [x, 5.02, 0.2],
         width: 0.58,
         height: 0.84,
         faceUp: Boolean(visibleTiles[index]),
@@ -210,8 +210,8 @@ function addSelfRack(specs: TileSpec[], section: BridgeSelfSectionSnapshot, acti
     specs.push({
       key: `self-hand-${button.tile.tileId}`,
       tile: button.tile,
-      position: [positions[index] || 0, -4.32, 1.45],
-      entryPosition: [positions[index] || 0, -5.08, 0.2],
+      position: [positions[index] || 0, -4.68, 1.45],
+      entryPosition: [positions[index] || 0, -5.42, 0.2],
       width: 0.78,
       height: 1.08,
       faceUp: true,
@@ -229,8 +229,8 @@ function addSelfRack(specs: TileSpec[], section: BridgeSelfSectionSnapshot, acti
     specs.push({
       key: `self-drawn-${drawnButton.tile.tileId}`,
       tile: drawnButton.tile,
-      position: [(positions[drawnIndex] || 0) + 0.24, -4.32, 1.58],
-      entryPosition: [(positions[drawnIndex] || 0) + 0.24, -5.08, 0.2],
+        position: [(positions[drawnIndex] || 0) + 0.24, -4.68, 1.58],
+        entryPosition: [(positions[drawnIndex] || 0) + 0.24, -5.42, 0.2],
       width: 0.78,
       height: 1.08,
       faceUp: true,
@@ -254,14 +254,14 @@ function addMelds(specs: TileSpec[], seat: SeatKey, melds: BridgeMeldSnapshot[])
 
   if (seat === "self" || seat === "top") {
     const positions = centeredPositions(flattened.length, 10.5, 0.47);
-    const y = seat === "self" ? -3.35 : 2.9;
+    const y = seat === "self" ? -2.7 : 2.7;
     flattened.forEach(({ tile, meldIndex, tileIndex }) => {
       const x = positions[flattened.findIndex((item) => item.tile.tileId === tile.tileId && item.meldIndex === meldIndex && item.tileIndex === tileIndex)] || 0;
       specs.push({
         key: `${seat}-meld-${meldIndex}-${tileIndex}-${tile.tileId}`,
         tile,
         position: [x, y, 1.15],
-        entryPosition: [x, seat === "self" ? -3.95 : 3.5, 0.2],
+        entryPosition: [x, seat === "self" ? -3.3 : 3.3, 0.2],
         width: 0.39,
         height: 0.56,
         faceUp: true,
@@ -502,10 +502,10 @@ function TableWall() {
 
   edgePositions.forEach((x, index) => {
     const offset = index % 2 === 0 ? 0.09 : -0.09;
-    positions.push({ position: [x, 4.72 + offset, 0.22] });
-    positions.push({ position: [x, 4.42 + offset, 0.18] });
-    positions.push({ position: [x, -4.72 - offset, 0.22] });
-    positions.push({ position: [x, -4.42 - offset, 0.18] });
+    positions.push({ position: [x, 3.82 + offset, 0.22] });
+    positions.push({ position: [x, 3.52 + offset, 0.18] });
+    positions.push({ position: [x, -3.65 - offset, 0.22] });
+    positions.push({ position: [x, -3.35 - offset, 0.18] });
   });
 
   edgePositions.forEach((y, index) => {
