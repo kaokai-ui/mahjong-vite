@@ -56,6 +56,7 @@ type BuildLobbyBridgeSnapshotContext = {
   soloDifficulty: LobbyBridgeSnapshot["lobby"]["soloDifficulty"];
   soloPlayerCount: LobbyBridgeSnapshot["lobby"]["soloPlayerCount"];
   scoringEnabled: boolean;
+  voiceEnabled: boolean;
   room: RoomLike | null;
   playerId: string;
   error: string;
@@ -80,6 +81,7 @@ export function buildLobbyBridgeSnapshot(context: BuildLobbyBridgeSnapshotContex
     soloDifficulty,
     soloPlayerCount,
     scoringEnabled,
+    voiceEnabled,
     room,
     playerId,
     error,
@@ -107,6 +109,7 @@ export function buildLobbyBridgeSnapshot(context: BuildLobbyBridgeSnapshotContex
       soloDifficulty,
       soloPlayerCount,
       scoringEnabled: String(scoringEnabled) as LobbyBridgeSnapshot["lobby"]["scoringEnabled"],
+      voiceEnabled,
       createDisabled: isSoloMode ? false : !onlineReady,
       joinDisabled: isSoloMode ? true : !onlineReady,
       noticeBanner: buildNoticeBanner({ room, playerId, error, message }),

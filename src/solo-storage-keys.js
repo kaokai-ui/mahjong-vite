@@ -7,5 +7,6 @@ export const SOLO_STORAGE_KEYS = Object.freeze({
   soloDifficulty: "mahjong-solo-difficulty",
   soloPlayerCount: "mahjong-solo-player-count",
   scoringEnabled: "mahjong-scoring-enabled",
+  voiceEnabled: "mahjong-voice-enabled",
   defaultsVersion: "mahjong-defaults-version",
 });

@@ -53,6 +53,7 @@ export function buildAppBridgeSnapshot(context: BuildAppBridgeSnapshotContext) {
     soloDifficulty: appState.selectedSoloDifficulty as ReturnType<typeof buildLobbyBridgeSnapshot>["lobby"]["soloDifficulty"],
     soloPlayerCount: String(appState.selectedSoloPlayerCount) as ReturnType<typeof buildLobbyBridgeSnapshot>["lobby"]["soloPlayerCount"],
     scoringEnabled: appState.selectedScoringEnabled,
+    voiceEnabled: appState.selectedVoiceEnabled,
     room,
     playerId,
     error: appState.error,

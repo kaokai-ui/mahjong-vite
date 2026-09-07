@@ -12,12 +12,14 @@ type ReadInitialAppSettingsContext = {
   normalizeGameMode: NormalizeGameMode;
   normalizeRoomId: NormalizeRoomId;
   normalizeScoringEnabled: NormalizeScoringEnabled;
+  normalizeVoiceEnabled: (value: unknown) => boolean;
   normalizeSoloDifficulty: NormalizeSoloDifficulty;
   normalizeSoloPlayerCount: NormalizeSoloPlayerCount;
   onlineModeValue: AppGameMode;
   playerNameStorageKey: string;
   queryRoom: string | null;
   scoringEnabledStorageKey: string;
+  voiceEnabledStorageKey: string;
   soloDifficultyStorageKey: string;
   soloPlayerCountStorageKey: string;
   soloModeValue: AppGameMode;
@@ -60,6 +62,7 @@ type InitialAppSettings = Pick<
   | "selectedSoloDifficulty"
   | "selectedSoloPlayerCount"
   | "selectedScoringEnabled"
+  | "selectedVoiceEnabled"
 >;
 
 export function readInitialAppSettings(context: ReadInitialAppSettingsContext): InitialAppSettings {
@@ -69,6 +72,7 @@ export function readInitialAppSettings(context: ReadInitialAppSettingsContext): 
     playerNameStorageKey,
     soloDifficultyStorageKey,
     scoringEnabledStorageKey,
+    voiceEnabledStorageKey,
     soloModeValue,
     onlineModeValue,
     normalizeGameMode,
@@ -76,6 +80,7 @@ export function readInitialAppSettings(context: ReadInitialAppSettingsContext): 
     normalizeSoloDifficulty,
     normalizeSoloPlayerCount,
     normalizeScoringEnabled,
+    normalizeVoiceEnabled,
     createRandomRoomId,
   } = context;
   const storedMode = readLocalSetting(gameModeStorageKey) || soloModeValue;
@@ -88,6 +93,7 @@ export function readInitialAppSettings(context: ReadInitialAppSettingsContext): 
     selectedSoloDifficulty: normalizeSoloDifficulty(readLocalSetting(soloDifficultyStorageKey)),
     selectedSoloPlayerCount: normalizeSoloPlayerCount(readLocalSetting(context.soloPlayerCountStorageKey)),
     selectedScoringEnabled: normalizeScoringEnabled(readLocalSetting(scoringEnabledStorageKey)),
+    selectedVoiceEnabled: normalizeVoiceEnabled(readLocalSetting(voiceEnabledStorageKey)),
   };
 }
 

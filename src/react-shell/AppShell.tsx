@@ -50,16 +50,36 @@ function FormFeedback({
   );
 }
 
+function VoiceSetting({
+  id,
+  enabled,
+  onChange,
+}: {
+  id: string;
+  enabled: boolean;
+  onChange: (enabled: boolean) => void;
+}) {
+  return (
+    <label className="voice-setting" htmlFor={id}>
+      <input id={id} type="checkbox" checked={enabled} onChange={(event) => onChange(event.currentTarget.checked)} />
+      <span>
+        <strong>出牌語音</strong>
+        <small>每張牌打出時唸出牌名（只在本機播放）</small>
+      </span>
+    </label>
+  );
+}
+
 function TableV2LaunchLink() {
   if (isTableV2Enabled()) {
     return null;
   }
 
   return (
-    <div className="table-v2-launch-link">
-      <span>想試試新的牌桌體驗？</span>
-      <a className="ghost-button" href={getTableV2Href()}>
-        試玩麻將 2 代
+    <div className="table-v2-launch-link" aria-label="牌桌版本切換">
+      <span>想試試新的 3D 牌桌？</span>
+      <a className="ghost-button" href={getTableV2Href()} aria-label="切換到 3D 牌桌" data-table-version-switch="v2">
+        切換到 3D
       </a>
     </div>
   );
@@ -129,6 +149,11 @@ export function AppShell() {
                   <div className="solo4p-mode-pill" aria-label="遊戲模式">
                     單人4p模式
                   </div>
+                  <VoiceSetting
+                    id="solo-voice-enabled-checkbox"
+                    enabled={lobby.voiceEnabled}
+                    onChange={(enabled) => actions.setVoiceEnabled(String(enabled))}
+                  />
                   <button
                     id="create-room-submit-button"
                     className="primary-button"
@@ -152,6 +177,7 @@ export function AppShell() {
               seatCount={Number(snapshot.gamePanel.tableStage.seatCount || 4)}
               isSoloMode
               actions={actions}
+              voiceEnabled={lobby.voiceEnabled}
               fullscreenActive={pageMode.fullscreenActive}
               fullscreenSupported={pageMode.fullscreenSupported}
               noticeBanner={inGameTable ? lobby.noticeBanner : null}
@@ -203,6 +229,11 @@ export function AppShell() {
                 ))}
               </select>
             </label>
+            <VoiceSetting
+              id="voice-enabled-checkbox"
+              enabled={lobby.voiceEnabled}
+              onChange={(enabled) => actions.setVoiceEnabled(String(enabled))}
+            />
             <div id="firebase-status">
               <div className={`status-card status-${lobby.firebaseStatus.tone}`}>
                 <span className="status-dot"></span>
@@ -398,6 +429,7 @@ export function AppShell() {
             seatCount={resolveSeatCount(snapshot.gamePanel.tableStage.seatCount, snapshot.lobby.soloPlayerCount)}
             isSoloMode={isSoloMode}
             actions={actions}
+            voiceEnabled={lobby.voiceEnabled}
             fullscreenActive={pageMode.fullscreenActive}
             fullscreenSupported={pageMode.fullscreenSupported}
             noticeBanner={inGameTable ? lobby.noticeBanner : null}

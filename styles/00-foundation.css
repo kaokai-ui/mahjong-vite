@@ -394,6 +394,37 @@ body.app-game-focus .solo4p-launcher {
   color: var(--ink);
 }
 
+.voice-setting {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 2px 0 14px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.voice-setting input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.voice-setting span {
+  display: grid;
+  gap: 2px;
+}
+
+.voice-setting strong {
+  font-size: 0.94rem;
+}
+
+.voice-setting small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .inline-field {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

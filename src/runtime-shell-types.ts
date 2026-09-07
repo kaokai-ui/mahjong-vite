@@ -143,6 +143,7 @@ export type AppState = {
   selectedSoloDifficulty: string;
   selectedSoloPlayerCount: number;
   selectedScoringEnabled: boolean;
+  selectedVoiceEnabled: boolean;
   roomPanelRulesetId: string;
   roomPanelRulesetDirty: boolean;
   roomPanelRoomId: string;

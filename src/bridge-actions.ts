@@ -14,10 +14,12 @@ type CreateBridgeActionsDeps = {
   normalizeRoomId: (value: unknown) => string;
   normalizeRulesetId: (value?: string) => string;
   normalizeScoringEnabled: (value: unknown) => boolean;
+  normalizeVoiceEnabled: (value: unknown) => boolean;
   normalizeSoloDifficulty: (value: unknown) => string;
   normalizeSoloPlayerCount: (value: unknown) => number;
   render: () => void;
   scoringEnabledStorageKey: string;
+  voiceEnabledStorageKey: string;
   sendGameCommand: (command: string, payload?: BridgeGameCommandPayload) => Promise<void>;
   soloDifficultyStorageKey: string;
   soloPlayerCountStorageKey: string;
@@ -69,6 +71,11 @@ export function createBridgeActions(appState: AppState, deps: CreateBridgeAction
       appState.selectedScoringEnabled = deps.normalizeScoringEnabled(value);
       deps.writeLocalSetting(deps.scoringEnabledStorageKey, String(appState.selectedScoringEnabled));
       deps.render();
+    },
+    setVoiceEnabled: (value: string) => {
+      appState.selectedVoiceEnabled = deps.normalizeVoiceEnabled(value);
+      deps.writeLocalSetting(deps.voiceEnabledStorageKey, String(appState.selectedVoiceEnabled));
+      deps.syncBridgeSnapshot();
     },
     generateCreateRoomCode: () => {
       appState.createRoomCode = deps.createRandomRoomId();

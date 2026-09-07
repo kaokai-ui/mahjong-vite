@@ -1,6 +1,3 @@
-export const GAME_FOCUS_WIDTH_REFRESH_THRESHOLD = 80;
-export const GAME_FOCUS_HEIGHT_REFRESH_THRESHOLD = 48;
-
 export function readFullscreenSupport() {
   if (typeof document === "undefined") {
     return false;

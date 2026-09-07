@@ -7,10 +7,12 @@ import {
   GAME_MODE_SOLO,
   GAME_MODE_STORAGE_KEY,
   SCORING_ENABLED_STORAGE_KEY,
+  VOICE_ENABLED_STORAGE_KEY,
   SOLO_DIFFICULTY_STORAGE_KEY,
   SOLO_PLAYER_COUNT_STORAGE_KEY,
   normalizeGameMode,
   normalizeRulesetId,
+  normalizeVoiceEnabled,
 } from "./app-bootstrap-state";
 import { createRandomFirebaseRoomId, normalizeFirebaseRoomId } from "./firebase-rules-contract.js";
 import {
@@ -70,6 +72,8 @@ export function createBootstrapRuntimes(appState: AppState, runtimeState: GameRu
     render: () => renderRuntime!.render(),
     runtimeState,
     scoringEnabledStorageKey: SCORING_ENABLED_STORAGE_KEY,
+    voiceEnabledStorageKey: VOICE_ENABLED_STORAGE_KEY,
+    normalizeVoiceEnabled,
     soloDifficultyStorageKey: SOLO_DIFFICULTY_STORAGE_KEY,
     soloPlayerCountStorageKey: SOLO_PLAYER_COUNT_STORAGE_KEY,
     soloModeValue: GAME_MODE_SOLO,

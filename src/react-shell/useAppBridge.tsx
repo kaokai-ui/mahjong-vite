@@ -125,6 +125,7 @@ export type LobbyBridgeSnapshot = {
     soloDifficulty: "easy" | "normal" | "hard" | "god";
     soloPlayerCount: "2" | "4";
     scoringEnabled: "false" | "true";
+    voiceEnabled: boolean;
     createDisabled: boolean;
     joinDisabled: boolean;
     noticeBanner: BridgeMessageSnapshot | null;
@@ -162,6 +163,7 @@ export type LobbyBridgeSnapshot = {
     tableStage: {
       seatCount: number;
       roundNumber: number;
+      wallTileCount: number;
       visible: boolean;
       hasResult: boolean;
       latestDiscard: BridgeTileSnapshot | null;
@@ -194,6 +196,7 @@ export type LobbyBridgeActions = {
   setSoloDifficulty: (value: string) => void;
   setSoloPlayerCount: (value: string) => void;
   setScoringEnabled: (value: string) => void;
+  setVoiceEnabled: (value: string) => void;
   generateCreateRoomCode: () => void;
   submitCreate: () => Promise<void>;
   submitJoin: () => Promise<void>;

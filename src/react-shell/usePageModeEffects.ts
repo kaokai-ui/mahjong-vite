@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  GAME_FOCUS_HEIGHT_REFRESH_THRESHOLD,
-  GAME_FOCUS_WIDTH_REFRESH_THRESHOLD,
   clearGameFocusHeightLock,
   readFullscreenState,
   readFullscreenSupport,
@@ -61,7 +59,7 @@ function useBodyModeClasses({
   }, [fullscreenActive, isSoloMode, gameFocusActive]);
 }
 
-function useGameFocusHeightLock(gameFocusActive: boolean, fullscreenActive: boolean) {
+function useGameFocusHeightLock(gameFocusActive: boolean) {
   useEffect(() => {
     const root = document.documentElement;
     if (!root) {
@@ -73,51 +71,42 @@ function useGameFocusHeightLock(gameFocusActive: boolean, fullscreenActive: bool
       return;
     }
 
-    const applyStableHeight = (force = false) => {
+    const applyStableHeight = () => {
       const metrics = readStableViewportMetrics();
       if (!metrics) {
         return;
       }
 
-      const previousWidth = Number(root.dataset.gameFocusViewportWidth || 0);
-      const previousHeight = Number(root.dataset.gameFocusViewportHeight || 0);
-      const shouldRefresh =
-        force ||
-        !previousWidth ||
-        !previousHeight ||
-        Math.abs(metrics.width - previousWidth) >= GAME_FOCUS_WIDTH_REFRESH_THRESHOLD ||
-        Math.abs(metrics.height - previousHeight) >= GAME_FOCUS_HEIGHT_REFRESH_THRESHOLD;
-
-      if (!shouldRefresh) {
-        return;
-      }
-
+      // Safari fires visualViewport resize events while its address bar
+      // collapses or reappears. Keep the height captured when entering the
+      // table; only the explicit orientation/fullscreen handlers below call
+      // this function again.
       root.dataset.gameFocusViewportWidth = String(metrics.width);
       root.dataset.gameFocusViewportHeight = String(metrics.height);
       root.style.setProperty("--app-game-focus-height", `${metrics.height}px`);
     };
 
-    applyStableHeight(true);
+    applyStableHeight();
 
-    const handleResize = () => {
-      applyStableHeight(false);
+    const handleOrientationChange = () => {
+      applyStableHeight();
     };
 
-    window.addEventListener("resize", handleResize);
-    window.visualViewport?.addEventListener("resize", handleResize);
-    window.addEventListener("orientationchange", handleResize);
-    document.addEventListener("fullscreenchange", handleResize);
-    document.addEventListener("webkitfullscreenchange", handleResize);
+    const handleFullscreenChange = () => {
+      applyStableHeight();
+    };
+
+    window.addEventListener("orientationchange", handleOrientationChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      window.visualViewport?.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
-      document.removeEventListener("fullscreenchange", handleResize);
-      document.removeEventListener("webkitfullscreenchange", handleResize);
+      window.removeEventListener("orientationchange", handleOrientationChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
       clearGameFocusHeightLock(root);
     };
-  }, [fullscreenActive, gameFocusActive]);
+  }, [gameFocusActive]);
 }
 
 function usePageModeCleanup() {
@@ -139,7 +128,7 @@ export function usePageModeEffects(snapshot: LobbyBridgeSnapshot) {
     snapshot,
     fullscreenActive,
   });
-  useGameFocusHeightLock(snapshot.page.gameFocusActive, fullscreenActive);
+  useGameFocusHeightLock(snapshot.page.gameFocusActive);
   usePageModeCleanup();
 
   return {

@@ -106,6 +106,7 @@ export function getEmptyGameTableStageSnapshot(): GameTableStageSnapshot {
   return {
     seatCount: 0,
     roundNumber: 0,
+      wallTileCount: 0,
     visible: false,
     hasResult: false,
     latestDiscard: null,
@@ -188,6 +189,7 @@ export function buildGameTableStageSnapshot(context: GamePanelContextLike | null
   return {
     seatCount: playerCount,
     roundNumber: Number(game && game.roundNumber) || 0,
+    wallTileCount: game?.wall?.length || 0,
     visible: true,
     hasResult: Boolean(game && game.result),
     latestDiscard: getLatestDiscardSnapshot(game),

@@ -23,12 +23,14 @@ type CreateAppBridgeRuntimeDeps = {
   normalizeRoomId: (value: unknown) => string;
   normalizeRulesetId: (value?: string) => string;
   normalizeScoringEnabled: (value: unknown) => boolean;
+  normalizeVoiceEnabled: (value: unknown) => boolean;
   normalizeSoloDifficulty: (value: unknown) => string;
   normalizeSoloPlayerCount: (value: unknown) => number;
   onlineModeValue: AppGameMode;
   render: () => void;
   runtimeState: GameRuntimeState;
   scoringEnabledStorageKey: string;
+  voiceEnabledStorageKey: string;
   soloDifficultyStorageKey: string;
   soloPlayerCountStorageKey: string;
   soloModeValue: AppGameMode;
@@ -92,10 +94,12 @@ export function createAppBridgeRuntime(appState: AppState, deps: CreateAppBridge
         normalizeRoomId: deps.normalizeRoomId,
         normalizeRulesetId: deps.normalizeRulesetId,
         normalizeScoringEnabled: deps.normalizeScoringEnabled,
+        normalizeVoiceEnabled: deps.normalizeVoiceEnabled,
         normalizeSoloDifficulty: deps.normalizeSoloDifficulty,
         normalizeSoloPlayerCount: deps.normalizeSoloPlayerCount,
         render: deps.render,
         scoringEnabledStorageKey: deps.scoringEnabledStorageKey,
+        voiceEnabledStorageKey: deps.voiceEnabledStorageKey,
         sendGameCommand: (command: string, payload?: unknown) =>
           deps.getController().sendGameCommand(command, payload),
         soloDifficultyStorageKey: deps.soloDifficultyStorageKey,

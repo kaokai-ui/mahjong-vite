@@ -22,6 +22,7 @@ const initialSnapshot = {
     soloDifficulty: "hard",
     soloPlayerCount: "2",
     scoringEnabled: "true",
+    voiceEnabled: true,
     createDisabled: false,
     joinDisabled: false,
     noticeBanner: null,
@@ -58,6 +59,7 @@ const initialSnapshot = {
     tableStage: {
       seatCount: 0,
       roundNumber: 0,
+      wallTileCount: 0,
       visible: false,
       hasResult: false,
       latestDiscard: null,
@@ -134,6 +136,7 @@ const initialActions: LobbyBridgeActions = {
   setSoloDifficulty: (_value: string) => {},
   setSoloPlayerCount: (_value: string) => {},
   setScoringEnabled: (_value: string) => {},
+  setVoiceEnabled: (_value: string) => {},
   generateCreateRoomCode: () => {},
   submitCreate: async () => {},
   submitJoin: async () => {},

@@ -11,13 +11,14 @@ type GamePanelProps = {
   seatCount: number;
   isSoloMode: boolean;
   actions: LobbyBridgeActions;
+  voiceEnabled: boolean;
   fullscreenActive: boolean;
   fullscreenSupported: boolean;
   noticeBanner: LobbyBridgeSnapshot["lobby"]["noticeBanner"];
 };
 
-export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, fullscreenActive, fullscreenSupported, noticeBanner }: GamePanelProps) {
-  useGameVoiceCues(gamePanel.tableStage);
+export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, voiceEnabled, fullscreenActive, fullscreenSupported, noticeBanner }: GamePanelProps) {
+  useGameVoiceCues(gamePanel.tableStage, voiceEnabled);
   const tableV2Enabled = isTableV2Enabled();
   const tableStageClassName = [
     "table-stage",

@@ -29,11 +29,25 @@ export const PLAYER_NAME_STORAGE_KEY = SOLO_STORAGE_KEYS.playerName;
 export const SOLO_DIFFICULTY_STORAGE_KEY = SOLO_STORAGE_KEYS.soloDifficulty;
 export const SOLO_PLAYER_COUNT_STORAGE_KEY = SOLO_STORAGE_KEYS.soloPlayerCount;
 export const SCORING_ENABLED_STORAGE_KEY = SOLO_STORAGE_KEYS.scoringEnabled;
+export const VOICE_ENABLED_STORAGE_KEY = SOLO_STORAGE_KEYS.voiceEnabled;
 export const DEFAULTS_VERSION_STORAGE_KEY = SOLO_STORAGE_KEYS.defaultsVersion;
 export const GAME_MODE_ONLINE = GAME_MODE_ONLINE_2P;
 export const GAME_MODE_SOLO = GAME_MODE_SOLO_VALUE;
 export const DEFAULTS_VERSION = "20260501-solo-player-count-entry";
 export const DEFAULT_RULESET_ID = DEFAULT_RULESET;
+export const DEFAULT_VOICE_ENABLED = true;
+
+export function normalizeVoiceEnabled(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    return value !== "false" && value !== "0";
+  }
+
+  return DEFAULT_VOICE_ENABLED;
+}
 
 export function createInitializedAppState(): AppState {
   const appState = createDefaultAppState();
@@ -66,6 +80,7 @@ export function createInitializedAppState(): AppState {
       playerNameStorageKey: PLAYER_NAME_STORAGE_KEY,
       soloDifficultyStorageKey: SOLO_DIFFICULTY_STORAGE_KEY,
       scoringEnabledStorageKey: SCORING_ENABLED_STORAGE_KEY,
+      voiceEnabledStorageKey: VOICE_ENABLED_STORAGE_KEY,
       soloPlayerCountStorageKey: SOLO_PLAYER_COUNT_STORAGE_KEY,
       soloModeValue: GAME_MODE_SOLO,
       onlineModeValue: GAME_MODE_ONLINE,
@@ -74,6 +89,7 @@ export function createInitializedAppState(): AppState {
       normalizeSoloDifficulty,
       normalizeSoloPlayerCount,
       normalizeScoringEnabled,
+      normalizeVoiceEnabled,
       createRandomRoomId: createRandomFirebaseRoomId,
     }),
   );
@@ -112,6 +128,7 @@ function createDefaultAppState(): AppState {
     selectedSoloDifficulty: DEFAULT_SOLO_DIFFICULTY,
     selectedSoloPlayerCount: DEFAULT_SOLO_PLAYER_COUNT,
     selectedScoringEnabled: DEFAULT_SCORING_ENABLED,
+    selectedVoiceEnabled: DEFAULT_VOICE_ENABLED,
     roomPanelRulesetId: DEFAULT_RULESET,
     roomPanelRulesetDirty: false,
     roomPanelRoomId: "",

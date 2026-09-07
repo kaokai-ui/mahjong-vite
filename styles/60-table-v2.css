@@ -79,6 +79,14 @@
   height: 100% !important;
 }
 
+/* The 3D surface handles tile taps itself. Prevent Safari pinch/double-tap
+   gestures from changing the page scale while a round is in progress. */
+.table-v2-scene {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .table-v2-scene {
   z-index: 1;
 }
@@ -90,6 +98,64 @@
   pointer-events: none;
   color: #f5f7e9;
   font-family: inherit;
+}
+
+.table-v2-history {
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  z-index: 8;
+  pointer-events: auto;
+}
+
+.table-v2-history > button {
+  padding: 7px 10px;
+  border: 1px solid #7c9e81;
+  border-radius: 8px;
+  background: #123e30;
+  color: #fff8dd;
+  cursor: pointer;
+}
+
+.table-v2-history-panel {
+  width: min(560px, 85vw);
+  max-height: 60vh;
+  margin-top: 8px;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid #7c9e81;
+  border-radius: 12px;
+  background: #123e30;
+  box-shadow: 0 8px 24px #0008;
+}
+
+.table-v2-history-panel p {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+}
+
+.table-v2-history-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 14px;
+}
+
+.table-v2-history-tiles > span {
+  display: grid;
+  width: 34px;
+  text-align: center;
+}
+
+.table-v2-history-tiles img {
+  display: block;
+  width: 34px;
+  height: 47px;
+}
+
+.table-v2-history-tiles small {
+  color: #edcd84;
+  font-size: 9px;
 }
 
 .table-v2-seat-caption {
@@ -194,21 +260,23 @@
 
 .table-v2-center-status {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  display: grid;
-  gap: 7px;
-  width: clamp(132px, 10%, 166px);
-  min-width: 132px;
-  min-height: 116px;
-  max-width: 20%;
-  padding: 14px 12px;
+  top: 2%;
+  right: 2%;
+  left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: min(28%, 280px);
+  padding: 5px 10px;
   border: 1px solid rgba(170, 184, 164, 0.42);
-  border-radius: 8px;
+  border-radius: 16px;
   background: linear-gradient(145deg, rgba(4, 11, 11, 0.98), rgba(2, 23, 19, 0.96));
   color: #e9e9d7;
   text-align: center;
-  transform: translate(-50%, -50%);
+  transform: none;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(230, 241, 215, 0.08);
 }
@@ -217,6 +285,36 @@
   border-color: rgba(215, 176, 85, 0.82);
   box-shadow: 0 0 0 2px rgba(215, 176, 85, 0.12), 0 12px 34px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 246, 202, 0.14);
   animation: table-v2-turn-pulse 2.2s ease-in-out infinite;
+}
+
+/* Crowded boards keep the status as a compact HUD badge in the upper-right
+   rail, where it never covers the discard area. */
+.table-v2.is-crowded .table-v2-center-status {
+  top: 2%;
+  right: 2%;
+  left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: min(28%, 280px);
+  padding: 5px 10px;
+  border-radius: 16px;
+  transform: none;
+  animation: none;
+}
+
+.table-v2.is-crowded .table-v2-center-status span,
+.table-v2.is-crowded .table-v2-center-status strong,
+.table-v2.is-crowded .table-v2-center-status small {
+  font-size: 0.68rem;
+}
+
+.table-v2.is-crowded .table-v2-center-status strong,
+.table-v2.is-crowded .table-v2-center-status small {
+  max-width: 10em;
 }
 
 .table-v2-center-status span {
@@ -245,11 +343,11 @@
 @keyframes table-v2-turn-pulse {
   0%,
   100% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
   }
 
   50% {
-    transform: translate(-50%, -50%) scale(1.025);
+    transform: scale(1.025);
   }
 }
 
@@ -365,7 +463,9 @@
   }
 
   .table-v2-center-status {
-    top: 50%;
+    top: 2%;
+    right: 2%;
+    left: auto;
     max-width: 24%;
     min-width: 110px;
     padding-inline: 8px;
