@@ -19,10 +19,12 @@ import { SOLO_STORAGE_KEYS } from "./solo-storage-keys.js";
 const PLAYER_NAME_KEY = SOLO_STORAGE_KEYS.playerName;
 const SOLO_DIFFICULTY_STORAGE_KEY = SOLO_STORAGE_KEYS.soloDifficulty;
 const SOLO_PLAYER_COUNT_STORAGE_KEY = SOLO_STORAGE_KEYS.soloPlayerCount;
+const VOICE_ENABLED_STORAGE_KEY = SOLO_STORAGE_KEYS.voiceEnabled;
 const HUMAN_PLAYER_ID = "solo-human";
 const HUMAN_BROWSER_ID = "solo-human-browser";
 const SOLO_ROOM_ID = "SOLO";
 const BOT_NAME_PREFIX = "電腦玩家";
+const VOICE_DISCARD_DELAY_MS = 1000;
 const DEFAULT_SOLO_PLAYER_COUNT = 2;
 const MAX_SOLO_PLAYER_COUNT = 4;
 const MAX_BOT_ACTION_RETRIES = 3;
@@ -178,8 +180,9 @@ export class SoloController {
       throw new Error(result.message);
     }
 
+    const postDiscardVoiceDelayMs = getPostDiscardVoiceDelay(type);
     this.updateRoomGame(result.game);
-    this.queueBotTurnIfNeeded();
+    this.queueBotTurnIfNeeded(postDiscardVoiceDelayMs);
   }
 
   leaveRoom() {
@@ -192,7 +195,7 @@ export class SoloController {
     return true;
   }
 
-  queueBotTurnIfNeeded() {
+  queueBotTurnIfNeeded(postActionDelayMs = 0) {
     this.clearBotTimer();
 
     const action = this.getPendingBotAction();
@@ -208,7 +211,7 @@ export class SoloController {
       this.botTimer = 0;
       this.setBotThinking(false, null);
       this.runBotAction(action);
-    }, action.delayMs || 900);
+    }, (action.delayMs || 900) + postActionDelayMs);
   }
 
   getPendingBotAction() {
@@ -278,11 +281,12 @@ export class SoloController {
       return;
     }
 
+    const postDiscardVoiceDelayMs = getPostDiscardVoiceDelay(action && action.type);
     this.updateRoomGame(result.game);
     if (action.resultMessage) {
       this.onInfo(action.resultMessage);
     }
-    this.queueBotTurnIfNeeded();
+    this.queueBotTurnIfNeeded(postDiscardVoiceDelayMs);
   }
 
   updateRoomGame(game) {
@@ -518,6 +522,16 @@ function resolvePendingBotSeat(room, game, pendingClaim) {
   }
 
   return null;
+}
+
+function getPostDiscardVoiceDelay(actionType) {
+  if (actionType !== "discardTile") {
+    return 0;
+  }
+
+  const storedVoiceEnabled = readStorage(VOICE_ENABLED_STORAGE_KEY);
+  const voiceEnabled = storedVoiceEnabled !== "false" && storedVoiceEnabled !== "0";
+  return voiceEnabled ? VOICE_DISCARD_DELAY_MS : 0;
 }
 
 function getHumanPlayer(room) {
