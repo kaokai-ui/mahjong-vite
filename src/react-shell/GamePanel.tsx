@@ -27,6 +27,7 @@ export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, voiceEnab
   ]
     .filter(Boolean)
     .join(" ");
+  const gamePanelClassName = ["panel", tableV2Enabled ? "game-panel-v2" : ""].filter(Boolean).join(" ");
   const fullscreenLabel = fullscreenActive ? "離開全螢幕" : "全螢幕顯示";
   const focusNote = fullscreenSupported ? gamePanel.focusNote : "這個瀏覽器目前不支援全螢幕。";
   const [topDiscardRow, bottomDiscardRow, leftDiscardRow, rightDiscardRow] = gamePanel.tableStage.discardRows;
@@ -59,7 +60,7 @@ export function GamePanel({ gamePanel, seatCount, isSoloMode, actions, voiceEnab
   const sideSeatRightLabel = "下家";
 
   return (
-    <section id="game-panel" className="panel">
+    <section id="game-panel" className={gamePanelClassName}>
       <div className="panel-head">
         <div>
           <h2>{gamePanel.title}</h2>

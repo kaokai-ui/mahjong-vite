@@ -288,6 +288,30 @@ body.app-native-fullscreen.app-game-focus #game-panel.panel .panel-head > div:fi
   box-shadow: 0 10px 24px rgba(4, 18, 14, 0.16);
 }
 
+/* In the 3D table, the top-left notice is a HUD layer. Keeping it out of the
+   panel-head flow prevents a wrapped message from reducing the Canvas height
+   and triggering a visible camera/table resize on tablets. */
+body.app-game-focus #game-panel.game-panel-v2 {
+  position: relative;
+}
+
+body.app-game-focus #game-panel.game-panel-v2 .game-topbar-notice {
+  position: absolute;
+  top: calc(72px + env(safe-area-inset-top));
+  left: calc(14px + env(safe-area-inset-left));
+  z-index: 70;
+  width: min(360px, calc(100vw - 28px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-width: calc(100% - 28px);
+  pointer-events: none;
+}
+
+body.app-game-focus #game-panel.game-panel-v2 .game-topbar-notice .banner {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
 .focus-note {
   color: var(--muted);
   font-size: 0.88rem;
