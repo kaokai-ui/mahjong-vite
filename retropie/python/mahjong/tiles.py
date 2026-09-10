@@ -21,7 +21,7 @@ HONOR_LABELS = {
     "G": "發",
     "B": "白",
 }
-SUIT_LABELS = {"m": "萬", "p": "筒", "s": "索"}
+SUIT_LABELS = {"m": "萬", "p": "筒", "s": "條"}
 NUMBER_LABELS = ("", "一", "二", "三", "四", "五", "六", "七", "八", "九")
 
 TILE_TYPES = tuple(

@@ -19,7 +19,7 @@ export const RULE_PRESETS = {
   full136: {
     id: "full136",
     name: "雙人全牌 136 張",
-    description: "使用萬、筒、索與字牌各四張，保留一般 13 張麻將的吃碰槓胡流程。",
+    description: "使用萬、筒、條與字牌各四張，保留一般 13 張麻將的吃碰槓胡流程。",
     tileTypes: FULL_TILE_TYPES,
     copies: 4,
     minPlayers: 2,
@@ -148,7 +148,7 @@ export function getTileLabel(tileTypeOrId) {
   const tileType = tileTypeOrId.includes("-") ? getTileType(tileTypeOrId) : tileTypeOrId;
   if (isSuitTile(tileType)) {
     const rank = Number(tileType[1]);
-    const suitLabel = tileType[0] === "m" ? "萬" : tileType[0] === "p" ? "筒" : "索";
+    const suitLabel = tileType[0] === "m" ? "萬" : tileType[0] === "p" ? "筒" : "條";
     return `${NUMBER_LABELS[rank]}${suitLabel}`;
   }
 

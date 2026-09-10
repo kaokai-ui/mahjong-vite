@@ -11,7 +11,7 @@ native-1080p scene prefers the versioned `../mahjong_tiles_v2/` library at
 
 - `tile-m1.png` through `tile-m9.png`: 萬子 1–9
 - `tile-p1.png` through `tile-p9.png`: 筒子 1–9
-- `tile-s1.png` through `tile-s9.png`: 索子 1–9
+- `tile-s1.png` through `tile-s9.png`: 條子 1–9
 - `tile-E.png`, `tile-S.png`, `tile-W.png`, `tile-N.png`, `tile-R.png`, `tile-G.png`, `tile-B.png`: 東南西北中發白
 - `tile-back.png`: hidden-tile back
 - `atlas-34.png`: all 34 unique faces in one atlas

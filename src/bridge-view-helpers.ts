@@ -286,7 +286,7 @@ export function getTileDisplayName(tileType: string): string {
     return `${TILE_NUMBER_LABELS[Number(tileType[1])]}筒`;
   }
   if (/^s[1-9]$/.test(tileType)) {
-    return `${TILE_NUMBER_LABELS[Number(tileType[1])]}索`;
+    return `${TILE_NUMBER_LABELS[Number(tileType[1])]}條`;
   }
   return HONOR_TILE_NAMES[tileType] || tileType;
 }

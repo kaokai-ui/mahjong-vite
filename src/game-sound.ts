@@ -85,7 +85,7 @@ function tileTypeToSpeechText(tileType: string): string {
   const suit = normalized[0];
   const rank = Number(normalized[1]);
   if ((suit === "m" || suit === "p" || suit === "s") && rank >= 1 && rank <= 9) {
-    const suitName = suit === "m" ? "萬" : suit === "p" ? "筒" : "索";
+    const suitName = suit === "m" ? "萬" : suit === "p" ? "筒" : "條";
     return `${TILE_NUMBER_NAMES[rank]}${suitName}`;
   }
   return TILE_HONOR_NAMES[normalized] || "";
