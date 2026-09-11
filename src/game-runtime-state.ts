@@ -123,8 +123,7 @@ export function getDrawRevealState(
     !lastDraw.tileId ||
     !hand.includes(lastDraw.tileId) ||
     !game ||
-    game.phase !== "discard" ||
-    normalizedDrawRevealSeconds <= 0
+    game.phase !== "discard"
   ) {
     clearDrawRevealState(state);
     return null;
@@ -140,6 +139,23 @@ export function getDrawRevealState(
   if (state.drawRevealKey !== key) {
     state.drawRevealKey = key;
     state.drawRevealEndsAt = now + normalizedDrawRevealSeconds * 1000;
+  }
+
+  if (normalizedDrawRevealSeconds === 0) {
+    // "不顯示" disables the countdown only. Keep the freshly drawn tile in
+    // the dedicated draw slot until the player discards it.
+    state.drawRevealEndsAt = 0;
+    state.drawRevealCompletedKey = "";
+    if (state.countdownTimer) {
+      window.clearTimeout(state.countdownTimer);
+      state.countdownTimer = 0;
+    }
+
+    return {
+      tileId: lastDraw.tileId,
+      countdownLabel: "",
+      isGracePeriod: false,
+    };
   }
 
   const remainingMs = state.drawRevealEndsAt - now;
